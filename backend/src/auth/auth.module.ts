@@ -30,8 +30,22 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [
     AuthService,
     JwtStrategy,
-    GoogleStrategy,
-    MicrosoftStrategy,
+    {
+      provide: GoogleStrategy,
+      useFactory: (config: ConfigService) => {
+        if (!config.get<string>('GOOGLE_CLIENT_ID')) return null;
+        return new GoogleStrategy(config);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: MicrosoftStrategy,
+      useFactory: (config: ConfigService) => {
+        if (!config.get<string>('MICROSOFT_CLIENT_ID')) return null;
+        return new MicrosoftStrategy(config);
+      },
+      inject: [ConfigService],
+    },
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
