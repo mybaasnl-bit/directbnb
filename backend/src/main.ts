@@ -18,8 +18,11 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3001);
   const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
 
-  // ─── Root redirect → Swagger docs ───────────────────────────────────────────
+  // ─── Health check & root redirect ───────────────────────────────────────────
   app.use('/', (req: any, res: any, next: any) => {
+    if (req.method === 'GET' && req.path === '/api/v1/health') {
+      return res.status(200).json({ status: 'ok' });
+    }
     if (req.path === '/' && req.method === 'GET') {
       return res.redirect('/api/docs');
     }
