@@ -1,0 +1,192 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import { HtmlEditor } from '@/components/admin/html-editor';
+import { ArrowLeft, Save, CheckCircle, AlertCircle } from 'lucide-react';
+
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subjectNl: string;
+  subjectEn: string;
+  htmlNl: string;
+  htmlEn: string;
+  updatedAt: string;
+}
+
+type ActiveLang = 'nl' | 'en';
+
+export default function EmailTemplateEditorPage() {
+  const { id, locale } = useParams<{ id: string; locale: string }>();
+  const router = useRouter();
+
+  const [template, setTemplate] = useState<EmailTemplate | null>(null);
+  const [subjectNl, setSubjectNl] = useState('');
+  const [subjectEn, setSubjectEn] = useState('');
+  const [htmlNl, setHtmlNl] = useState('');
+  const [htmlEn, setHtmlEn] = useState('');
+  const [lang, setLang] = useState<ActiveLang>('nl');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    api.get(`/email-templates/${id}`).then(({ data }) => {
+      // TransformInterceptor wraps response: { success, data, statusCode }
+      const tpl = data?.data ?? data;
+      setTemplate(tpl);
+      setSubjectNl(tpl.subjectNl);
+      setSubjectEn(tpl.subjectEn);
+      setHtmlNl(tpl.htmlNl);
+      setHtmlEn(tpl.htmlEn);
+      setLoading(false);
+    });
+  }, [id]);
+
+  const markDirty = (fn: () => void) => {
+    fn();
+    setDirty(true);
+    setSaveStatus('idle');
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveStatus('idle');
+    try {
+      await api.patch(`/email-templates/${id}`, {
+        subjectNl,
+        subjectEn,
+        htmlNl,
+        htmlEn,
+      });
+      setSaveStatus('success');
+      setDirty(false);
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch {
+      setSaveStatus('error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-4">
+        <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse" />
+        <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!template) return null;
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => router.push(`/${locale}/admin/email-templates`)}
+            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">{template.name}</h1>
+            <p className="text-sm text-slate-400 font-mono">{template.name}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {saveStatus === 'success' && (
+            <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+              <CheckCircle className="w-4 h-4" />
+              Opgeslagen
+            </div>
+          )}
+          {saveStatus === 'error' && (
+            <div className="flex items-center gap-1.5 text-red-500 text-sm font-medium">
+              <AlertCircle className="w-4 h-4" />
+              Fout bij opslaan
+            </div>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || !dirty}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? 'Opslaan…' : 'Opslaan'}
+          </button>
+        </div>
+      </div>
+
+      {/* Language selector */}
+      <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-fit mb-6">
+        {(['nl', 'en'] as const).map((l) => (
+          <button
+            key={l}
+            type="button"
+            onClick={() => setLang(l)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+              lang === l
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-6">
+        {/* Subject field */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <label className="block text-sm font-semibold text-slate-700 mb-2">
+            Onderwerp ({lang === 'nl' ? 'Nederlands' : 'Engels'})
+          </label>
+          <input
+            type="text"
+            value={lang === 'nl' ? subjectNl : subjectEn}
+            onChange={(e) =>
+              markDirty(() =>
+                lang === 'nl' ? setSubjectNl(e.target.value) : setSubjectEn(e.target.value),
+              )
+            }
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+            placeholder={`E-mail onderwerp in het ${lang === 'nl' ? 'Nederlands' : 'Engels'}`}
+          />
+          <p className="mt-2 text-xs text-slate-400">
+            Gebruik{' '}
+            <code className="font-mono bg-slate-100 px-1 rounded">{'{{naam}}'}</code> voor
+            variabelen.
+          </p>
+        </div>
+
+        {/* HTML body */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-6">
+          <HtmlEditor
+            label={`HTML inhoud (${lang === 'nl' ? 'Nederlands' : 'Engels'})`}
+            value={lang === 'nl' ? htmlNl : htmlEn}
+            onChange={(val) =>
+              markDirty(() => (lang === 'nl' ? setHtmlNl(val) : setHtmlEn(val)))
+            }
+            height={500}
+          />
+        </div>
+
+        {/* Last updated */}
+        <p className="text-xs text-slate-400 text-right">
+          Laatst bijgewerkt:{' '}
+          {new Date(template.updatedAt).toLocaleString('nl-NL', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          })}
+        </p>
+      </div>
+    </div>
+  );
+}

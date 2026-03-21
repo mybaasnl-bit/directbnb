@@ -1,0 +1,474 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+  COMPLETED
+  PAYMENT_PENDING
+  PAID
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  FULL
+  DEPOSIT
+}
+
+enum FeedbackCategory {
+  BUG
+  FEATURE
+  UX
+  GENERAL
+}
+
+enum FeedbackStatus {
+  NEW
+  REVIEWED
+  RESOLVED
+}
+
+enum EmailLogStatus {
+  SENT
+  FAILED
+}
+
+enum PaymentProvider {
+  STRIPE
+  MOLLIE
+}
+
+enum TokenType {
+  RESET
+  INVITE
+}
+
+enum HostPaymentStatus {
+  PENDING
+  ONBOARDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum PayoutStatus {
+  PENDING
+  IN_TRANSIT
+  PAID
+  FAILED
+  CANCELLED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  passwordHash      String?  // null for social-login-only accounts
+  firstName         String
+  lastName          String
+  phone             String?
+  role              UserRole @default(OWNER)
+  preferredLanguage String   @default("nl")
+  isActive          Boolean  @default(true)
+  isBetaUser        Boolean  @default(false)
+  emailVerified     Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  properties          Property[]
+  guests              Guest[]
+  bookings            Booking[]
+  feedback            Feedback[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  paymentAccount      HostPaymentAccount?
+  oauthAccounts       OAuthAccount[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Property {
+  id             String   @id @default(uuid())
+  ownerId        String
+  slug           String   @unique
+  name           String
+  descriptionNl  String?  @db.Text
+  descriptionEn  String?  @db.Text
+  addressStreet  String?
+  addressCity    String?
+  addressZip     String?
+  addressCountry String   @default("NL")
+  latitude       Decimal? @db.Decimal(10, 8)
+  longitude      Decimal? @db.Decimal(11, 8)
+  isPublished    Boolean  @default(false)
+
+  // Amenities (predefined keys: wifi, parking, breakfast, airco, …)
+  amenities      String[] @default([])
+
+  // Policies
+  checkInTime        String?  // e.g. "15:00"
+  checkOutTime       String?  // e.g. "11:00"
+  cancellationPolicy String?  @db.Text
+  smokingAllowed     Boolean  @default(false)
+  petsAllowed        Boolean  @default(false)
+  childrenAllowed    Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  owner   User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  photos  PropertyPhoto[]
+  rooms   Room[]
+  reviews Review[]
+
+  @@index([ownerId])
+  @@index([slug])
+  @@map("properties")
+}
+
+model PropertyPhoto {
+  id         String   @id @default(uuid())
+  propertyId String
+  url        String
+  altText    String?
+  sortOrder  Int      @default(0)
+  isCover    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@map("property_photos")
+}
+
+model Room {
+  id            String   @id @default(uuid())
+  propertyId    String
+  name          String
+  descriptionNl String?  @db.Text
+  descriptionEn String?  @db.Text
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  maxGuests     Int      @default(2)
+  beds          Int?
+  bathrooms     Int?
+  sqm           Int?
+  minStay       Int      @default(1)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  property     Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  photos       RoomPhoto[]
+  bookings     Booking[]
+  availability Availability[]
+
+  @@index([propertyId])
+  @@map("rooms")
+}
+
+model RoomPhoto {
+  id        String   @id @default(uuid())
+  roomId    String
+  url       String
+  altText   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@map("room_photos")
+}
+
+model Guest {
+  id          String   @id @default(uuid())
+  ownerId     String
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  nationality String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([ownerId])
+  @@index([email])
+  @@map("guests")
+}
+
+model Booking {
+  id           String        @id @default(uuid())
+  roomId       String
+  guestId      String
+  ownerId      String
+  checkIn      DateTime      @db.Date
+  checkOut     DateTime      @db.Date
+  numGuests    Int           @default(1)
+  totalPrice   Decimal       @db.Decimal(10, 2)
+  status       BookingStatus @default(PENDING)
+  guestMessage          String?       @db.Text
+  ownerNotes            String?       @db.Text
+  source                String        @default("direct")
+  stripePaymentIntentId String?
+  molliePaymentId       String?
+  paymentProvider       PaymentProvider?
+  depositPaid           Boolean       @default(false)
+  depositAmount         Decimal?      @db.Decimal(10, 2)
+  paymentStatus         PaymentStatus?
+  paymentType           PaymentType?
+  paidAt                DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  room     Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  guest    Guest     @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([roomId])
+  @@index([ownerId])
+  @@index([guestId])
+  @@index([status])
+  @@index([checkIn])
+  @@index([checkOut])
+  @@map("bookings")
+}
+
+model Payment {
+  id                String          @id @default(uuid())
+  bookingId         String
+  amount            Decimal         @db.Decimal(10, 2)
+  currency          String          @default("EUR")
+  status            PaymentStatus   @default(PENDING)
+  type              PaymentType     @default(FULL)
+  provider          PaymentProvider
+  providerPaymentId String?
+  method            String?
+  paidAt            DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([providerPaymentId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Availability {
+  id          String   @id @default(uuid())
+  roomId      String
+  blockedDate DateTime @db.Date
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, blockedDate])
+  @@index([roomId])
+  @@index([blockedDate])
+  @@map("availability")
+}
+
+model Feedback {
+  id            String            @id @default(uuid())
+  ownerId       String
+  category      FeedbackCategory?
+  message       String            @db.Text
+  screenshotUrl String?
+  status        FeedbackStatus    @default(NEW)
+  createdAt     DateTime          @default(now())
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("feedback")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String?   // null for INVITE tokens (user not yet registered)
+  email     String
+  tokenHash String    @unique
+  type      TokenType @default(RESET)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([email])
+  @@map("password_reset_tokens")
+}
+
+model BetaSignup {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  bnbName   String
+  location  String
+  website   String?
+  language  String   @default("nl")
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("beta_signups")
+}
+
+model EmailLog {
+  id                String         @id @default(uuid())
+  recipientEmail    String
+  templateName      String
+  language          String
+  status            EmailLogStatus
+  providerMessageId String?
+  errorMessage      String?        @db.Text
+  createdAt         DateTime       @default(now())
+
+  @@index([recipientEmail])
+  @@index([status])
+  @@index([templateName])
+  @@map("email_logs")
+}
+
+model Review {
+  id                String   @id @default(uuid())
+  propertyId        String
+  bookingId         String?  @unique
+  guestFirstName    String
+  rating            Int      // 1–5
+  cleanlinessRating Int?
+  locationRating    Int?
+  valueRating       Int?
+  comment           String?  @db.Text
+  isPublished       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([isPublished])
+  @@map("reviews")
+}
+
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  subjectNl String
+  subjectEn String
+  htmlNl    String   @db.Text
+  htmlEn    String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@map("email_templates")
+}
+
+model OAuthAccount {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String   // "google" | "microsoft"
+  providerAccountId String   // user's ID at the provider
+  email             String?  // email returned by provider
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+model HostPaymentAccount {
+  id                 String            @id @default(uuid())
+  ownerId            String            @unique
+  provider           PaymentProvider   @default(STRIPE)
+  providerAccountId  String?           @unique
+  ibanLast4          String?
+  bankName           String?
+  status             HostPaymentStatus @default(PENDING)
+  detailsSubmitted   Boolean           @default(false)
+  chargesEnabled     Boolean           @default(false)
+  payoutsEnabled     Boolean           @default(false)
+  platformFeePercent Decimal?          @db.Decimal(5, 2) @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  payouts Payout[]
+
+  @@index([ownerId])
+  @@map("host_payment_accounts")
+}
+
+model Payout {
+  id               String             @id @default(uuid())
+  hostAccountId    String
+  ownerId          String
+  bookingId        String?
+  amount           Decimal            @db.Decimal(10, 2)
+  platformFee      Decimal            @db.Decimal(10, 2) @default(0)
+  netAmount        Decimal            @db.Decimal(10, 2)
+  currency         String             @default("EUR")
+  status           PayoutStatus       @default(PENDING)
+  providerPayoutId String?
+  description      String?
+  arrivalDate      DateTime?
+  failureMessage   String?            @db.Text
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  hostAccount HostPaymentAccount @relation(fields: [hostAccountId], references: [id])
+
+  @@index([hostAccountId])
+  @@index([ownerId])
+  @@index([status])
+  @@map("payouts")
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd '/Users/jessebaas/Documents/01-Sorteermap/Werk/02-Mybaas/Saas B&B/backend' && npm install && npm run start:dev"],
+      "port": 3001
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd '/Users/jessebaas/Documents/01-Sorteermap/Werk/02-Mybaas/Saas B&B/frontend' && npm install && npm run dev"],
+      "port": 3000
+    },
+    {
+      "name": "landing",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd '/Users/jessebaas/Documents/01-Sorteermap/Werk/02-Mybaas/Saas B&B/landing' && npm install && npm run dev"],
+      "port": 3002
+    }
+  ]
+}
