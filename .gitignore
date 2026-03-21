@@ -11,8 +11,8 @@ node_modules/
 backend/dist/
 
 # ─── Next.js build output ────────────────────────────────────────────────────
-frontend/.next/
-frontend/out/
+**/.next/
+**/out/
 
 # ─── Prisma ──────────────────────────────────────────────────────────────────
 backend/prisma/migrations/**/migration_lock.toml
