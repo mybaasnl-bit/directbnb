@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm run build && npx prisma migrate deploy && node dist/src/main.js",
+    "startCommand": "npx prisma migrate deploy && node dist/src/main.js",
     "healthcheckPath": "/api/v1/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
