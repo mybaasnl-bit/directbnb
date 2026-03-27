@@ -149,6 +149,87 @@ export class EmailTemplatesService {
     return this.renderVariables(html, variables);
   }
 
+  // ─── Host template resolution (for editor) ───────────────────────────────
+
+  /**
+   * Returns raw template fields for the host editor.
+   * Uses host override if available, otherwise returns system default.
+   * Includes isCustomized flag so the UI can show "Reset to default".
+   */
+  async resolveForHost(hostId: string, templateName: string): Promise<{
+    subjectNl: string;
+    subjectEn: string;
+    htmlNl: string;
+    htmlEn: string;
+    isCustomized: boolean;
+  }> {
+    const hostTpl = await this.findHostTemplate(hostId, templateName);
+    if (hostTpl) {
+      return {
+        subjectNl: hostTpl.subjectNl,
+        subjectEn: hostTpl.subjectEn,
+        htmlNl: hostTpl.htmlNl,
+        htmlEn: hostTpl.htmlEn,
+        isCustomized: true,
+      };
+    }
+
+    const systemTpl = await this.findByName(templateName);
+    return {
+      subjectNl: systemTpl.subjectNl,
+      subjectEn: systemTpl.subjectEn,
+      htmlNl: systemTpl.htmlNl,
+      htmlEn: systemTpl.htmlEn,
+      isCustomized: false,
+    };
+  }
+
+  /**
+   * Send a test email for a host's template (uses their override if set).
+   */
+  async sendHostTestEmail(hostId: string, templateName: string, dto: SendTestEmailDto) {
+    const { language, to } = dto;
+
+    const sampleVars: Record<string, string> = {
+      name: 'Jan Janssen',
+      guest_name: 'Jan Janssen',
+      owner_name: 'Eigenaar',
+      bnb_name: 'Mijn B&B',
+      property_name: 'Mijn B&B',
+      room_name: 'Kamer 1',
+      guest_email: 'gast@example.com',
+      owner_email: 'eigenaar@example.com',
+      check_in: '15 april 2025',
+      check_out: '18 april 2025',
+      total_price: '225,00',
+      num_guests: '2',
+      signup_date: new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }),
+    };
+
+    const { subject, html } = await this.resolve(templateName, language, sampleVars, hostId);
+
+    if (!this.config.get<string>('RESEND_API_KEY')) {
+      this.logger.warn('Host test email skipped — RESEND_API_KEY not set');
+      return { sent: false, reason: 'RESEND_API_KEY not set' };
+    }
+
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.from,
+        to,
+        subject: `[TEST] ${subject}`,
+        html,
+      });
+
+      if (error) throw new Error(error.message);
+      this.logger.log(`Host test email sent to ${to} (messageId: ${data?.id})`);
+      return { sent: true, messageId: data?.id };
+    } catch (err: any) {
+      this.logger.error(`Host test email failed: ${err.message}`);
+      throw err;
+    }
+  }
+
   // ─── Test email ───────────────────────────────────────────────────────────
 
   async sendTestEmail(id: string, dto: SendTestEmailDto) {
