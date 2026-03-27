@@ -105,6 +105,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   paymentAccount      HostPaymentAccount?
   oauthAccounts       OAuthAccount[]
+  hostEmailTemplates  HostEmailTemplate[]
 
   @@index([email])
   @@map("users")
@@ -409,6 +410,24 @@ model EmailTemplate {
 
   @@index([name])
   @@map("email_templates")
+}
+
+model HostEmailTemplate {
+  id           String   @id @default(uuid())
+  hostId       String
+  templateName String
+  subjectNl    String
+  subjectEn    String
+  htmlNl       String   @db.Text
+  htmlEn       String   @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  host User @relation(fields: [hostId], references: [id], onDelete: Cascade)
+
+  @@unique([hostId, templateName])
+  @@index([hostId])
+  @@map("host_email_templates")
 }
 
 model OAuthAccount {

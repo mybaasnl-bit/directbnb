@@ -202,80 +202,72 @@ export class EmailService {
     await this.send({ to, subject, html: this.baseLayout(content, language) });
   }
 
-  // ─── Booking emails (existing — unchanged) ───────────────────────────────────
+  // ─── Booking emails (via DB templates with host customization) ──────────────
 
   async sendBookingRequest(booking: any, owner: any) {
-    const lang = owner.preferredLanguage ?? 'nl';
+    const lang: 'nl' | 'en' = owner.preferredLanguage === 'en' ? 'en' : 'nl';
     const isNl = lang === 'nl';
-
     const checkIn = new Date(booking.checkIn).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB');
     const checkOut = new Date(booking.checkOut).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB');
     const guestName = `${booking.guest.firstName} ${booking.guest.lastName}`;
     const propertyName = booking.room.property.name;
     const roomName = booking.room.name;
 
-    await this.send({
-      to: owner.email,
-      subject: isNl
-        ? `Nieuwe boekingsaanvraag — ${propertyName}`
-        : `New booking request — ${propertyName}`,
-      html: this.ownerBookingRequestHtml({
-        lang,
-        ownerName: owner.firstName,
-        guestName,
-        guestEmail: booking.guest.email,
-        guestPhone: booking.guest.phone,
-        propertyName,
-        roomName,
-        checkIn,
-        checkOut,
-        numGuests: booking.numGuests,
-        totalPrice: booking.totalPrice,
-        guestMessage: booking.guestMessage,
-        bookingId: booking.id,
-      }),
-    });
+    const vars: Record<string, string> = {
+      owner_name: owner.firstName,
+      guest_name: guestName,
+      guest_email: booking.guest.email,
+      guest_phone: booking.guest.phone ?? '',
+      property_name: propertyName,
+      room_name: roomName,
+      check_in: checkIn,
+      check_out: checkOut,
+      num_guests: String(booking.numGuests),
+      total_price: Number(booking.totalPrice).toFixed(2),
+      guest_message: booking.guestMessage ?? '',
+      booking_id: booking.id,
+    };
 
-    await this.send({
-      to: booking.guest.email,
-      subject: isNl
-        ? `Boekingsaanvraag ontvangen — ${propertyName}`
-        : `Booking request received — ${propertyName}`,
-      html: this.guestBookingRequestHtml({
-        lang,
-        guestName: booking.guest.firstName,
-        propertyName,
-        roomName,
-        checkIn,
-        checkOut,
-        numGuests: booking.numGuests,
-        totalPrice: booking.totalPrice,
-      }),
-    });
+    // Owner email — use host's custom template if available
+    try {
+      const { subject, html } = await this.templates.resolve('booking_request_owner', lang, vars, owner.id);
+      await this.sendAndLog({ to: owner.email, subject, html, templateName: 'booking_request_owner', language: lang });
+    } catch {
+      this.logger.warn('booking_request_owner template not found, skipping owner email');
+    }
+
+    // Guest email
+    try {
+      const { subject, html } = await this.templates.resolve('booking_request_guest', lang, vars, owner.id);
+      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_request_guest', language: lang });
+    } catch {
+      this.logger.warn('booking_request_guest template not found, skipping guest email');
+    }
   }
 
   async sendBookingConfirmed(booking: any, owner: any) {
-    const lang = owner.preferredLanguage ?? 'nl';
+    const lang: 'nl' | 'en' = owner.preferredLanguage === 'en' ? 'en' : 'nl';
     const isNl = lang === 'nl';
     const checkIn = new Date(booking.checkIn).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB');
     const checkOut = new Date(booking.checkOut).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB');
 
-    await this.send({
-      to: booking.guest.email,
-      subject: isNl
-        ? `Boeking bevestigd — ${booking.room.property.name}`
-        : `Booking confirmed — ${booking.room.property.name}`,
-      html: this.bookingConfirmedHtml({
-        lang,
-        guestName: booking.guest.firstName,
-        propertyName: booking.room.property.name,
-        roomName: booking.room.name,
-        checkIn,
-        checkOut,
-        totalPrice: booking.totalPrice,
-        ownerEmail: owner.email,
-      }),
-    });
+    const vars: Record<string, string> = {
+      guest_name: booking.guest.firstName,
+      property_name: booking.room.property.name,
+      room_name: booking.room.name,
+      check_in: checkIn,
+      check_out: checkOut,
+      total_price: Number(booking.totalPrice).toFixed(2),
+      owner_email: owner.email,
+      owner_name: owner.firstName,
+    };
+
+    try {
+      const { subject, html } = await this.templates.resolve('booking_confirmed', lang, vars, owner.id);
+      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_confirmed', language: lang });
+    } catch {
+      this.logger.warn('booking_confirmed template not found, skipping');
+    }
   }
 
   // ─── Payment emails ──────────────────────────────────────────────────────────
@@ -435,24 +427,35 @@ export class EmailService {
   }
 
   async sendBookingCancelled(booking: any, owner: any) {
-    const lang = owner.preferredLanguage ?? 'nl';
+    const lang: 'nl' | 'en' = owner.preferredLanguage === 'en' ? 'en' : 'nl';
     const isNl = lang === 'nl';
     const checkIn = new Date(booking.checkIn).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB');
     const checkOut = new Date(booking.checkOut).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB');
 
-    await this.send({
-      to: booking.guest.email,
-      subject: isNl
-        ? `Boeking geannuleerd — ${booking.room.property.name}`
-        : `Booking cancelled — ${booking.room.property.name}`,
-      html: this.bookingCancelledHtml({
-        lang,
-        guestName: booking.guest.firstName,
-        propertyName: booking.room.property.name,
-        checkIn,
-        checkOut,
-      }),
-    });
+    const vars: Record<string, string> = {
+      guest_name: booking.guest.firstName,
+      property_name: booking.room.property.name,
+      room_name: booking.room.name,
+      check_in: checkIn,
+      check_out: checkOut,
+      owner_name: owner.firstName,
+    };
+
+    // Guest cancellation email
+    try {
+      const { subject, html } = await this.templates.resolve('booking_cancelled_guest', lang, vars, owner.id);
+      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_cancelled_guest', language: lang });
+    } catch {
+      this.logger.warn('booking_cancelled_guest template not found, skipping guest email');
+    }
+
+    // Owner notification email
+    try {
+      const { subject, html } = await this.templates.resolve('booking_cancelled_owner', lang, vars, owner.id);
+      await this.sendAndLog({ to: owner.email, subject, html, templateName: 'booking_cancelled_owner', language: lang });
+    } catch {
+      this.logger.warn('booking_cancelled_owner template not found, skipping owner email');
+    }
   }
 
   // ─── Private core ─────────────────────────────────────────────────────────────

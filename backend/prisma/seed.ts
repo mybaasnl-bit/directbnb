@@ -181,6 +181,62 @@ const templates = [
       <p>Please contact the host for more information.</p>
     `, 'en'),
   },
+  {
+    name: 'booking_cancelled_guest',
+    subjectNl: 'Boeking geannuleerd — {{property_name}}',
+    subjectEn: 'Booking cancelled — {{property_name}}',
+    htmlNl: layout(`
+      <h2>Boeking geannuleerd</h2>
+      <p>Hallo {{guest_name}},</p>
+      <p>Helaas is uw boeking voor <strong>{{property_name}}</strong> geannuleerd.</p>
+      <div class="detail-box">
+        <div class="detail-row"><span class="detail-label">Kamer</span><span class="detail-value">{{room_name}}</span></div>
+        <div class="detail-row"><span class="detail-label">Inchecken</span><span class="detail-value">{{check_in}}</span></div>
+        <div class="detail-row"><span class="detail-label">Uitchecken</span><span class="detail-value">{{check_out}}</span></div>
+      </div>
+      <p>Neem contact op met de eigenaar via voor meer informatie.</p>
+    `, 'nl'),
+    htmlEn: layout(`
+      <h2>Booking cancelled</h2>
+      <p>Hello {{guest_name}},</p>
+      <p>Unfortunately your booking at <strong>{{property_name}}</strong> has been cancelled.</p>
+      <div class="detail-box">
+        <div class="detail-row"><span class="detail-label">Room</span><span class="detail-value">{{room_name}}</span></div>
+        <div class="detail-row"><span class="detail-label">Check-in</span><span class="detail-value">{{check_in}}</span></div>
+        <div class="detail-row"><span class="detail-label">Check-out</span><span class="detail-value">{{check_out}}</span></div>
+      </div>
+      <p>Please contact the host for more information.</p>
+    `, 'en'),
+  },
+  {
+    name: 'booking_cancelled_owner',
+    subjectNl: 'Boeking geannuleerd door gast — {{property_name}}',
+    subjectEn: 'Booking cancelled by guest — {{property_name}}',
+    htmlNl: layout(`
+      <h2>Boeking geannuleerd</h2>
+      <p>Hallo {{owner_name}},</p>
+      <p>De gast <strong>{{guest_name}}</strong> heeft de boeking voor <strong>{{property_name}}</strong> geannuleerd.</p>
+      <div class="detail-box">
+        <div class="detail-row"><span class="detail-label">Kamer</span><span class="detail-value">{{room_name}}</span></div>
+        <div class="detail-row"><span class="detail-label">Inchecken</span><span class="detail-value">{{check_in}}</span></div>
+        <div class="detail-row"><span class="detail-label">Uitchecken</span><span class="detail-value">{{check_out}}</span></div>
+      </div>
+      <p>De data zijn nu weer beschikbaar voor nieuwe boekingen.</p>
+      <a href="https://directbnb.nl/dashboard/bookings" class="button">Bekijk boekingen</a>
+    `, 'nl'),
+    htmlEn: layout(`
+      <h2>Booking cancelled</h2>
+      <p>Hello {{owner_name}},</p>
+      <p>Guest <strong>{{guest_name}}</strong> has cancelled their booking at <strong>{{property_name}}</strong>.</p>
+      <div class="detail-box">
+        <div class="detail-row"><span class="detail-label">Room</span><span class="detail-value">{{room_name}}</span></div>
+        <div class="detail-row"><span class="detail-label">Check-in</span><span class="detail-value">{{check_in}}</span></div>
+        <div class="detail-row"><span class="detail-label">Check-out</span><span class="detail-value">{{check_out}}</span></div>
+      </div>
+      <p>Those dates are now available for new bookings.</p>
+      <a href="https://directbnb.nl/dashboard/bookings" class="button">View bookings</a>
+    `, 'en'),
+  },
 ];
 
 async function main() {

@@ -1,10 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Resend } from 'resend';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateEmailTemplateDto } from './dto/update-email-template.dto';
+import { UpsertHostTemplateDto } from './dto/upsert-host-template.dto';
+import { SendTestEmailDto } from './dto/send-test-email.dto';
 
 @Injectable()
 export class EmailTemplatesService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(EmailTemplatesService.name);
+  private readonly resend: Resend;
+  private readonly from: string;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
+    const apiKey = config.get<string>('RESEND_API_KEY') || 'placeholder';
+    this.resend = new Resend(apiKey);
+    this.from = config.get('EMAIL_FROM', 'DirectBnB <onboarding@resend.dev>');
+  }
+
+  // ─── System templates (admin) ─────────────────────────────────────────────
 
   findAll() {
     return this.prisma.emailTemplate.findMany({
@@ -32,38 +49,156 @@ export class EmailTemplatesService {
   }
 
   async update(id: string, dto: UpdateEmailTemplateDto) {
-    await this.findOne(id); // ensure exists
-    return this.prisma.emailTemplate.update({
-      where: { id },
-      data: dto,
+    await this.findOne(id);
+    return this.prisma.emailTemplate.update({ where: { id }, data: dto });
+  }
+
+  // ─── Host templates (owner) ───────────────────────────────────────────────
+
+  findHostTemplates(hostId: string) {
+    return this.prisma.hostEmailTemplate.findMany({
+      where: { hostId },
+      orderBy: { templateName: 'asc' },
     });
   }
 
+  async findHostTemplate(hostId: string, templateName: string) {
+    return this.prisma.hostEmailTemplate.findUnique({
+      where: { hostId_templateName: { hostId, templateName } },
+    });
+  }
+
+  async upsertHostTemplate(hostId: string, templateName: string, dto: UpsertHostTemplateDto) {
+    // Verify the base template exists
+    await this.findByName(templateName);
+
+    return this.prisma.hostEmailTemplate.upsert({
+      where: { hostId_templateName: { hostId, templateName } },
+      create: { hostId, templateName, ...dto },
+      update: dto,
+    });
+  }
+
+  async deleteHostTemplate(hostId: string, templateName: string) {
+    const existing = await this.findHostTemplate(hostId, templateName);
+    if (!existing) throw new NotFoundException('Host template not found');
+    return this.prisma.hostEmailTemplate.delete({
+      where: { hostId_templateName: { hostId, templateName } },
+    });
+  }
+
+  // ─── Template resolution (host → system fallback) ────────────────────────
+
   /**
-   * Replace {{variable}} placeholders in a string with actual values.
-   * Unknown placeholders are left as-is.
+   * Resolve a template: use host-specific if available, fall back to system default.
+   * Then render variables.
    */
-  renderTemplate(html: string, variables: Record<string, string>): string {
-    return html.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => variables[key] ?? `{{${key}}}`);
+  async resolve(
+    templateName: string,
+    language: 'nl' | 'en',
+    variables: Record<string, string>,
+    hostId?: string,
+  ): Promise<{ subject: string; html: string }> {
+    let subjectTemplate: string;
+    let htmlTemplate: string;
+
+    // Try host-specific template first
+    if (hostId) {
+      const hostTpl = await this.findHostTemplate(hostId, templateName);
+      if (hostTpl) {
+        subjectTemplate = language === 'nl' ? hostTpl.subjectNl : hostTpl.subjectEn;
+        htmlTemplate = language === 'nl' ? hostTpl.htmlNl : hostTpl.htmlEn;
+        return {
+          subject: this.renderVariables(subjectTemplate, variables),
+          html: this.renderVariables(htmlTemplate, variables),
+        };
+      }
+    }
+
+    // Fall back to system template
+    const systemTpl = await this.findByName(templateName);
+    subjectTemplate = language === 'nl' ? systemTpl.subjectNl : systemTpl.subjectEn;
+    htmlTemplate = language === 'nl' ? systemTpl.htmlNl : systemTpl.htmlEn;
+
+    return {
+      subject: this.renderVariables(subjectTemplate, variables),
+      html: this.renderVariables(htmlTemplate, variables),
+    };
   }
 
   /**
-   * Load a template by name, render with variables, return subject + html for given language.
+   * Legacy: render a system template by name (used by email.service.ts sendTemplatedEmail).
    */
   async render(
     name: string,
     language: 'nl' | 'en',
     variables: Record<string, string>,
   ): Promise<{ subject: string; html: string }> {
-    const template = await this.findByName(name);
-    const subject = this.renderTemplate(
+    return this.resolve(name, language, variables);
+  }
+
+  /**
+   * Replace {{variable}} placeholders in a string with actual values.
+   */
+  renderVariables(template: string, variables: Record<string, string>): string {
+    return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => variables[key] ?? `{{${key}}}`);
+  }
+
+  /** @deprecated Use renderVariables */
+  renderTemplate(html: string, variables: Record<string, string>): string {
+    return this.renderVariables(html, variables);
+  }
+
+  // ─── Test email ───────────────────────────────────────────────────────────
+
+  async sendTestEmail(id: string, dto: SendTestEmailDto) {
+    const template = await this.findOne(id);
+    const { language, to } = dto;
+
+    const sampleVars: Record<string, string> = {
+      name: 'Jan Janssen',
+      guest_name: 'Jan Janssen',
+      owner_name: 'Eigenaar',
+      bnb_name: 'Mijn B&B',
+      property_name: 'Mijn B&B',
+      room_name: 'Kamer 1',
+      guest_email: 'gast@example.com',
+      owner_email: 'eigenaar@example.com',
+      check_in: '15 april 2025',
+      check_out: '18 april 2025',
+      total_price: '225,00',
+      num_guests: '2',
+      signup_date: new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }),
+    };
+
+    const subject = this.renderVariables(
       language === 'nl' ? template.subjectNl : template.subjectEn,
-      variables,
+      sampleVars,
     );
-    const html = this.renderTemplate(
+    const html = this.renderVariables(
       language === 'nl' ? template.htmlNl : template.htmlEn,
-      variables,
+      sampleVars,
     );
-    return { subject, html };
+
+    if (!this.config.get<string>('RESEND_API_KEY')) {
+      this.logger.warn('Test email skipped — RESEND_API_KEY not set');
+      return { sent: false, reason: 'RESEND_API_KEY not set' };
+    }
+
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.from,
+        to,
+        subject: `[TEST] ${subject}`,
+        html,
+      });
+
+      if (error) throw new Error(error.message);
+      this.logger.log(`Test email sent to ${to} (messageId: ${data?.id})`);
+      return { sent: true, messageId: data?.id };
+    } catch (err: any) {
+      this.logger.error(`Test email failed: ${err.message}`);
+      throw err;
+    }
   }
 }
