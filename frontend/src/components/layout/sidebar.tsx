@@ -34,6 +34,7 @@ export function Sidebar() {
     { href: `/${locale}/bookings`, label: t('bookings'), icon: BookOpen },
     { href: `/${locale}/calendar`, label: t('calendar'), icon: CalendarDays },
     { href: `/${locale}/guests`, label: t('guests'), icon: Users },
+    ...(!isAdmin ? [{ href: `/${locale}/email-templates`, label: t('emailTemplates'), icon: Mail }] : []),
     { href: `/${locale}/settings`, label: t('settings'), icon: Settings },
     { href: `/${locale}/betalingen`, label: t('payouts'), icon: Banknote },
   ];

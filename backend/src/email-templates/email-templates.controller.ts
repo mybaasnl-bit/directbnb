@@ -67,6 +67,23 @@ export class EmailTemplatesController {
     return this.service.findHostTemplates(req.user.id);
   }
 
+  @Get('host/mine/:templateName/resolved')
+  @ApiOperation({ summary: 'Get resolved template (host override or system default) for the editor' })
+  getResolvedTemplate(@Req() req: any, @Param('templateName') templateName: string) {
+    return this.service.resolveForHost(req.user.id, templateName);
+  }
+
+  @Post('host/mine/:templateName/test')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send a test email for a host template (uses host override if available)' })
+  sendHostTest(
+    @Req() req: any,
+    @Param('templateName') templateName: string,
+    @Body() dto: SendTestEmailDto,
+  ) {
+    return this.service.sendHostTestEmail(req.user.id, templateName, dto);
+  }
+
   @Get('host/mine/:templateName')
   @ApiOperation({ summary: 'Get a specific custom template for the logged-in host' })
   getMyTemplate(@Req() req: any, @Param('templateName') templateName: string) {
