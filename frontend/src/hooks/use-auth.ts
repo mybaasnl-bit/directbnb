@@ -42,14 +42,13 @@ export function useAuth() {
 
   const logout = async () => {
     try {
-      const { default: Cookies } = await import('js-cookie');
       const refreshToken = Cookies.get('refresh_token');
       if (refreshToken) {
         await api.post('/auth/logout', { refreshToken }).catch(() => {});
       }
     } finally {
       clearAuth();
-      queryClient.clear();
+      queryClient.removeQueries({ queryKey: ['me'] });
       router.push(`/${locale}/login`);
     }
   };

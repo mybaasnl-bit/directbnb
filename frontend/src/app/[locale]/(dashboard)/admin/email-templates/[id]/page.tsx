@@ -1,9 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { HtmlEditor } from '@/components/admin/html-editor';
+
+const HtmlEditor = dynamic(
+  () => import('@/components/admin/html-editor').then((m) => ({ default: m.HtmlEditor })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full rounded-xl border border-slate-200 bg-slate-50 animate-pulse" style={{ height: 548 }} />
+    ),
+  },
+);
 import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw } from 'lucide-react';
 
 interface EmailTemplate {
@@ -33,6 +43,9 @@ export default function EmailTemplateEditorPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [dirty, setDirty] = useState(false);
 
+  const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestDataRef = useRef({ subjectNl: '', subjectEn: '', htmlNl: '', htmlEn: '' });
+
   // Test email state
   const [testEmail, setTestEmail] = useState('');
   const [showTestModal, setShowTestModal] = useState(false);
@@ -47,21 +60,35 @@ export default function EmailTemplateEditorPage() {
       setSubjectEn(tpl.subjectEn);
       setHtmlNl(tpl.htmlNl);
       setHtmlEn(tpl.htmlEn);
+      latestDataRef.current = {
+        subjectNl: tpl.subjectNl, subjectEn: tpl.subjectEn,
+        htmlNl: tpl.htmlNl, htmlEn: tpl.htmlEn,
+      };
       setLoading(false);
     });
   }, [id]);
 
-  const markDirty = (fn: () => void) => {
+  // Keep ref in sync for autosave
+  useEffect(() => {
+    latestDataRef.current = { subjectNl, subjectEn, htmlNl, htmlEn };
+  }, [subjectNl, subjectEn, htmlNl, htmlEn]);
+
+  useEffect(() => {
+    return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
+  }, []);
+
+  const markDirty = useCallback((fn: () => void) => {
     fn();
     setDirty(true);
     setSaveStatus('idle');
-  };
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
+    if (autosaveRef.current) clearTimeout(autosaveRef.current);
     setSaving(true);
     setSaveStatus('idle');
     try {
-      await api.patch(`/email-templates/${id}`, { subjectNl, subjectEn, htmlNl, htmlEn });
+      await api.patch(`/email-templates/${id}`, latestDataRef.current);
       setSaveStatus('success');
       setDirty(false);
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -70,7 +97,17 @@ export default function EmailTemplateEditorPage() {
     } finally {
       setSaving(false);
     }
-  };
+  }, [id]);
+
+  // Stable onChange handlers for HtmlEditor
+  const handleHtmlNlChange = useCallback(
+    (val: string) => markDirty(() => setHtmlNl(val)),
+    [markDirty],
+  );
+  const handleHtmlEnChange = useCallback(
+    (val: string) => markDirty(() => setHtmlEn(val)),
+    [markDirty],
+  );
 
   const handleSendTest = async () => {
     if (!testEmail) return;
@@ -195,9 +232,7 @@ export default function EmailTemplateEditorPage() {
           <HtmlEditor
             label={`HTML inhoud (${lang === 'nl' ? 'Nederlands' : 'Engels'})`}
             value={lang === 'nl' ? htmlNl : htmlEn}
-            onChange={(val) =>
-              markDirty(() => (lang === 'nl' ? setHtmlNl(val) : setHtmlEn(val)))
-            }
+            onChange={lang === 'nl' ? handleHtmlNlChange : handleHtmlEnChange}
             height={500}
           />
         </div>

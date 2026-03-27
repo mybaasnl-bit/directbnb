@@ -1,15 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { HtmlEditor } from '@/components/admin/html-editor';
 import {
-  ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles,
+  ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
+// Lazy-load the heavy editor — only downloaded when user visits this page
+const HtmlEditor = dynamic(
+  () => import('@/components/admin/html-editor').then((m) => ({ default: m.HtmlEditor })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full rounded-xl border border-slate-200 bg-slate-50 animate-pulse" style={{ height: 548 }} />
+    ),
+  },
+);
+
 type ActiveLang = 'nl' | 'en';
+type SaveStatus = 'idle' | 'success' | 'error' | 'autosaving';
 
 interface ResolvedTemplate {
   subjectNl: string;
@@ -37,6 +49,9 @@ const TEMPLATE_META: Record<string, { label: string; description: string; variab
   },
 };
 
+// Autosave after 3s of inactivity
+const AUTOSAVE_DELAY = 3000;
+
 export default function HostEmailTemplateEditorPage() {
   const { templateName, locale } = useParams<{ templateName: string; locale: string }>();
   const router = useRouter();
@@ -50,7 +65,7 @@ export default function HostEmailTemplateEditorPage() {
   const [lang, setLang] = useState<ActiveLang>('nl');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [dirty, setDirty] = useState(false);
 
   // Test email state
@@ -58,6 +73,10 @@ export default function HostEmailTemplateEditorPage() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [testSending, setTestSending] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  // Autosave timer
+  const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestDataRef = useRef({ subjectNl, subjectEn, htmlNl, htmlEn });
 
   const meta = TEMPLATE_META[templateName];
 
@@ -73,27 +92,27 @@ export default function HostEmailTemplateEditorPage() {
     });
   }, [templateName]);
 
-  // Pre-fill test email with user's own email
   useEffect(() => {
     if (user?.email) setTestEmail(user.email);
-  }, [user]);
+  }, [user?.email]);
 
-  const markDirty = (fn: () => void) => {
-    fn();
-    setDirty(true);
-    setSaveStatus('idle');
-  };
+  // Keep latest data in ref for autosave
+  useEffect(() => {
+    latestDataRef.current = { subjectNl, subjectEn, htmlNl, htmlEn };
+  }, [subjectNl, subjectEn, htmlNl, htmlEn]);
 
-  const handleSave = async () => {
-    setSaving(true);
-    setSaveStatus('idle');
+  // Cleanup autosave timer
+  useEffect(() => {
+    return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
+  }, []);
+
+  const performSave = useCallback(async (data: {
+    subjectNl: string; subjectEn: string; htmlNl: string; htmlEn: string;
+  }, isAuto = false) => {
+    if (isAuto) setSaveStatus('autosaving');
+    else { setSaving(true); setSaveStatus('idle'); }
     try {
-      await api.put(`/email-templates/host/mine/${templateName}`, {
-        subjectNl,
-        subjectEn,
-        htmlNl,
-        htmlEn,
-      });
+      await api.put(`/email-templates/host/mine/${templateName}`, data);
       setSaveStatus('success');
       setDirty(false);
       setIsCustomized(true);
@@ -101,15 +120,45 @@ export default function HostEmailTemplateEditorPage() {
     } catch {
       setSaveStatus('error');
     } finally {
-      setSaving(false);
+      if (!isAuto) setSaving(false);
     }
-  };
+  }, [templateName]);
 
-  const handleReset = async () => {
+  // Schedule autosave whenever dirty state changes
+  useEffect(() => {
+    if (!dirty) return;
+    if (autosaveRef.current) clearTimeout(autosaveRef.current);
+    autosaveRef.current = setTimeout(() => {
+      performSave(latestDataRef.current, true);
+    }, AUTOSAVE_DELAY);
+    return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
+  }, [dirty, subjectNl, subjectEn, htmlNl, htmlEn, performSave]);
+
+  const markDirty = useCallback((fn: () => void) => {
+    fn();
+    setDirty(true);
+    setSaveStatus('idle');
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (autosaveRef.current) clearTimeout(autosaveRef.current);
+    performSave(latestDataRef.current, false);
+  }, [performSave]);
+
+  // Stable onChange handlers — prevent HtmlEditor from re-rendering when parent re-renders
+  const handleHtmlNlChange = useCallback(
+    (val: string) => markDirty(() => setHtmlNl(val)),
+    [markDirty],
+  );
+  const handleHtmlEnChange = useCallback(
+    (val: string) => markDirty(() => setHtmlEn(val)),
+    [markDirty],
+  );
+
+  const handleReset = useCallback(async () => {
     if (!confirm('Weet u zeker dat u wilt resetten naar de standaard DirectBnB template? Uw aanpassingen gaan verloren.')) return;
     try {
       await api.delete(`/email-templates/host/mine/${templateName}`);
-      // Reload default
       const { data } = await api.get(`/email-templates/host/mine/${templateName}/resolved`);
       const tpl: ResolvedTemplate = data?.data ?? data;
       setSubjectNl(tpl.subjectNl);
@@ -121,17 +170,14 @@ export default function HostEmailTemplateEditorPage() {
     } catch {
       alert('Resetten mislukt. Probeer het opnieuw.');
     }
-  };
+  }, [templateName]);
 
-  const handleSendTest = async () => {
+  const handleSendTest = useCallback(async () => {
     if (!testEmail) return;
     setTestSending(true);
     setTestStatus('idle');
     try {
-      await api.post(`/email-templates/host/mine/${templateName}/test`, {
-        to: testEmail,
-        language: lang,
-      });
+      await api.post(`/email-templates/host/mine/${templateName}/test`, { to: testEmail, language: lang });
       setTestStatus('success');
       setTimeout(() => { setTestStatus('idle'); setShowTestModal(false); }, 2500);
     } catch {
@@ -139,12 +185,13 @@ export default function HostEmailTemplateEditorPage() {
     } finally {
       setTestSending(false);
     }
-  };
+  }, [testEmail, lang, templateName]);
 
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto space-y-4">
         <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse" />
+        <div className="h-12 bg-slate-100 rounded-2xl animate-pulse" />
         <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
       </div>
     );
@@ -154,10 +201,7 @@ export default function HostEmailTemplateEditorPage() {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
         <p className="text-slate-500">Template niet gevonden.</p>
-        <button
-          onClick={() => router.push(`/${locale}/email-templates`)}
-          className="mt-4 text-indigo-600 hover:underline text-sm"
-        >
+        <button onClick={() => router.push(`/${locale}/email-templates`)} className="mt-4 text-indigo-600 hover:underline text-sm">
           Terug naar overzicht
         </button>
       </div>
@@ -179,13 +223,10 @@ export default function HostEmailTemplateEditorPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">{meta.label}</h1>
               {isCustomized ? (
-                <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">
-                  Aangepast
-                </span>
+                <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">Aangepast</span>
               ) : (
                 <span className="text-xs bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Standaard
+                  <Sparkles className="w-3 h-3" />Standaard
                 </span>
               )}
             </div>
@@ -194,6 +235,12 @@ export default function HostEmailTemplateEditorPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {saveStatus === 'autosaving' && (
+            <div className="flex items-center gap-1.5 text-slate-400 text-sm">
+              <Clock className="w-3.5 h-3.5 animate-spin" />
+              Opslaan…
+            </div>
+          )}
           {saveStatus === 'success' && (
             <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
               <CheckCircle className="w-4 h-4" />
@@ -211,7 +258,6 @@ export default function HostEmailTemplateEditorPage() {
             <button
               onClick={handleReset}
               className="flex items-center gap-2 border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-              title="Reset naar standaard DirectBnB template"
             >
               <RotateCcw className="w-4 h-4" />
               Reset
@@ -257,9 +303,7 @@ export default function HostEmailTemplateEditorPage() {
             type="button"
             onClick={() => setLang(l)}
             className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-              lang === l
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
+              lang === l ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
@@ -277,9 +321,7 @@ export default function HostEmailTemplateEditorPage() {
             type="text"
             value={lang === 'nl' ? subjectNl : subjectEn}
             onChange={(e) =>
-              markDirty(() =>
-                lang === 'nl' ? setSubjectNl(e.target.value) : setSubjectEn(e.target.value),
-              )
+              markDirty(() => (lang === 'nl' ? setSubjectNl(e.target.value) : setSubjectEn(e.target.value)))
             }
             className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
             placeholder={`E-mail onderwerp in het ${lang === 'nl' ? 'Nederlands' : 'Engels'}`}
@@ -291,9 +333,7 @@ export default function HostEmailTemplateEditorPage() {
           <HtmlEditor
             label={`E-mail inhoud (${lang === 'nl' ? 'Nederlands' : 'Engels'})`}
             value={lang === 'nl' ? htmlNl : htmlEn}
-            onChange={(val) =>
-              markDirty(() => (lang === 'nl' ? setHtmlNl(val) : setHtmlEn(val)))
-            }
+            onChange={lang === 'nl' ? handleHtmlNlChange : handleHtmlEnChange}
             height={500}
           />
         </div>
@@ -329,9 +369,7 @@ export default function HostEmailTemplateEditorPage() {
                       type="button"
                       onClick={() => setLang(l)}
                       className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                        lang === l
-                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-                          : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                        lang === l ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
                       }`}
                     >
                       {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
@@ -342,14 +380,12 @@ export default function HostEmailTemplateEditorPage() {
 
               {testStatus === 'success' && (
                 <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
-                  <CheckCircle className="w-4 h-4" />
-                  Test e-mail verstuurd!
+                  <CheckCircle className="w-4 h-4" />Test e-mail verstuurd!
                 </div>
               )}
               {testStatus === 'error' && (
                 <div className="flex items-center gap-2 text-red-500 text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  Versturen mislukt. Probeer het opnieuw.
+                  <AlertCircle className="w-4 h-4" />Versturen mislukt. Probeer het opnieuw.
                 </div>
               )}
             </div>
