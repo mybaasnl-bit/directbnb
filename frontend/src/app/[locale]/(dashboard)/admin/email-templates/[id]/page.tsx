@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { HtmlEditor } from '@/components/admin/html-editor';
-import { ArrowLeft, Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw } from 'lucide-react';
 
 interface EmailTemplate {
   id: string;
@@ -33,9 +33,14 @@ export default function EmailTemplateEditorPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [dirty, setDirty] = useState(false);
 
+  // Test email state
+  const [testEmail, setTestEmail] = useState('');
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testSending, setTestSending] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
   useEffect(() => {
     api.get(`/email-templates/${id}`).then(({ data }) => {
-      // TransformInterceptor wraps response: { success, data, statusCode }
       const tpl = data?.data ?? data;
       setTemplate(tpl);
       setSubjectNl(tpl.subjectNl);
@@ -56,12 +61,7 @@ export default function EmailTemplateEditorPage() {
     setSaving(true);
     setSaveStatus('idle');
     try {
-      await api.patch(`/email-templates/${id}`, {
-        subjectNl,
-        subjectEn,
-        htmlNl,
-        htmlEn,
-      });
+      await api.patch(`/email-templates/${id}`, { subjectNl, subjectEn, htmlNl, htmlEn });
       setSaveStatus('success');
       setDirty(false);
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -69,6 +69,21 @@ export default function EmailTemplateEditorPage() {
       setSaveStatus('error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSendTest = async () => {
+    if (!testEmail) return;
+    setTestSending(true);
+    setTestStatus('idle');
+    try {
+      await api.post(`/email-templates/${id}/test`, { to: testEmail, language: lang });
+      setTestStatus('success');
+      setTimeout(() => { setTestStatus('idle'); setShowTestModal(false); }, 2500);
+    } catch {
+      setTestStatus('error');
+    } finally {
+      setTestSending(false);
     }
   };
 
@@ -100,7 +115,7 @@ export default function EmailTemplateEditorPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {saveStatus === 'success' && (
             <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
               <CheckCircle className="w-4 h-4" />
@@ -113,6 +128,16 @@ export default function EmailTemplateEditorPage() {
               Fout bij opslaan
             </div>
           )}
+
+          {/* Test email button */}
+          <button
+            onClick={() => setShowTestModal(true)}
+            className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-800 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+          >
+            <Send className="w-4 h-4" />
+            Test versturen
+          </button>
+
           <button
             onClick={handleSave}
             disabled={saving || !dirty}
@@ -161,8 +186,7 @@ export default function EmailTemplateEditorPage() {
           />
           <p className="mt-2 text-xs text-slate-400">
             Gebruik{' '}
-            <code className="font-mono bg-slate-100 px-1 rounded">{'{{naam}}'}</code> voor
-            variabelen.
+            <code className="font-mono bg-slate-100 px-1 rounded">{'{{naam}}'}</code> voor variabelen.
           </p>
         </div>
 
@@ -187,6 +211,83 @@ export default function EmailTemplateEditorPage() {
           })}
         </p>
       </div>
+
+      {/* Test email modal */}
+      {showTestModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">Test e-mail versturen</h2>
+            <p className="text-sm text-slate-500 mb-5">
+              Stuur een voorbeeld van deze template naar een e-mailadres om te controleren hoe het eruitziet.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                  E-mailadres
+                </label>
+                <input
+                  type="email"
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  placeholder="jij@example.com"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Taal</label>
+                <div className="flex gap-2">
+                  {(['nl', 'en'] as const).map((l) => (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() => setLang(l)}
+                      className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                        lang === l
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                          : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                      }`}
+                    >
+                      {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {testStatus === 'success' && (
+                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
+                  <CheckCircle className="w-4 h-4" />
+                  Test e-mail verstuurd!
+                </div>
+              )}
+              {testStatus === 'error' && (
+                <div className="flex items-center gap-2 text-red-500 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  Versturen mislukt. Controleer of RESEND_API_KEY is ingesteld.
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => { setShowTestModal(false); setTestStatus('idle'); }}
+                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleSendTest}
+                disabled={!testEmail || testSending}
+                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                {testSending ? 'Versturen…' : 'Verstuur test'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
