@@ -3,13 +3,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { HtmlEditor } from '@/components/admin/html-editor';
-import {
-  ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock,
-} from 'lucide-react';
+import { EmailBuilder } from '@/components/email-builder';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
-type ActiveLang = 'nl' | 'en';
 type SaveStatus = 'idle' | 'success' | 'error' | 'autosaving';
 
 interface ResolvedTemplate {
@@ -23,7 +20,7 @@ interface ResolvedTemplate {
 const TEMPLATE_META: Record<string, { label: string; description: string; variables: string[] }> = {
   booking_request_guest: {
     label: 'Boekingsaanvraag ontvangen',
-    description: 'Ontvangen door de gast nadat ze een boekingsaanvraag hebben ingediend.',
+    description: 'Ontvangen door de gast nadat ze een aanvraag hebben ingediend.',
     variables: ['guest_name', 'property_name', 'room_name', 'check_in', 'check_out', 'num_guests', 'total_price'],
   },
   booking_confirmed: {
@@ -38,7 +35,6 @@ const TEMPLATE_META: Record<string, { label: string; description: string; variab
   },
 };
 
-// Autosave after 3s of inactivity
 const AUTOSAVE_DELAY = 3000;
 
 export default function HostEmailTemplateEditorPage() {
@@ -47,25 +43,20 @@ export default function HostEmailTemplateEditorPage() {
   const { user } = useAuth();
 
   const [subjectNl, setSubjectNl] = useState('');
-  const [subjectEn, setSubjectEn] = useState('');
   const [htmlNl, setHtmlNl] = useState('');
-  const [htmlEn, setHtmlEn] = useState('');
   const [isCustomized, setIsCustomized] = useState(false);
-  const [lang, setLang] = useState<ActiveLang>('nl');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [dirty, setDirty] = useState(false);
 
-  // Test email state
   const [testEmail, setTestEmail] = useState('');
   const [showTestModal, setShowTestModal] = useState(false);
   const [testSending, setTestSending] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Autosave timer
   const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestDataRef = useRef({ subjectNl, subjectEn, htmlNl, htmlEn });
+  const latestRef = useRef({ subjectNl: '', htmlNl: '' });
 
   const meta = TEMPLATE_META[templateName];
 
@@ -75,17 +66,12 @@ export default function HostEmailTemplateEditorPage() {
       .then(({ data }) => {
         const tpl: ResolvedTemplate = data?.data ?? data;
         setSubjectNl(tpl.subjectNl);
-        setSubjectEn(tpl.subjectEn);
         setHtmlNl(tpl.htmlNl);
-        setHtmlEn(tpl.htmlEn);
         setIsCustomized(tpl.isCustomized);
       })
       .catch(() => {
-        // Endpoint not available yet (e.g. backend not deployed) — use empty defaults
         setSubjectNl('');
-        setSubjectEn('');
         setHtmlNl('');
-        setHtmlEn('');
       })
       .finally(() => setLoading(false));
   }, [templateName]);
@@ -94,19 +80,13 @@ export default function HostEmailTemplateEditorPage() {
     if (user?.email) setTestEmail(user.email);
   }, [user?.email]);
 
-  // Keep latest data in ref for autosave
   useEffect(() => {
-    latestDataRef.current = { subjectNl, subjectEn, htmlNl, htmlEn };
-  }, [subjectNl, subjectEn, htmlNl, htmlEn]);
+    latestRef.current = { subjectNl, htmlNl };
+  }, [subjectNl, htmlNl]);
 
-  // Cleanup autosave timer
-  useEffect(() => {
-    return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-  }, []);
+  useEffect(() => () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); }, []);
 
-  const performSave = useCallback(async (data: {
-    subjectNl: string; subjectEn: string; htmlNl: string; htmlEn: string;
-  }, isAuto = false) => {
+  const performSave = useCallback(async (data: { subjectNl: string; subjectEn: string; htmlNl: string; htmlEn: string }, isAuto = false) => {
     if (isAuto) setSaveStatus('autosaving');
     else { setSaving(true); setSaveStatus('idle'); }
     try {
@@ -122,15 +102,14 @@ export default function HostEmailTemplateEditorPage() {
     }
   }, [templateName]);
 
-  // Schedule autosave whenever dirty state changes
   useEffect(() => {
     if (!dirty) return;
     if (autosaveRef.current) clearTimeout(autosaveRef.current);
     autosaveRef.current = setTimeout(() => {
-      performSave(latestDataRef.current, true);
+      performSave({ subjectNl: latestRef.current.subjectNl, subjectEn: latestRef.current.subjectNl, htmlNl: latestRef.current.htmlNl, htmlEn: latestRef.current.htmlNl }, true);
     }, AUTOSAVE_DELAY);
     return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-  }, [dirty, subjectNl, subjectEn, htmlNl, htmlEn, performSave]);
+  }, [dirty, subjectNl, htmlNl, performSave]);
 
   const markDirty = useCallback((fn: () => void) => {
     fn();
@@ -140,18 +119,8 @@ export default function HostEmailTemplateEditorPage() {
 
   const handleSave = useCallback(() => {
     if (autosaveRef.current) clearTimeout(autosaveRef.current);
-    performSave(latestDataRef.current, false);
+    performSave({ subjectNl: latestRef.current.subjectNl, subjectEn: latestRef.current.subjectNl, htmlNl: latestRef.current.htmlNl, htmlEn: latestRef.current.htmlNl }, false);
   }, [performSave]);
-
-  // Stable onChange handlers — prevent HtmlEditor from re-rendering when parent re-renders
-  const handleHtmlNlChange = useCallback(
-    (val: string) => markDirty(() => setHtmlNl(val)),
-    [markDirty],
-  );
-  const handleHtmlEnChange = useCallback(
-    (val: string) => markDirty(() => setHtmlEn(val)),
-    [markDirty],
-  );
 
   const handleReset = useCallback(async () => {
     if (!confirm('Weet u zeker dat u wilt resetten naar de standaard DirectBnB template? Uw aanpassingen gaan verloren.')) return;
@@ -160,9 +129,7 @@ export default function HostEmailTemplateEditorPage() {
       const { data } = await api.get(`/email-templates/host/mine/${templateName}/resolved`);
       const tpl: ResolvedTemplate = data?.data ?? data;
       setSubjectNl(tpl.subjectNl);
-      setSubjectEn(tpl.subjectEn);
       setHtmlNl(tpl.htmlNl);
-      setHtmlEn(tpl.htmlEn);
       setIsCustomized(false);
       setDirty(false);
     } catch {
@@ -175,7 +142,7 @@ export default function HostEmailTemplateEditorPage() {
     setTestSending(true);
     setTestStatus('idle');
     try {
-      await api.post(`/email-templates/host/mine/${templateName}/test`, { to: testEmail, language: lang });
+      await api.post(`/email-templates/host/mine/${templateName}/test`, { to: testEmail, language: 'nl' });
       setTestStatus('success');
       setTimeout(() => { setTestStatus('idle'); setShowTestModal(false); }, 2500);
     } catch {
@@ -183,14 +150,13 @@ export default function HostEmailTemplateEditorPage() {
     } finally {
       setTestSending(false);
     }
-  }, [testEmail, lang, templateName]);
+  }, [testEmail, templateName]);
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto space-y-4">
-        <div className="h-8 w-48 bg-slate-200 rounded-lg animate-pulse" />
-        <div className="h-12 bg-slate-100 rounded-2xl animate-pulse" />
-        <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
+      <div className="space-y-4 h-[calc(100vh-120px)]">
+        <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse" />
+        <div className="flex-1 h-full bg-slate-100 rounded-2xl animate-pulse" />
       </div>
     );
   }
@@ -207,9 +173,9 @@ export default function HostEmailTemplateEditorPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="flex flex-col h-[calc(100vh-80px)] gap-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between px-1 pb-4 shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/${locale}/email-templates`)}
@@ -219,189 +185,75 @@ export default function HostEmailTemplateEditorPage() {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-900">{meta.label}</h1>
+              <h1 className="text-lg font-bold text-slate-900">{meta.label}</h1>
               {isCustomized ? (
                 <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">Aangepast</span>
               ) : (
                 <span className="text-xs bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />Standaard
+                  <Sparkles className="w-3 h-3" /> Standaard
                 </span>
               )}
             </div>
-            <p className="text-sm text-slate-400">{meta.description}</p>
+            <p className="text-xs text-slate-400">{meta.description}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {saveStatus === 'autosaving' && (
-            <div className="flex items-center gap-1.5 text-slate-400 text-sm">
-              <Clock className="w-3.5 h-3.5 animate-spin" />
-              Opslaan…
-            </div>
+            <div className="flex items-center gap-1.5 text-slate-400 text-sm"><Clock className="w-3.5 h-3.5 animate-spin" /> Opslaan…</div>
           )}
           {saveStatus === 'success' && (
-            <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
-              <CheckCircle className="w-4 h-4" />
-              Opgeslagen
-            </div>
+            <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Opgeslagen</div>
           )}
           {saveStatus === 'error' && (
-            <div className="flex items-center gap-1.5 text-red-500 text-sm font-medium">
-              <AlertCircle className="w-4 h-4" />
-              Fout bij opslaan
-            </div>
+            <div className="flex items-center gap-1.5 text-red-500 text-sm font-medium"><AlertCircle className="w-4 h-4" /> Fout bij opslaan</div>
           )}
 
           {isCustomized && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset
+            <button onClick={handleReset} className="flex items-center gap-2 border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
+              <RotateCcw className="w-4 h-4" /> Reset
             </button>
           )}
 
-          <button
-            onClick={() => setShowTestModal(true)}
-            className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-800 px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-          >
-            <Send className="w-4 h-4" />
-            Test versturen
+          <button onClick={() => setShowTestModal(true)} className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
+            <Send className="w-4 h-4" /> Test
           </button>
 
-          <button
-            onClick={handleSave}
-            disabled={saving || !dirty}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'Opslaan…' : 'Opslaan'}
+          <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+            <Save className="w-4 h-4" /> {saving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
       </div>
 
-      {/* Available variables */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Beschikbare variabelen</p>
-        <div className="flex flex-wrap gap-2">
-          {meta.variables.map((v) => (
-            <code key={v} className="text-xs font-mono bg-white border border-slate-200 text-indigo-700 px-2 py-1 rounded-lg">
-              {`{{${v}}}`}
-            </code>
-          ))}
-        </div>
+      {/* Builder */}
+      <div className="flex-1 overflow-hidden">
+        <EmailBuilder
+          value={htmlNl}
+          onChange={(html) => markDirty(() => setHtmlNl(html))}
+          subject={subjectNl}
+          onSubjectChange={(s) => markDirty(() => setSubjectNl(s))}
+          variables={meta.variables}
+        />
       </div>
 
-      {/* Language selector */}
-      <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 w-fit mb-6">
-        {(['nl', 'en'] as const).map((l) => (
-          <button
-            key={l}
-            type="button"
-            onClick={() => setLang(l)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-              lang === l ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-6">
-        {/* Subject */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6">
-          <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Onderwerp ({lang === 'nl' ? 'Nederlands' : 'Engels'})
-          </label>
-          <input
-            type="text"
-            value={lang === 'nl' ? subjectNl : subjectEn}
-            onChange={(e) =>
-              markDirty(() => (lang === 'nl' ? setSubjectNl(e.target.value) : setSubjectEn(e.target.value)))
-            }
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
-            placeholder={`E-mail onderwerp in het ${lang === 'nl' ? 'Nederlands' : 'Engels'}`}
-          />
-        </div>
-
-        {/* HTML body */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6">
-          <HtmlEditor
-            label={`E-mail inhoud (${lang === 'nl' ? 'Nederlands' : 'Engels'})`}
-            value={lang === 'nl' ? htmlNl : htmlEn}
-            onChange={lang === 'nl' ? handleHtmlNlChange : handleHtmlEnChange}
-            height={500}
-          />
-        </div>
-      </div>
-
-      {/* Test email modal */}
+      {/* Test modal */}
       {showTestModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h2 className="text-lg font-bold text-slate-900 mb-1">Test e-mail versturen</h2>
-            <p className="text-sm text-slate-500 mb-5">
-              Stuur een voorbeeld naar uzelf om te controleren hoe de e-mail eruitziet voor uw gasten.
-            </p>
-
+            <p className="text-sm text-slate-500 mb-5">Stuur een voorbeeld naar uzelf om te controleren hoe de e-mail eruitziet voor uw gasten.</p>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label>
-                <input
-                  type="email"
-                  value={testEmail}
-                  onChange={(e) => setTestEmail(e.target.value)}
-                  placeholder="uw@emailadres.nl"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="uw@emailadres.nl" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">Taal</label>
-                <div className="flex gap-2">
-                  {(['nl', 'en'] as const).map((l) => (
-                    <button
-                      key={l}
-                      type="button"
-                      onClick={() => setLang(l)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                        lang === l ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                      }`}
-                    >
-                      {l === 'nl' ? '🇳🇱 Nederlands' : '🇬🇧 English'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {testStatus === 'success' && (
-                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
-                  <CheckCircle className="w-4 h-4" />Test e-mail verstuurd!
-                </div>
-              )}
-              {testStatus === 'error' && (
-                <div className="flex items-center gap-2 text-red-500 text-sm">
-                  <AlertCircle className="w-4 h-4" />Versturen mislukt. Probeer het opnieuw.
-                </div>
-              )}
+              {testStatus === 'success' && <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Test e-mail verstuurd!</div>}
+              {testStatus === 'error' && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" /> Versturen mislukt. Probeer het opnieuw.</div>}
             </div>
-
             <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => { setShowTestModal(false); setTestStatus('idle'); }}
-                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Annuleren
-              </button>
-              <button
-                onClick={handleSendTest}
-                disabled={!testEmail || testSending}
-                className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
-              >
-                <Send className="w-4 h-4" />
-                {testSending ? 'Versturen…' : 'Verstuur test'}
+              <button onClick={() => { setShowTestModal(false); setTestStatus('idle'); }} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Annuleren</button>
+              <button onClick={handleSendTest} disabled={!testEmail || testSending} className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                <Send className="w-4 h-4" /> {testSending ? 'Versturen…' : 'Verstuur test'}
               </button>
             </div>
           </div>
