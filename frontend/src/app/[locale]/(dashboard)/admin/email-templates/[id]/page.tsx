@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Send } from 'lucide-react';
 
 const HtmlEditor = dynamic(
   () => import('@/components/admin/html-editor').then((m) => ({ default: m.HtmlEditor })),
@@ -14,7 +15,6 @@ const HtmlEditor = dynamic(
     ),
   },
 );
-import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw } from 'lucide-react';
 
 interface EmailTemplate {
   id: string;
