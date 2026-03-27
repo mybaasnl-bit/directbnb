@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api, setAuth, clearAuth } from '@/lib/api';
 import { useRouter, useParams } from 'next/navigation';
+import Cookies from 'js-cookie';
 import type { User } from '@/types';
 
 export function useAuth() {
@@ -11,11 +12,14 @@ export function useAuth() {
   const params = useParams();
   const locale = params?.locale ?? 'nl';
 
+  const hasToken = typeof window !== 'undefined' ? !!Cookies.get('access_token') : false;
+
   const { data: user, isLoading, refetch } = useQuery<User>({
     queryKey: ['me'],
     queryFn: () => api.get('/auth/me').then((r) => r.data.data),
     retry: false,
     staleTime: 5 * 60 * 1000,
+    enabled: hasToken,
   });
 
   const loginMutation = useMutation({

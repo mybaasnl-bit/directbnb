@@ -42,7 +42,7 @@ api.interceptors.response.use(
 
       if (!refreshToken) {
         clearAuth();
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/nl/login';
         }
         return Promise.reject(error);
@@ -75,7 +75,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearAuth();
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           window.location.href = '/nl/login';
         }
         return Promise.reject(refreshError);
