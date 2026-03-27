@@ -39,6 +39,7 @@ export default function EmailTemplateEditorPage() {
   const [testSending, setTestSending] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
+  // Always-current ref — avoids stale closure in callbacks
   const latestRef = useRef({ subjectNl: '', subjectEn: '', htmlNl: '', htmlEn: '' });
 
   useEffect(() => {
@@ -47,16 +48,22 @@ export default function EmailTemplateEditorPage() {
       .then(({ data }) => {
         const tpl: EmailTemplate = data?.data ?? data;
         setTemplate(tpl);
-        setSubjectNl(tpl.subjectNl);
-        setSubjectEn(tpl.subjectEn);
-        setHtmlNl(tpl.htmlNl);
-        setHtmlEn(tpl.htmlEn);
-        latestRef.current = { subjectNl: tpl.subjectNl, subjectEn: tpl.subjectEn, htmlNl: tpl.htmlNl, htmlEn: tpl.htmlEn };
+        setSubjectNl(tpl.subjectNl ?? '');
+        setSubjectEn(tpl.subjectEn ?? '');
+        setHtmlNl(tpl.htmlNl ?? '');
+        setHtmlEn(tpl.htmlEn ?? '');
+        latestRef.current = {
+          subjectNl: tpl.subjectNl ?? '',
+          subjectEn: tpl.subjectEn ?? '',
+          htmlNl: tpl.htmlNl ?? '',
+          htmlEn: tpl.htmlEn ?? '',
+        };
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Keep ref in sync
   useEffect(() => {
     latestRef.current = { subjectNl, subjectEn, htmlNl, htmlEn };
   }, [subjectNl, subjectEn, htmlNl, htmlEn]);
@@ -71,12 +78,19 @@ export default function EmailTemplateEditorPage() {
     setSaving(true);
     setSaveStatus('idle');
     try {
-      await api.patch(`/email-templates/${id}`, latestRef.current);
+      const data = latestRef.current;
+      await api.patch(`/email-templates/${id}`, {
+        subjectNl: data.subjectNl || undefined,  // send undefined if empty → skips MinLength(1)
+        subjectEn: data.subjectEn || undefined,
+        htmlNl: data.htmlNl || undefined,
+        htmlEn: data.htmlEn || undefined,
+      });
       setSaveStatus('success');
       setDirty(false);
       setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch {
+    } catch (err: unknown) {
       setSaveStatus('error');
+      console.error('Admin template save failed:', err);
     } finally {
       setSaving(false);
     }
@@ -109,20 +123,20 @@ export default function EmailTemplateEditorPage() {
   if (!template) return null;
 
   const currentSubject = lang === 'nl' ? subjectNl : subjectEn;
-  const currentHtml = lang === 'nl' ? htmlNl : htmlEn;
+  const currentHtml    = lang === 'nl' ? htmlNl    : htmlEn;
 
-  const handleSubjectChange = (s: string) => markDirty(() => lang === 'nl' ? setSubjectNl(s) : setSubjectEn(s));
-  const handleHtmlChange = (html: string) => markDirty(() => lang === 'nl' ? setHtmlNl(html) : setHtmlEn(html));
+  const handleSubjectChange = (s: string) =>
+    markDirty(() => (lang === 'nl' ? setSubjectNl(s) : setSubjectEn(s)));
+
+  const handleHtmlChange = (html: string) =>
+    markDirty(() => (lang === 'nl' ? setHtmlNl(html) : setHtmlEn(html)));
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] gap-0">
+    <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
       <div className="flex items-center justify-between px-1 pb-4 shrink-0">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/${locale}/admin/email-templates`)}
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
-          >
+          <button onClick={() => router.push(`/${locale}/admin/email-templates`)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
@@ -135,47 +149,30 @@ export default function EmailTemplateEditorPage() {
           {/* Language switcher */}
           <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
             {(['nl', 'en'] as Lang[]).map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLang(l)}
-                className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${lang === l ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
+              <button key={l} type="button" onClick={() => setLang(l)} className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${lang === l ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                 {l === 'nl' ? '🇳🇱 NL' : '🇬🇧 EN'}
               </button>
             ))}
           </div>
 
           {saveStatus === 'success' && (
-            <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
-              <CheckCircle className="w-4 h-4" /> Opgeslagen
-            </div>
+            <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Opgeslagen</div>
           )}
           {saveStatus === 'error' && (
-            <div className="flex items-center gap-1.5 text-red-500 text-sm font-medium">
-              <AlertCircle className="w-4 h-4" /> Fout bij opslaan
-            </div>
+            <div className="flex items-center gap-1.5 text-red-500 text-sm font-medium"><AlertCircle className="w-4 h-4" /> Fout bij opslaan</div>
           )}
 
-          <button
-            onClick={() => setShowTestModal(true)}
-            className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-          >
+          <button onClick={() => setShowTestModal(true)} className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
             <Send className="w-4 h-4" /> Test
           </button>
 
-          <button
-            onClick={handleSave}
-            disabled={saving || !dirty}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            {saving ? 'Opslaan…' : 'Opslaan'}
+          <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+            <Save className="w-4 h-4" /> {saving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
       </div>
 
-      {/* Builder — fills remaining height */}
+      {/* Builder — key=lang forces fresh parse when language switches */}
       <div className="flex-1 overflow-hidden">
         <EmailBuilder
           key={lang}

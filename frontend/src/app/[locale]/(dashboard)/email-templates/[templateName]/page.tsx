@@ -35,16 +35,20 @@ const TEMPLATE_META: Record<string, { label: string; description: string; variab
   },
 };
 
-const AUTOSAVE_DELAY = 3000;
+const AUTOSAVE_DELAY = 4000;
 
 export default function HostEmailTemplateEditorPage() {
   const { templateName, locale } = useParams<{ templateName: string; locale: string }>();
   const router = useRouter();
   const { user } = useAuth();
 
+  // All 4 fields stored — NL is edited by builder, EN is kept from API
   const [subjectNl, setSubjectNl] = useState('');
+  const [subjectEn, setSubjectEn] = useState('');
   const [htmlNl, setHtmlNl] = useState('');
+  const [htmlEn, setHtmlEn] = useState('');
   const [isCustomized, setIsCustomized] = useState(false);
+  const [templateLoaded, setTemplateLoaded] = useState(false); // Guard: don't save before load
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -56,22 +60,33 @@ export default function HostEmailTemplateEditorPage() {
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestRef = useRef({ subjectNl: '', htmlNl: '' });
+  // Keep the very-latest values in a ref so autosave closure never goes stale
+  const latestRef = useRef({ subjectNl: '', subjectEn: '', htmlNl: '', htmlEn: '' });
 
   const meta = TEMPLATE_META[templateName];
 
+  // ── Load template ──────────────────────────────────────────────────────────
   useEffect(() => {
     api
       .get(`/email-templates/host/mine/${templateName}/resolved`)
       .then(({ data }) => {
         const tpl: ResolvedTemplate = data?.data ?? data;
-        setSubjectNl(tpl.subjectNl);
-        setHtmlNl(tpl.htmlNl);
-        setIsCustomized(tpl.isCustomized);
+        setSubjectNl(tpl.subjectNl ?? '');
+        setSubjectEn(tpl.subjectEn ?? '');
+        setHtmlNl(tpl.htmlNl ?? '');
+        setHtmlEn(tpl.htmlEn ?? '');
+        setIsCustomized(tpl.isCustomized ?? false);
+        latestRef.current = {
+          subjectNl: tpl.subjectNl ?? '',
+          subjectEn: tpl.subjectEn ?? '',
+          htmlNl: tpl.htmlNl ?? '',
+          htmlEn: tpl.htmlEn ?? '',
+        };
+        setTemplateLoaded(true);
       })
       .catch(() => {
-        setSubjectNl('');
-        setHtmlNl('');
+        // Endpoint not yet deployed — allow editing anyway, save will fail gracefully
+        setTemplateLoaded(true);
       })
       .finally(() => setLoading(false));
   }, [templateName]);
@@ -80,36 +95,52 @@ export default function HostEmailTemplateEditorPage() {
     if (user?.email) setTestEmail(user.email);
   }, [user?.email]);
 
+  // Sync latest ref
   useEffect(() => {
-    latestRef.current = { subjectNl, htmlNl };
-  }, [subjectNl, htmlNl]);
+    latestRef.current = { subjectNl, subjectEn, htmlNl, htmlEn };
+  }, [subjectNl, subjectEn, htmlNl, htmlEn]);
 
+  // Cleanup on unmount
   useEffect(() => () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); }, []);
 
-  const performSave = useCallback(async (data: { subjectNl: string; subjectEn: string; htmlNl: string; htmlEn: string }, isAuto = false) => {
+  // ── Save logic ─────────────────────────────────────────────────────────────
+  const performSave = useCallback(async (isAuto = false) => {
+    // Never save before the template has loaded — would overwrite with empty data
+    if (!templateLoaded) return;
+
+    const data = latestRef.current;
+    // Don't save empty subjects — backend rejects them
+    if (!data.subjectNl || !data.htmlNl) return;
+
     if (isAuto) setSaveStatus('autosaving');
     else { setSaving(true); setSaveStatus('idle'); }
+
     try {
-      await api.put(`/email-templates/host/mine/${templateName}`, data);
+      await api.put(`/email-templates/host/mine/${templateName}`, {
+        subjectNl: data.subjectNl,
+        subjectEn: data.subjectEn || data.subjectNl, // fallback NL→EN
+        htmlNl: data.htmlNl,
+        htmlEn: data.htmlEn || data.htmlNl,           // fallback NL→EN
+      });
       setSaveStatus('success');
       setDirty(false);
       setIsCustomized(true);
       setTimeout(() => setSaveStatus('idle'), 3000);
-    } catch {
+    } catch (err: unknown) {
       setSaveStatus('error');
+      console.error('Save failed:', err);
     } finally {
       if (!isAuto) setSaving(false);
     }
-  }, [templateName]);
+  }, [templateName, templateLoaded]);
 
+  // Autosave: triggers only after template is loaded AND dirty
   useEffect(() => {
-    if (!dirty) return;
+    if (!dirty || !templateLoaded) return;
     if (autosaveRef.current) clearTimeout(autosaveRef.current);
-    autosaveRef.current = setTimeout(() => {
-      performSave({ subjectNl: latestRef.current.subjectNl, subjectEn: latestRef.current.subjectNl, htmlNl: latestRef.current.htmlNl, htmlEn: latestRef.current.htmlNl }, true);
-    }, AUTOSAVE_DELAY);
+    autosaveRef.current = setTimeout(() => performSave(true), AUTOSAVE_DELAY);
     return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-  }, [dirty, subjectNl, htmlNl, performSave]);
+  }, [dirty, subjectNl, htmlNl, performSave, templateLoaded]);
 
   const markDirty = useCallback((fn: () => void) => {
     fn();
@@ -119,7 +150,7 @@ export default function HostEmailTemplateEditorPage() {
 
   const handleSave = useCallback(() => {
     if (autosaveRef.current) clearTimeout(autosaveRef.current);
-    performSave({ subjectNl: latestRef.current.subjectNl, subjectEn: latestRef.current.subjectNl, htmlNl: latestRef.current.htmlNl, htmlEn: latestRef.current.htmlNl }, false);
+    performSave(false);
   }, [performSave]);
 
   const handleReset = useCallback(async () => {
@@ -128,8 +159,11 @@ export default function HostEmailTemplateEditorPage() {
       await api.delete(`/email-templates/host/mine/${templateName}`);
       const { data } = await api.get(`/email-templates/host/mine/${templateName}/resolved`);
       const tpl: ResolvedTemplate = data?.data ?? data;
-      setSubjectNl(tpl.subjectNl);
-      setHtmlNl(tpl.htmlNl);
+      setSubjectNl(tpl.subjectNl ?? '');
+      setSubjectEn(tpl.subjectEn ?? '');
+      setHtmlNl(tpl.htmlNl ?? '');
+      setHtmlEn(tpl.htmlEn ?? '');
+      latestRef.current = { subjectNl: tpl.subjectNl ?? '', subjectEn: tpl.subjectEn ?? '', htmlNl: tpl.htmlNl ?? '', htmlEn: tpl.htmlEn ?? '' };
       setIsCustomized(false);
       setDirty(false);
     } catch {
@@ -152,6 +186,7 @@ export default function HostEmailTemplateEditorPage() {
     }
   }, [testEmail, templateName]);
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="space-y-4 h-[calc(100vh-120px)]">
@@ -173,14 +208,11 @@ export default function HostEmailTemplateEditorPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] gap-0">
+    <div className="flex flex-col h-[calc(100vh-80px)]">
       {/* Header */}
       <div className="flex items-center justify-between px-1 pb-4 shrink-0">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/${locale}/email-templates`)}
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
-          >
+          <button onClick={() => router.push(`/${locale}/email-templates`)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
