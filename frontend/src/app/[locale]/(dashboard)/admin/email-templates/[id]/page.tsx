@@ -1,20 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { HtmlEditor } from '@/components/admin/html-editor';
 import { ArrowLeft, Save, CheckCircle, AlertCircle, Send } from 'lucide-react';
-
-const HtmlEditor = dynamic(
-  () => import('@/components/admin/html-editor').then((m) => ({ default: m.HtmlEditor })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full rounded-xl border border-slate-200 bg-slate-50 animate-pulse" style={{ height: 548 }} />
-    ),
-  },
-);
 
 interface EmailTemplate {
   id: string;
@@ -53,19 +43,24 @@ export default function EmailTemplateEditorPage() {
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   useEffect(() => {
-    api.get(`/email-templates/${id}`).then(({ data }) => {
-      const tpl = data?.data ?? data;
-      setTemplate(tpl);
-      setSubjectNl(tpl.subjectNl);
-      setSubjectEn(tpl.subjectEn);
-      setHtmlNl(tpl.htmlNl);
-      setHtmlEn(tpl.htmlEn);
-      latestDataRef.current = {
-        subjectNl: tpl.subjectNl, subjectEn: tpl.subjectEn,
-        htmlNl: tpl.htmlNl, htmlEn: tpl.htmlEn,
-      };
-      setLoading(false);
-    });
+    api
+      .get(`/email-templates/${id}`)
+      .then(({ data }) => {
+        const tpl = data?.data ?? data;
+        setTemplate(tpl);
+        setSubjectNl(tpl.subjectNl);
+        setSubjectEn(tpl.subjectEn);
+        setHtmlNl(tpl.htmlNl);
+        setHtmlEn(tpl.htmlEn);
+        latestDataRef.current = {
+          subjectNl: tpl.subjectNl, subjectEn: tpl.subjectEn,
+          htmlNl: tpl.htmlNl, htmlEn: tpl.htmlEn,
+        };
+      })
+      .catch(() => {
+        // Template not found — template state stays null, page shows null guard below
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   // Keep ref in sync for autosave

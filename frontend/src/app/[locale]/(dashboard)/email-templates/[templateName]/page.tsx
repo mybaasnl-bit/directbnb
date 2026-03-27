@@ -1,24 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { HtmlEditor } from '@/components/admin/html-editor';
 import {
   ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-
-// Lazy-load the heavy editor — only downloaded when user visits this page
-const HtmlEditor = dynamic(
-  () => import('@/components/admin/html-editor').then((m) => ({ default: m.HtmlEditor })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full rounded-xl border border-slate-200 bg-slate-50 animate-pulse" style={{ height: 548 }} />
-    ),
-  },
-);
 
 type ActiveLang = 'nl' | 'en';
 type SaveStatus = 'idle' | 'success' | 'error' | 'autosaving';
@@ -81,15 +70,24 @@ export default function HostEmailTemplateEditorPage() {
   const meta = TEMPLATE_META[templateName];
 
   useEffect(() => {
-    api.get(`/email-templates/host/mine/${templateName}/resolved`).then(({ data }) => {
-      const tpl: ResolvedTemplate = data?.data ?? data;
-      setSubjectNl(tpl.subjectNl);
-      setSubjectEn(tpl.subjectEn);
-      setHtmlNl(tpl.htmlNl);
-      setHtmlEn(tpl.htmlEn);
-      setIsCustomized(tpl.isCustomized);
-      setLoading(false);
-    });
+    api
+      .get(`/email-templates/host/mine/${templateName}/resolved`)
+      .then(({ data }) => {
+        const tpl: ResolvedTemplate = data?.data ?? data;
+        setSubjectNl(tpl.subjectNl);
+        setSubjectEn(tpl.subjectEn);
+        setHtmlNl(tpl.htmlNl);
+        setHtmlEn(tpl.htmlEn);
+        setIsCustomized(tpl.isCustomized);
+      })
+      .catch(() => {
+        // Endpoint not available yet (e.g. backend not deployed) — use empty defaults
+        setSubjectNl('');
+        setSubjectEn('');
+        setHtmlNl('');
+        setHtmlEn('');
+      })
+      .finally(() => setLoading(false));
   }, [templateName]);
 
   useEffect(() => {
