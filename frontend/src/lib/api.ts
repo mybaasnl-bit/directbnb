@@ -5,8 +5,16 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v
 
 export const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 });
+
+// Detect current locale from URL (e.g. /nl/... or /en/...)
+function getLocaleFromPath(): string {
+  if (typeof window === 'undefined') return 'nl';
+  const match = window.location.pathname.match(/^\/([a-z]{2})(\/|$)/);
+  return match ? match[1] : 'nl';
+}
 
 // Attach access token to every request
 api.interceptors.request.use((config) => {
@@ -43,7 +51,7 @@ api.interceptors.response.use(
       if (!refreshToken) {
         clearAuth();
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/nl/login';
+          window.location.href = `/${getLocaleFromPath()}/login`;
         }
         return Promise.reject(error);
       }
@@ -76,7 +84,7 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         clearAuth();
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/nl/login';
+          window.location.href = `/${getLocaleFromPath()}/login`;
         }
         return Promise.reject(refreshError);
       } finally {
