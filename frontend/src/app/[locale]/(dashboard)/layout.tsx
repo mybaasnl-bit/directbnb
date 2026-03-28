@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/layout/sidebar';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
+import { ChatBubble } from '@/components/layout/chat-bubble';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect } from 'react';
@@ -41,6 +42,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Chat bubble — altijd zichtbaar rechtsonder */}
+      <ChatBubble />
     </div>
   );
 }
