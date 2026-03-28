@@ -19,11 +19,15 @@ import {
   ClipboardList,
   Euro,
   Banknote,
-  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const t = useTranslations('nav');
   const pathname = usePathname();
   const { locale } = useParams();
@@ -42,13 +46,13 @@ export function Sidebar() {
   const pendingCount = pendingBookings.length;
 
   const navItems = [
-    { href: `/${locale}/dashboard`,        label: 'Dashboard',     icon: LayoutDashboard },
-    { href: `/${locale}/bookings`,         label: 'Boekingen',     icon: BookOpen,  badge: pendingCount },
-    { href: `/${locale}/calendar`,         label: 'Agenda',        icon: CalendarDays },
-    { href: `/${locale}/properties`,       label: 'Kamers',        icon: Building2 },
-    { href: `/${locale}/guests`,           label: 'Gasten',        icon: Users },
+    { href: `/${locale}/dashboard`,        label: 'Dashboard',       icon: LayoutDashboard },
+    { href: `/${locale}/bookings`,         label: 'Boekingen',       icon: BookOpen, badge: pendingCount },
+    { href: `/${locale}/calendar`,         label: 'Kalender',        icon: CalendarDays },
+    { href: `/${locale}/properties`,       label: 'Accommodaties',   icon: Building2 },
+    { href: `/${locale}/guests`,           label: 'Gasten',          icon: Users },
     ...(!isAdmin ? [{ href: `/${locale}/email-templates`, label: 'E-mails', icon: Mail }] : []),
-    { href: `/${locale}/betalingen`,       label: 'Uitbetalingen', icon: Banknote },
+    { href: `/${locale}/betalingen`,       label: 'Uitbetalingen',   icon: Banknote },
   ];
 
   const bottomItems = [
@@ -56,14 +60,14 @@ export function Sidebar() {
   ];
 
   const adminItems = [
-    { href: `/${locale}/admin/payments`,        label: t('payments'),    icon: Euro },
+    { href: `/${locale}/admin/payments`,        label: t('payments'),       icon: Euro },
     { href: `/${locale}/admin/email-templates`, label: t('emailTemplates'), icon: Mail },
-    { href: `/${locale}/admin/beta-signups`,    label: t('betaSignups'), icon: ClipboardList },
-    { href: `/${locale}/admin/email-logs`,      label: t('emailLogs'),   icon: FileText },
+    { href: `/${locale}/admin/beta-signups`,    label: t('betaSignups'),    icon: ClipboardList },
+    { href: `/${locale}/admin/email-logs`,      label: t('emailLogs'),      icon: FileText },
   ];
 
-  return (
-    <aside className="w-[280px] shrink-0 min-h-screen bg-white border-r border-slate-100 flex flex-col">
+  const sidebarContent = (
+    <aside className="w-[280px] h-full bg-white border-r border-slate-100 flex flex-col">
 
       {/* Logo */}
       <div className="px-6 py-6">
@@ -83,13 +87,14 @@ export function Sidebar() {
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, badge }: any) => {
           const isActive = pathname === href || (href !== `/${locale}/dashboard` && pathname.startsWith(href));
           return (
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={cn(
                 'group flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-base font-medium transition-all duration-150',
                 isActive
@@ -97,7 +102,6 @@ export function Sidebar() {
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50',
               )}
             >
-              {/* Active indicator bar */}
               <span className={cn(
                 'absolute left-0 w-1 h-8 rounded-r-full bg-brand transition-opacity',
                 isActive ? 'opacity-100' : 'opacity-0',
@@ -110,7 +114,6 @@ export function Sidebar() {
 
               <span className="flex-1">{label}</span>
 
-              {/* Badge (bv. openstaande boekingen) */}
               {badge > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-brand text-white text-xs font-bold">
                   {badge > 9 ? '9+' : badge}
@@ -132,6 +135,7 @@ export function Sidebar() {
                 <Link
                   key={href}
                   href={href}
+                  onClick={onClose}
                   className={cn(
                     'flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all',
                     isActive
@@ -156,6 +160,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-base font-medium transition-all',
                 isActive
@@ -170,7 +175,7 @@ export function Sidebar() {
         })}
 
         <button
-          onClick={logout}
+          onClick={() => { logout(); onClose?.(); }}
           className="flex items-center gap-3.5 px-4 py-3.5 w-full rounded-xl text-base font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all"
         >
           <LogOut className="w-5 h-5 shrink-0 text-slate-400" />
@@ -178,5 +183,29 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar — always visible */}
+      <div className="hidden md:flex shrink-0 min-h-screen">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          {/* Drawer */}
+          <div className="relative flex h-full">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

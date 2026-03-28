@@ -77,6 +77,12 @@ function nightsBetween(a: string, b: string) {
   return Math.max(0, Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000));
 }
 
+/** Toont prijzen zonder decimalen als het een heel getal is, anders met 2 decimalen */
+function fmtPrice(price: number | string): string {
+  const n = Number(price);
+  return n % 1 === 0 ? n.toFixed(0) : n.toFixed(2);
+}
+
 // ─── StarRating ───────────────────────────────────────────────────────────────
 
 function StarRating({ rating, max = 5, size = 'sm' }: { rating: number; max?: number; size?: 'sm' | 'md' | 'lg' }) {
@@ -633,7 +639,7 @@ function BookingWidget({
       {selectedRoom ? (
         <div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-slate-900">€{Number(selectedRoom.pricePerNight).toFixed(0)}</span>
+            <span className="text-2xl font-bold text-slate-900">€{fmtPrice(selectedRoom.pricePerNight)}</span>
             <span className="text-slate-500 text-sm">{t('perNight')}</span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">{selectedRoom.name}</p>
@@ -668,7 +674,7 @@ function BookingWidget({
       {selectedRoom && nights > 0 && (
         <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
           <div className="flex justify-between text-slate-600">
-            <span>€{Number(selectedRoom.pricePerNight).toFixed(0)} × {nights} {nights === 1 ? (isNl ? 'nacht' : 'night') : (isNl ? 'nachten' : 'nights')}</span>
+            <span>€{fmtPrice(selectedRoom.pricePerNight)} × {nights} {nights === 1 ? (isNl ? 'nacht' : 'night') : (isNl ? 'nachten' : 'nights')}</span>
             <span>€{total.toFixed(2)}</span>
           </div>
           <hr className="border-slate-200" />
@@ -767,7 +773,7 @@ function BookingSheet({
   const unavailSet = new Set(availData?.unavailableDates ?? []);
 
   // Booking form
-  const { register, handleSubmit, formState: { errors } } = useForm<BookingForm>({
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<BookingForm>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       roomId: selectedRoom?.id ?? '',
@@ -776,6 +782,13 @@ function BookingSheet({
       numGuests,
     },
   });
+
+  // Keep roomId in sync with selectedRoom so zod validation passes
+  useEffect(() => {
+    if (selectedRoom?.id) {
+      setValue('roomId', selectedRoom.id, { shouldValidate: false });
+    }
+  }, [selectedRoom?.id, setValue]);
 
   const submitMutation = useMutation({
     mutationFn: (data: BookingForm) =>
@@ -915,7 +928,7 @@ function BookingSheet({
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-bold text-slate-900 text-sm leading-tight">{room.name}</p>
                               <div className="text-right shrink-0">
-                                <p className="font-extrabold text-slate-900">€{Number(room.pricePerNight).toFixed(0)}</p>
+                                <p className="font-extrabold text-slate-900">€{fmtPrice(room.pricePerNight)}</p>
                                 <p className="text-xs text-slate-400">{isNl ? '/nacht' : '/night'}</p>
                               </div>
                             </div>
@@ -927,7 +940,7 @@ function BookingSheet({
                             </div>
                             {nightsCount > 0 && isSelected && (
                               <p className="text-xs font-semibold text-indigo-600 mt-1.5">
-                                €{(nightsCount * Number(room.pricePerNight)).toFixed(0)} {isNl ? 'totaal' : 'total'}
+                                €{fmtPrice(nightsCount * Number(room.pricePerNight))} {isNl ? 'totaal' : 'total'}
                               </p>
                             )}
                           </div>
@@ -997,7 +1010,7 @@ function BookingSheet({
               )}
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <input type="hidden" {...register('roomId')} value={selectedRoom?.id ?? ''} />
+                <input type="hidden" {...register('roomId')} />
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1417,7 +1430,7 @@ export function PropertyPageClient({ property }: Props) {
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-bold text-slate-900 text-base leading-tight">{room.name}</h3>
                             <div className="text-right shrink-0">
-                              <p className="text-xl font-extrabold text-slate-900">€{Number(room.pricePerNight).toFixed(0)}</p>
+                              <p className="text-xl font-extrabold text-slate-900">€{fmtPrice(room.pricePerNight)}</p>
                               <p className="text-xs text-slate-400">{t('perNight')}</p>
                             </div>
                           </div>
@@ -1472,7 +1485,7 @@ export function PropertyPageClient({ property }: Props) {
                             <div className="flex items-start justify-between gap-4">
                               <h3 className="font-bold text-slate-900 text-lg">{room.name}</h3>
                               <div className="text-right shrink-0">
-                                <p className="text-2xl font-extrabold text-slate-900">€{Number(room.pricePerNight).toFixed(0)}</p>
+                                <p className="text-2xl font-extrabold text-slate-900">€{fmtPrice(room.pricePerNight)}</p>
                                 <p className="text-xs text-slate-400">{t('perNight')}</p>
                               </div>
                             </div>

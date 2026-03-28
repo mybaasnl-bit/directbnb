@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
   CalendarCheck,
@@ -254,23 +254,29 @@ function PendingCard({ booking, onConfirm, onReject, isPending }: {
 export default function DashboardPage() {
   const { locale } = useParams<{ locale: string }>();
 
-  const { data, isLoading, refetch } = useQuery({
+  const qc = useQueryClient();
+
+  const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get('/dashboard').then((r) => r.data.data),
   });
 
-  const { data: pendingBookings = [], refetch: refetchPending } = useQuery<any[]>({
+  const { data: pendingBookings = [] } = useQuery<any[]>({
     queryKey: ['pending-bookings'],
     queryFn: () =>
       api.get('/bookings', { params: { status: 'PENDING' } }).then((r) => r.data.data ?? []),
     refetchInterval: 30_000,
   });
 
-  const handleStatus = async (id: string, status: string) => {
-    await api.patch(`/bookings/${id}/status`, { status });
-    refetch();
-    refetchPending();
-  };
+  const updateStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      api.patch(`/bookings/${id}/status`, { status }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pending-bookings'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+    },
+  });
 
   if (isLoading) return <Skeleton />;
 
@@ -298,9 +304,9 @@ export default function DashboardPage() {
               <PendingCard
                 key={b.id}
                 booking={b}
-                onConfirm={() => handleStatus(b.id, 'CONFIRMED')}
-                onReject={() => handleStatus(b.id, 'REJECTED')}
-                isPending={false}
+                onConfirm={() => updateStatus.mutate({ id: b.id, status: 'CONFIRMED' })}
+                onReject={() => updateStatus.mutate({ id: b.id, status: 'REJECTED' })}
+                isPending={updateStatus.isPending}
               />
             ))}
           </div>

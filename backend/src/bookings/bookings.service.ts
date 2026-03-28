@@ -81,11 +81,19 @@ export class BookingsService {
 
   // ─── Owner: get all bookings ─────────────────────────────────────────────────
 
-  async findAllByOwner(ownerId: string, status?: BookingStatus) {
+  async findAllByOwner(ownerId: string, status?: BookingStatus, search?: string) {
     return this.prisma.booking.findMany({
       where: {
         ownerId,
         ...(status && { status }),
+        ...(search && {
+          OR: [
+            { guest: { firstName: { contains: search, mode: 'insensitive' } } },
+            { guest: { lastName: { contains: search, mode: 'insensitive' } } },
+            { guest: { email: { contains: search, mode: 'insensitive' } } },
+            { room: { property: { name: { contains: search, mode: 'insensitive' } } } },
+          ],
+        }),
       },
       include: {
         guest: true,

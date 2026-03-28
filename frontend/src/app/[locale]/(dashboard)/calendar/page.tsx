@@ -168,7 +168,7 @@ export default function CalendarPage() {
                 className={`
                   relative aspect-square flex flex-col items-center justify-center text-sm border-b border-r border-slate-50 transition-colors
                   ${!inMonth ? 'opacity-30' : ''}
-                  ${today ? 'font-bold' : ''}
+                  ${today ? 'font-bold ring-2 ring-brand ring-inset' : ''}
                   ${booking ? 'bg-indigo-50 text-indigo-700 cursor-default' : ''}
                   ${isBlocked && !booking ? 'bg-slate-100 text-slate-400' : ''}
                   ${!isBlocked && !booking && inMonth ? 'hover:bg-green-50 hover:text-green-700 cursor-pointer' : ''}
