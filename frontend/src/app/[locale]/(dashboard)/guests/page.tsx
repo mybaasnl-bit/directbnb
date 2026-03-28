@@ -32,7 +32,7 @@ export default function GuestsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
         />
       </div>
 
@@ -62,7 +62,7 @@ export default function GuestsPage() {
                 <tr key={guest.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-xs shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand font-semibold text-xs shrink-0">
                         {guest.firstName[0]}{guest.lastName[0]}
                       </div>
                       <span className="font-medium text-slate-900">

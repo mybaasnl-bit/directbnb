@@ -33,7 +33,7 @@ export default function PropertiesPage() {
         </div>
         <Link
           href={`/${locale}/properties/new`}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
           {t('addProperty')}
@@ -53,7 +53,7 @@ export default function PropertiesPage() {
           <p className="text-slate-400 text-sm mb-6">{t('emptySubtitle')}</p>
           <Link
             href={`/${locale}/properties/new`}
-            className="inline-flex items-center gap-2 bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg"
+            className="inline-flex items-center gap-2 bg-brand text-white text-sm font-medium px-4 py-2 rounded-lg"
           >
             <Plus className="w-4 h-4" />
             {t('addFirstProperty')}
@@ -111,7 +111,7 @@ export default function PropertiesPage() {
                       href={`/${locale}/bnb/${property.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700"
+                      className="flex items-center gap-1.5 text-sm text-brand hover:text-brand-600"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       {t('viewPage')}

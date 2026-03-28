@@ -31,7 +31,7 @@ export function FeedbackButton({ compact = false }: FeedbackButtonProps) {
         className={`flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition-colors ${
           compact
             ? 'p-2 hover:bg-slate-100 rounded-lg'
-            : 'bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium'
+            : 'bg-brand hover:bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium'
         }`}
       >
         <MessageSquarePlus className="w-4 h-4" />
@@ -59,7 +59,7 @@ export function FeedbackButton({ compact = false }: FeedbackButtonProps) {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
                 >
                   <option value="BUG">{t('categories.bug')}</option>
                   <option value="FEATURE">{t('categories.feature')}</option>
@@ -77,7 +77,7 @@ export function FeedbackButton({ compact = false }: FeedbackButtonProps) {
                   onChange={(e) => setMessage(e.target.value)}
                   rows={5}
                   placeholder={t('messagePlaceholder')}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
                 />
               </div>
 
@@ -97,7 +97,7 @@ export function FeedbackButton({ compact = false }: FeedbackButtonProps) {
                 <button
                   onClick={() => submit.mutate()}
                   disabled={!message.trim() || submit.isPending}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                  className="flex-1 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
                 >
                   {submit.isPending ? t('sending') : t('send')}
                 </button>

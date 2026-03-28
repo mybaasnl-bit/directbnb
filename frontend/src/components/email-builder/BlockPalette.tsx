@@ -45,7 +45,7 @@ export function BlockPalette({ onLoadTemplate }: Props) {
                   onLoadTemplate(tpl.create());
                 }
               }}
-              className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-sm text-slate-700 font-medium transition-colors"
+              className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-200 hover:border-brand/20 hover:bg-brand-light text-sm text-slate-700 font-medium transition-colors"
             >
               {tpl.label}
             </button>
@@ -69,8 +69,8 @@ function PaletteItem({ type, icon, desc }: { type: BlockType; icon: string; desc
       {...attributes}
       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing select-none transition-all ${
         isDragging
-          ? 'opacity-40 border-indigo-300 bg-indigo-50'
-          : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-sm'
+          ? 'opacity-40 border-brand/20 bg-brand-light'
+          : 'border-slate-200 bg-white hover:border-brand/20 hover:bg-brand-light hover:shadow-sm'
       }`}
     >
       <span className="text-xl leading-none">{icon}</span>

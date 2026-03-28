@@ -62,7 +62,7 @@ function ResetPasswordForm() {
             <KeyRound className="w-6 h-6 text-red-500" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">{t.noToken}</h2>
-          <Link href={`/${locale}/forgot-password`} className="inline-block mt-4 text-indigo-600 text-sm font-medium hover:underline">
+          <Link href={`/${locale}/forgot-password`} className="inline-block mt-4 text-brand text-sm font-medium hover:underline">
             {t.forgotLink}
           </Link>
         </div>
@@ -81,7 +81,7 @@ function ResetPasswordForm() {
           <p className="text-slate-500 text-sm mb-6">{t.successMsg}</p>
           <Link
             href={`/${locale}/login`}
-            className="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
+            className="inline-flex items-center justify-center w-full bg-brand hover:bg-brand-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
           >
             {t.loginLink}
           </Link>
@@ -94,8 +94,8 @@ function ResetPasswordForm() {
     <div className="w-full max-w-md">
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
         <div className="mb-8">
-          <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center mb-4">
-            <KeyRound className="w-6 h-6 text-indigo-600" />
+          <div className="w-12 h-12 bg-brand-light rounded-xl flex items-center justify-center mb-4">
+            <KeyRound className="w-6 h-6 text-brand" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">{t.title}</h1>
           <p className="text-slate-500 mt-1 text-sm">{t.subtitle}</p>
@@ -112,7 +112,7 @@ function ResetPasswordForm() {
                 required
                 minLength={8}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
               />
               <button
                 type="button"
@@ -146,7 +146,7 @@ function ResetPasswordForm() {
               onChange={e => setConfirm(e.target.value)}
               required
               placeholder="••••••••"
-              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm ${
+              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-sm ${
                 confirm && confirm !== password ? 'border-red-300' : 'border-slate-200'
               }`}
             />
@@ -161,7 +161,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading || !password || !confirm}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {loading ? <><Loader2 className="w-4 h-4 animate-spin" />{t.submitting}</> : t.submit}
           </button>

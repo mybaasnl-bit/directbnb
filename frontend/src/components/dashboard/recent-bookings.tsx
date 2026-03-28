@@ -12,7 +12,7 @@ export function RecentBookings({ bookings }: { bookings: any[] }) {
     <div className="bg-white rounded-xl border border-slate-200">
       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
         <h3 className="font-semibold text-slate-900">{t('recentBookings')}</h3>
-        <Link href={`/${locale}/bookings`} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+        <Link href={`/${locale}/bookings`} className="text-xs text-brand hover:text-brand-600 font-medium">
           {t('viewAll')}
         </Link>
       </div>

@@ -9,11 +9,11 @@ export function uid(): string {
 export function createDefaultBlock(type: BlockType): Block {
   switch (type) {
     case 'header':
-      return { id: uid(), type: 'header', props: { title: 'Welkom!', subtitle: '', bgColor: '#4f46e5', textColor: '#ffffff' } };
+      return { id: uid(), type: 'header', props: { title: 'Welkom!', subtitle: '', bgColor: '#FF5000', textColor: '#ffffff' } };
     case 'text':
       return { id: uid(), type: 'text', props: { content: 'Beste {{guest_name}},\n\nSchrijf hier uw bericht.', align: 'left', fontSize: 16, color: '#374151', bold: false } };
     case 'button':
-      return { id: uid(), type: 'button', props: { label: 'Klik hier', url: 'https://', bgColor: '#4f46e5', textColor: '#ffffff', align: 'center' } };
+      return { id: uid(), type: 'button', props: { label: 'Klik hier', url: 'https://', bgColor: '#FF5000', textColor: '#ffffff', align: 'center' } };
     case 'image':
       return { id: uid(), type: 'image', props: { src: '', alt: 'Afbeelding', align: 'center', width: 100 } };
     case 'divider':
@@ -29,7 +29,7 @@ export function createDefaultBlock(type: BlockType): Block {
 
 export function bookingConfirmationTemplate(): Block[] {
   return [
-    { id: uid(), type: 'header', props: { title: 'Boeking bevestigd! ✓', subtitle: 'Hartelijk dank voor uw boeking.', bgColor: '#4f46e5', textColor: '#ffffff' } },
+    { id: uid(), type: 'header', props: { title: 'Boeking bevestigd! ✓', subtitle: 'Hartelijk dank voor uw boeking.', bgColor: '#FF5000', textColor: '#ffffff' } },
     { id: uid(), type: 'spacer', props: { height: 32 } },
     { id: uid(), type: 'text', props: { content: 'Beste {{guest_name}},\n\nHartelijk dank voor uw boeking bij {{property_name}}. Wij bevestigen hierbij uw reservering en kijken ernaar uit u te mogen verwelkomen!', align: 'left', fontSize: 16, color: '#374151', bold: false } },
     { id: uid(), type: 'spacer', props: { height: 16 } },

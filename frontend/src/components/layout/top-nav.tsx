@@ -145,7 +145,7 @@ export function TopNav() {
                         {/* Guest + property */}
                         <div className="flex items-start justify-between gap-3 mb-2.5">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-xs flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand-600 font-semibold text-xs flex-shrink-0">
                               {booking.guest.firstName[0]}{booking.guest.lastName[0]}
                             </div>
                             <div className="min-w-0">
@@ -202,7 +202,7 @@ export function TopNav() {
                 <Link
                   href={`/${locale}/bookings`}
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-between text-xs font-medium text-indigo-600 hover:text-indigo-700 group"
+                  className="flex items-center justify-between text-xs font-medium text-brand hover:text-brand-600 group"
                 >
                   {t('viewAll')}
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -215,7 +215,7 @@ export function TopNav() {
 
         <LanguageSwitcher />
 
-        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold text-sm">
+        <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand font-semibold text-sm">
           {user?.firstName?.[0]}{user?.lastName?.[0]}
         </div>
       </div>

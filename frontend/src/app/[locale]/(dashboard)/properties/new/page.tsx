@@ -53,7 +53,7 @@ export default function NewPropertyPage() {
             <input
               {...register('name')}
               placeholder="Canal House Amsterdam"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
             {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
           </div>
@@ -66,7 +66,7 @@ export default function NewPropertyPage() {
               {...register('descriptionNl')}
               rows={4}
               placeholder="Een prachtig pand aan de gracht..."
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
             />
           </div>
 
@@ -78,7 +78,7 @@ export default function NewPropertyPage() {
               {...register('descriptionEn')}
               rows={4}
               placeholder="A beautiful property on the canal..."
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
             />
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function NewPropertyPage() {
             <input
               {...register('addressStreet')}
               placeholder="Prinsengracht 123"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -99,7 +99,7 @@ export default function NewPropertyPage() {
               <input
                 {...register('addressCity')}
                 placeholder="Amsterdam"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             <div>
@@ -107,7 +107,7 @@ export default function NewPropertyPage() {
               <input
                 {...register('addressZip')}
                 placeholder="1015 DX"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function NewPropertyPage() {
           <button
             type="submit"
             disabled={isSubmitting || create.isPending}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+            className="flex-1 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
           >
             {create.isPending ? t('creating') : t('createProperty')}
           </button>

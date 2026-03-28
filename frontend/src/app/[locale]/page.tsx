@@ -32,9 +32,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold text-slate-900">
-              Direct<span className="text-indigo-600">BnB</span>
+              Direct<span className="text-brand">BnB</span>
             </span>
-            <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-brand-light text-brand px-2 py-0.5 rounded-full font-medium">
               Beta
             </span>
           </div>
@@ -52,7 +52,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href={`/${locale}/register`}
-              className="text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+              className="text-sm bg-brand hover:bg-brand-600 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
             >
               {t('nav.joinBeta')}
             </Link>
@@ -63,21 +63,21 @@ export default function LandingPage() {
       {/* ── HERO ── */}
       <section className="relative overflow-hidden bg-white pt-20 pb-24 px-6">
         {/* Background gradient blobs */}
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-indigo-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] bg-indigo-50 rounded-full blur-3xl opacity-40 pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-brand-light rounded-full blur-3xl opacity-60 pointer-events-none" />
+        <div className="absolute -bottom-20 -left-20 w-[400px] h-[400px] bg-brand-light rounded-full blur-3xl opacity-40 pointer-events-none" />
 
         <div className="relative max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
 
             {/* Left: copy */}
             <div>
-              <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-sm font-medium px-3 py-1.5 rounded-full mb-6">
-                <Star className="w-3.5 h-3.5 fill-indigo-500 text-indigo-500" />
+              <div className="inline-flex items-center gap-2 bg-brand-light text-brand-600 text-sm font-medium px-3 py-1.5 rounded-full mb-6">
+                <Star className="w-3.5 h-3.5 fill-brand text-brand" />
                 {t('hero.badge')}
               </div>
               <h1 className="text-5xl font-extrabold leading-tight text-slate-900 mb-5">
                 {t('hero.headline1')}{' '}
-                <span className="text-indigo-600">{t('hero.headlineAccent')}</span>{' '}
+                <span className="text-brand">{t('hero.headlineAccent')}</span>{' '}
                 {t('hero.headline2')}
               </h1>
               <p className="text-xl text-slate-500 leading-relaxed mb-8 max-w-lg">
@@ -86,7 +86,7 @@ export default function LandingPage() {
               <div className="flex flex-wrap gap-3">
                 <Link
                   href={`/${locale}/register`}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3.5 rounded-xl transition-colors text-sm"
+                  className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white font-semibold px-6 py-3.5 rounded-xl transition-colors text-sm"
                 >
                   {t('hero.ctaPrimary')}
                   <ArrowRight className="w-4 h-4" />
@@ -122,7 +122,7 @@ export default function LandingPage() {
               <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
                 {/* Fake top bar */}
                 <div className="bg-slate-900 px-4 py-3 flex items-center justify-between">
-                  <span className="text-white text-sm font-semibold">Direct<span className="text-indigo-400">BnB</span></span>
+                  <span className="text-white text-sm font-semibold">Direct<span className="text-brand">BnB</span></span>
                   <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-red-400" />
                     <div className="w-3 h-3 rounded-full bg-yellow-400" />
@@ -133,7 +133,7 @@ export default function LandingPage() {
                   {/* Stats row */}
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: t('mockup.bookings'), value: '12', color: 'bg-indigo-50 text-indigo-700' },
+                      { label: t('mockup.bookings'), value: '12', color: 'bg-brand-light text-brand-600' },
                       { label: t('mockup.guests'), value: '28', color: 'bg-emerald-50 text-emerald-700' },
                       { label: t('mockup.revenue'), value: '€1.840', color: 'bg-amber-50 text-amber-700' },
                     ].map((s) => (
@@ -148,7 +148,7 @@ export default function LandingPage() {
                     {[
                       { name: 'Anna de Vries', room: 'Kamer Roos', status: t('mockup.confirmed'), color: 'bg-emerald-100 text-emerald-700' },
                       { name: 'Mark Johnson', room: 'Suite Lavendel', status: t('mockup.pending'), color: 'bg-amber-100 text-amber-700' },
-                      { name: 'Sophie Martin', room: 'Kamer Iris', status: t('mockup.paid'), color: 'bg-indigo-100 text-indigo-700' },
+                      { name: 'Sophie Martin', room: 'Kamer Iris', status: t('mockup.paid'), color: 'bg-brand-light text-brand-600' },
                     ].map((b) => (
                       <div key={b.name} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2.5">
                         <div>
@@ -175,8 +175,8 @@ export default function LandingPage() {
 
               {/* Floating payment card */}
               <div className="absolute -bottom-4 -right-4 bg-white border border-slate-200 rounded-xl shadow-lg px-3 py-2.5 flex items-center gap-2.5 text-sm">
-                <div className="w-7 h-7 bg-indigo-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-3.5 h-3.5 text-indigo-600" />
+                <div className="w-7 h-7 bg-brand-light rounded-full flex items-center justify-center">
+                  <CreditCard className="w-3.5 h-3.5 text-brand" />
                 </div>
                 <div>
                   <div className="font-semibold text-slate-900 text-xs">€285 {t('mockup.received')}</div>
@@ -197,7 +197,7 @@ export default function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: TrendingUp, title: t('value.card1Title'), desc: t('value.card1Desc'), color: 'bg-indigo-100 text-indigo-600' },
+              { icon: TrendingUp, title: t('value.card1Title'), desc: t('value.card1Desc'), color: 'bg-brand-light text-brand' },
               { icon: ShieldCheck, title: t('value.card2Title'), desc: t('value.card2Desc'), color: 'bg-green-100 text-green-600' },
               { icon: CalendarDays, title: t('value.card3Title'), desc: t('value.card3Desc'), color: 'bg-amber-100 text-amber-600' },
               { icon: Zap, title: t('value.card4Title'), desc: t('value.card4Desc'), color: 'bg-purple-100 text-purple-600' },
@@ -218,7 +218,7 @@ export default function LandingPage() {
       <section id="how-it-works" className="py-24 px-6 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-indigo-600 text-sm font-semibold uppercase tracking-wider">{t('how.label')}</span>
+            <span className="text-brand text-sm font-semibold uppercase tracking-wider">{t('how.label')}</span>
             <h2 className="text-3xl font-bold text-slate-900 mt-2">{t('how.title')}</h2>
             <p className="text-slate-500 mt-2 text-lg max-w-xl mx-auto">{t('how.subtitle')}</p>
           </div>
@@ -230,21 +230,21 @@ export default function LandingPage() {
                 icon: Building2,
                 title: t('how.step1Title'),
                 desc: t('how.step1Desc'),
-                color: 'bg-indigo-600',
+                color: 'bg-brand',
               },
               {
                 step: '02',
                 icon: Globe,
                 title: t('how.step2Title'),
                 desc: t('how.step2Desc'),
-                color: 'bg-indigo-600',
+                color: 'bg-brand',
               },
               {
                 step: '03',
                 icon: BarChart3,
                 title: t('how.step3Title'),
                 desc: t('how.step3Desc'),
-                color: 'bg-indigo-600',
+                color: 'bg-brand',
               },
             ].map(({ step, icon: Icon, title, desc, color }, i) => (
               <div key={step} className="relative">
@@ -274,7 +274,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left: copy */}
             <div>
-              <span className="text-indigo-600 text-sm font-semibold uppercase tracking-wider">{t('features.label')}</span>
+              <span className="text-brand text-sm font-semibold uppercase tracking-wider">{t('features.label')}</span>
               <h2 className="text-3xl font-bold text-slate-900 mt-2 mb-3">{t('features.title')}</h2>
               <p className="text-slate-500 text-lg mb-8">{t('features.subtitle')}</p>
 
@@ -288,8 +288,8 @@ export default function LandingPage() {
                   { icon: Mail, title: t('features.f6Title'), desc: t('features.f6Desc') },
                 ].map(({ icon: Icon, title, desc }) => (
                   <div key={title} className="flex items-start gap-4">
-                    <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Icon className="w-4 h-4 text-indigo-600" />
+                    <div className="w-9 h-9 bg-brand-light rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4 text-brand" />
                     </div>
                     <div>
                       <div className="font-semibold text-slate-900 text-sm">{title}</div>
@@ -303,7 +303,7 @@ export default function LandingPage() {
             {/* Right: feature cards grid */}
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: CalendarDays, title: t('features.f1Title'), color: 'bg-indigo-50 text-indigo-600' },
+                { icon: CalendarDays, title: t('features.f1Title'), color: 'bg-brand-light text-brand' },
                 { icon: Users, title: t('features.f2Title'), color: 'bg-emerald-50 text-emerald-600' },
                 { icon: CreditCard, title: t('features.f3Title'), color: 'bg-amber-50 text-amber-600' },
                 { icon: Bell, title: t('features.f4Title'), color: 'bg-purple-50 text-purple-600' },
@@ -325,7 +325,7 @@ export default function LandingPage() {
       {/* ── BETA SIGNUP ── */}
       <section id="beta" className="py-24 px-6 bg-white">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-sm font-medium px-3 py-1.5 rounded-full mb-6">
+          <div className="inline-flex items-center gap-2 bg-brand-light text-brand-600 text-sm font-medium px-3 py-1.5 rounded-full mb-6">
             <ShieldCheck className="w-3.5 h-3.5" />
             {t('beta.badge')}
           </div>
@@ -336,7 +336,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href={`/${locale}/register`}
-              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-4 rounded-xl text-base transition-colors"
+              className="flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 text-white font-semibold px-8 py-4 rounded-xl text-base transition-colors"
             >
               {t('beta.cta')}
               <ArrowRight className="w-4 h-4" />
@@ -356,7 +356,7 @@ export default function LandingPage() {
             <div className="grid md:grid-cols-2">
               {/* Left: copy */}
               <div className="p-10">
-                <Globe className="w-8 h-8 text-indigo-600 mb-4" />
+                <Globe className="w-8 h-8 text-brand mb-4" />
                 <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('languages.title')}</h2>
                 <p className="text-slate-500 mb-6">{t('languages.subtitle')}</p>
                 <p className="text-xs text-slate-400">{t('languages.comingSoon')}</p>
@@ -386,18 +386,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── FINAL CTA ── */}
-      <section className="py-24 px-6 bg-indigo-600">
+      <section className="py-24 px-6 bg-brand">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-4xl font-extrabold text-white mb-4">{t('finalCta.title')}</h2>
-          <p className="text-indigo-200 text-lg mb-8 max-w-xl mx-auto">{t('finalCta.subtitle')}</p>
+          <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">{t('finalCta.subtitle')}</p>
           <Link
             href={`/${locale}/register`}
-            className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-indigo-700 font-bold px-8 py-4 rounded-xl text-base transition-colors"
+            className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-brand-600 font-bold px-8 py-4 rounded-xl text-base transition-colors"
           >
             {t('finalCta.cta')}
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <p className="mt-4 text-indigo-300 text-sm">{t('finalCta.noCredit')}</p>
+          <p className="mt-4 text-white/60 text-sm">{t('finalCta.noCredit')}</p>
         </div>
       </section>
 
@@ -405,7 +405,7 @@ export default function LandingPage() {
       <footer className="bg-slate-900 py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-lg font-bold text-white">
-            Direct<span className="text-indigo-400">BnB</span>
+            Direct<span className="text-brand">BnB</span>
           </span>
           <p className="text-slate-500 text-sm">{t('footer.copy')}</p>
           <div className="flex gap-5 text-sm text-slate-500">

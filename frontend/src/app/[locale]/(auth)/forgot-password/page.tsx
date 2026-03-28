@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
           <p className="text-slate-500 text-sm">{t('resetEmailSentBody')}</p>
           <Link
             href={`/${locale}/login`}
-            className="inline-block mt-6 text-indigo-600 text-sm font-medium"
+            className="inline-block mt-6 text-brand text-sm font-medium"
           >
             {t('backToLogin')}
           </Link>
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
               {...register('email')}
               type="email"
               placeholder="jan@example.nl"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message as string}</p>}
           </div>
@@ -71,14 +71,14 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+            className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
           >
             {t('sendResetLink')}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link href={`/${locale}/login`} className="text-sm text-indigo-600 hover:text-indigo-700">
+          <Link href={`/${locale}/login`} className="text-sm text-brand hover:text-brand-600">
             {t('backToLogin')}
           </Link>
         </div>

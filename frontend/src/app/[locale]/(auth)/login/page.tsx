@@ -149,7 +149,7 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               placeholder="jan@example.nl"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
             />
             {errors.email && (
               <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
@@ -166,7 +166,7 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
               />
               <button
                 type="button"
@@ -185,7 +185,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-end">
             <Link
               href={`/${locale}/forgot-password`}
-              className="text-sm text-indigo-600 hover:text-indigo-700"
+              className="text-sm text-brand hover:text-brand-600"
             >
               {t('forgotPassword')}
             </Link>
@@ -200,7 +200,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+            className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
           >
             {isSubmitting ? t('loggingIn') : t('loginButton')}
           </button>
@@ -209,7 +209,7 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-500">
             {t('noAccount')}{' '}
-            <Link href={`/${locale}/register`} className="text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link href={`/${locale}/register`} className="text-brand hover:text-brand-600 font-medium">
               {t('registerLink')}
             </Link>
           </p>

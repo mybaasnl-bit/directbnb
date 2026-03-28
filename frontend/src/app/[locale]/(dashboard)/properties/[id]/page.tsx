@@ -67,7 +67,7 @@ function SaveButton({ pending, saved }: { pending: boolean; saved: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
     >
       {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
       {pending ? 'Opslaan…' : saved ? 'Opgeslagen' : 'Opslaan'}
@@ -237,7 +237,7 @@ export default function PropertyDetailPage() {
     return (
       <div className="text-center py-20">
         <p className="text-slate-500 mb-4">Accommodatie niet gevonden.</p>
-        <Link href={`/${locale}/properties`} className="text-indigo-600 hover:underline text-sm">← Terug naar overzicht</Link>
+        <Link href={`/${locale}/properties`} className="text-brand hover:underline text-sm">← Terug naar overzicht</Link>
       </div>
     );
   }
@@ -286,7 +286,7 @@ export default function PropertyDetailPage() {
               href={`/${locale}/bnb/${property.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700"
+              className="flex items-center gap-1.5 text-sm text-brand hover:text-brand-600"
             >
               <ExternalLink className="w-4 h-4" />
               Bekijken
@@ -320,7 +320,7 @@ export default function PropertyDetailPage() {
             value={form.name ?? ''}
             onChange={e => handleField('name', e.target.value)}
             required
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
 
@@ -332,7 +332,7 @@ export default function PropertyDetailPage() {
               onChange={e => handleField('descriptionNl', e.target.value)}
               rows={4}
               placeholder="Een prachtig pand..."
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
             />
           </div>
           <div>
@@ -342,7 +342,7 @@ export default function PropertyDetailPage() {
               onChange={e => handleField('descriptionEn', e.target.value)}
               rows={4}
               placeholder="A beautiful property..."
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
             />
           </div>
         </div>
@@ -353,7 +353,7 @@ export default function PropertyDetailPage() {
             value={form.addressStreet ?? ''}
             onChange={e => handleField('addressStreet', e.target.value)}
             placeholder="Prinsengracht 123"
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -363,7 +363,7 @@ export default function PropertyDetailPage() {
               value={form.addressCity ?? ''}
               onChange={e => handleField('addressCity', e.target.value)}
               placeholder="Amsterdam"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div>
@@ -372,7 +372,7 @@ export default function PropertyDetailPage() {
               value={form.addressZip ?? ''}
               onChange={e => handleField('addressZip', e.target.value)}
               placeholder="1015 DX"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
         </div>
@@ -384,7 +384,7 @@ export default function PropertyDetailPage() {
           <h2 className="font-semibold text-slate-900">Kamers</h2>
           <button
             onClick={() => setShowAddRoom(v => !v)}
-            className="flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 px-3 py-1.5 rounded-lg hover:bg-indigo-50 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium text-brand hover:text-brand-600 px-3 py-1.5 rounded-lg hover:bg-brand-light transition-colors"
           >
             <Plus className="w-4 h-4" />
             Kamer toevoegen
@@ -400,7 +400,7 @@ export default function PropertyDetailPage() {
                 value={roomForm.name}
                 onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="Garden Suite"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -411,7 +411,7 @@ export default function PropertyDetailPage() {
                   value={roomForm.pricePerNight}
                   onChange={e => setRoomForm(f => ({ ...f, pricePerNight: e.target.value }))}
                   placeholder="125.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
@@ -420,7 +420,7 @@ export default function PropertyDetailPage() {
                   type="number" min="1"
                   value={roomForm.maxGuests}
                   onChange={e => setRoomForm(f => ({ ...f, maxGuests: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </div>
@@ -432,7 +432,7 @@ export default function PropertyDetailPage() {
                   value={roomForm.beds}
                   onChange={e => setRoomForm(f => ({ ...f, beds: e.target.value }))}
                   placeholder="2"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
@@ -442,7 +442,7 @@ export default function PropertyDetailPage() {
                   value={roomForm.sqm}
                   onChange={e => setRoomForm(f => ({ ...f, sqm: e.target.value }))}
                   placeholder="25"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
               <div>
@@ -451,7 +451,7 @@ export default function PropertyDetailPage() {
                   type="number" min="1"
                   value={roomForm.minStay}
                   onChange={e => setRoomForm(f => ({ ...f, minStay: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
                 />
               </div>
             </div>
@@ -476,7 +476,7 @@ export default function PropertyDetailPage() {
                   addRoom.mutate();
                 }}
                 disabled={addRoom.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
               >
                 {addRoom.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Opslaan
@@ -621,11 +621,11 @@ export default function PropertyDetailPage() {
                 onClick={() => toggleAmenity(key)}
                 className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all text-left ${
                   active
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                    ? 'border-brand/20 bg-brand-light text-brand-600'
                     : 'border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-indigo-600' : 'text-slate-300'}`} />
+                <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-brand' : 'text-slate-300'}`} />
                 {labelNl}
               </button>
             );
@@ -647,7 +647,7 @@ export default function PropertyDetailPage() {
               type="time"
               value={policiesData.checkInTime ?? ''}
               onChange={e => handlePolicyField('checkInTime', e.target.value)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
           <div>
@@ -656,7 +656,7 @@ export default function PropertyDetailPage() {
               type="time"
               value={policiesData.checkOutTime ?? ''}
               onChange={e => handlePolicyField('checkOutTime', e.target.value)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
         </div>
@@ -668,7 +668,7 @@ export default function PropertyDetailPage() {
             value={policiesData.cancellationPolicy ?? ''}
             onChange={e => handlePolicyField('cancellationPolicy', e.target.value)}
             placeholder="Bijv. Gratis annuleren tot 48 uur voor aankomst..."
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
           />
         </div>
 

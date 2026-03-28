@@ -111,7 +111,7 @@ export default function CalendarPage() {
         <select
           value={selectedRoomId}
           onChange={(e) => setSelectedRoomId(e.target.value)}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
         >
           <option value="">{t('selectRoom')}</option>
           {allRooms.map((room: any) => (
@@ -169,7 +169,7 @@ export default function CalendarPage() {
                   relative aspect-square flex flex-col items-center justify-center text-sm border-b border-r border-slate-50 transition-colors
                   ${!inMonth ? 'opacity-30' : ''}
                   ${today ? 'font-bold ring-2 ring-brand ring-inset' : ''}
-                  ${booking ? 'bg-indigo-50 text-indigo-700 cursor-default' : ''}
+                  ${booking ? 'bg-brand-light text-brand-600 cursor-default' : ''}
                   ${isBlocked && !booking ? 'bg-slate-100 text-slate-400' : ''}
                   ${!isBlocked && !booking && inMonth ? 'hover:bg-green-50 hover:text-green-700 cursor-pointer' : ''}
                   ${!selectedRoomId ? 'cursor-not-allowed' : ''}
@@ -177,7 +177,7 @@ export default function CalendarPage() {
               >
                 <span>{format(day, 'd')}</span>
                 {booking && (
-                  <span className="text-[10px] text-indigo-500 mt-0.5 max-w-full truncate px-1">
+                  <span className="text-[10px] text-brand mt-0.5 max-w-full truncate px-1">
                     {booking.guest?.firstName}
                   </span>
                 )}
@@ -192,7 +192,7 @@ export default function CalendarPage() {
         {/* Legend */}
         <div className="flex items-center gap-4 px-6 py-3 border-t border-slate-100 text-xs text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-indigo-100 border border-indigo-200" />
+            <span className="w-3 h-3 rounded-sm bg-brand-light border border-brand/20" />
             {t('legendBooked')}
           </span>
           <span className="flex items-center gap-1.5">

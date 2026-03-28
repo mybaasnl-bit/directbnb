@@ -193,7 +193,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
                   value={subject}
                   onChange={(e) => onSubjectChange(e.target.value)}
                   placeholder="Onderwerp van de e-mail"
-                  className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
                 />
               </div>
             </div>
@@ -204,7 +204,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
       {/* Drag overlay */}
       <DragOverlay dropAnimation={null}>
         {activePaletteType && (
-          <div className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl shadow-xl opacity-90 pointer-events-none">
+          <div className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-xl shadow-xl opacity-90 pointer-events-none">
             + {BLOCK_LABELS[activePaletteType]}
           </div>
         )}
@@ -265,7 +265,7 @@ function EmptyState({ onAdd }: { onAdd: (type: BlockType) => void }) {
       <button
         type="button"
         onClick={() => onAdd('text')}
-        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-xl text-sm font-medium hover:bg-brand-600 transition-colors"
       >
         <Plus className="w-4 h-4" /> Tekstblok toevoegen
       </button>
@@ -303,7 +303,7 @@ function SortableBlock({ block, isSelected, onSelect, onDelete }: SortableBlockP
       <div
         className={`absolute inset-0 pointer-events-none z-10 transition-all ${
           isSelected
-            ? 'ring-2 ring-indigo-500 ring-inset'
+            ? 'ring-2 ring-brand ring-inset'
             : 'ring-0 group-hover:ring-2 group-hover:ring-slate-300 group-hover:ring-inset'
         }`}
       />

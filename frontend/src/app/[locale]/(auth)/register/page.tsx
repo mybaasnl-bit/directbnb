@@ -93,13 +93,13 @@ function RegisterForm() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
         {/* Invite banner */}
         {isInvite && (
-          <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-start gap-3">
-            <PartyPopper className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+          <div className="mb-6 bg-brand-light border border-brand/20 rounded-xl p-4 flex items-start gap-3">
+            <PartyPopper className="w-5 h-5 text-brand flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-indigo-900">
+              <p className="text-sm font-semibold text-slate-900">
                 {t('inviteBannerTitle')}
               </p>
-              <p className="text-xs text-indigo-700 mt-0.5">
+              <p className="text-xs text-brand-600 mt-0.5">
                 {t('inviteBannerBody')}
               </p>
             </div>
@@ -153,7 +153,7 @@ function RegisterForm() {
                 {...register('firstName')}
                 type="text"
                 placeholder="Jan"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
               {errors.firstName && (
                 <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>
@@ -167,7 +167,7 @@ function RegisterForm() {
                 {...register('lastName')}
                 type="text"
                 placeholder="de Vries"
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
               {errors.lastName && (
                 <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>
@@ -185,7 +185,7 @@ function RegisterForm() {
                 type="email"
                 placeholder="jan@example.nl"
                 readOnly={isInvite}
-                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                className={`w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand ${
                   isInvite ? 'bg-slate-50 text-slate-500 cursor-not-allowed pr-10' : ''
                 }`}
               />
@@ -206,7 +206,7 @@ function RegisterForm() {
               {...register('phone')}
               type="tel"
               placeholder="+31 6 12 34 56 78"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
@@ -220,7 +220,7 @@ function RegisterForm() {
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 placeholder={t('passwordPlaceholder')}
-                className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
               <button
                 type="button"
@@ -243,15 +243,15 @@ function RegisterForm() {
           )}
 
           {!isInvite && (
-            <div className="bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-3">
-              <p className="text-indigo-700 text-xs">{t('betaNotice')}</p>
+            <div className="bg-brand-light border border-brand-light rounded-lg px-4 py-3">
+              <p className="text-brand-600 text-xs">{t('betaNotice')}</p>
             </div>
           )}
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+            className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
           >
             {isSubmitting ? t('registering') : t('registerButton')}
           </button>
@@ -260,7 +260,7 @@ function RegisterForm() {
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-500">
             {t('hasAccount')}{' '}
-            <Link href={`/${locale}/login`} className="text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link href={`/${locale}/login`} className="text-brand hover:text-brand-600 font-medium">
               {t('loginLink')}
             </Link>
           </p>

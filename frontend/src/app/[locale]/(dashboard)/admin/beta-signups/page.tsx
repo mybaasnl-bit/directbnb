@@ -89,7 +89,7 @@ export default function BetaSignupsPage() {
           <button
             onClick={exportCsv}
             disabled={signups.length === 0}
-            className="flex items-center gap-2 text-sm bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 text-sm bg-brand hover:bg-brand-600 disabled:opacity-40 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -100,7 +100,7 @@ export default function BetaSignupsPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Totaal aanmeldingen', value: signups.length, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Totaal aanmeldingen', value: signups.length, color: 'text-brand', bg: 'bg-brand-light' },
           { label: 'Nederlands', value: signups.filter(s => s.language === 'nl').length, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Uitgenodigd', value: invited.size, color: 'text-emerald-600', bg: 'bg-emerald-50' },
         ].map(stat => (
@@ -157,7 +157,7 @@ export default function BetaSignupsPage() {
                       <p className="text-slate-500 text-xs mt-0.5">{s.bnbName}</p>
                     </td>
                     <td className="px-5 py-4">
-                      <a href={`mailto:${s.email}`} className="text-indigo-600 hover:text-indigo-800 hover:underline">
+                      <a href={`mailto:${s.email}`} className="text-brand hover:text-brand-600 hover:underline">
                         {s.email}
                       </a>
                       {s.website && (
@@ -180,7 +180,7 @@ export default function BetaSignupsPage() {
                     </td>
                     <td className="px-5 py-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        s.language === 'nl' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
+                        s.language === 'nl' ? 'bg-blue-100 text-blue-700' : 'bg-brand-light text-brand'
                       }`}>
                         {s.language.toUpperCase()}
                       </span>
@@ -198,7 +198,7 @@ export default function BetaSignupsPage() {
                         className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
                           wasInvited
                             ? 'bg-emerald-50 text-emerald-600 cursor-default'
-                            : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600 disabled:opacity-50'
+                            : 'bg-brand-light hover:bg-brand-light text-brand disabled:opacity-50'
                         }`}
                       >
                         {isInviting ? (
