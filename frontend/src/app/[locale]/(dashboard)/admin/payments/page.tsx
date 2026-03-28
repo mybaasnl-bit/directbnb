@@ -98,7 +98,7 @@ export default function AdminPaymentsPage() {
             onClick={() => setStatusFilter(s)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               statusFilter === s
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-brand text-white'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
@@ -150,7 +150,7 @@ export default function AdminPaymentsPage() {
                     <td className="px-4 py-3">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
                         payment.type === 'FULL'
-                          ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                          ? 'text-brand-600 bg-brand-light border-brand/20'
                           : 'text-slate-600 bg-slate-100 border-slate-200'
                       }`}>
                         {payment.type === 'FULL' ? 'Volledig' : 'Aanbetaling'}

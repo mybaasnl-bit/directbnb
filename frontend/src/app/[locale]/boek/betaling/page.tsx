@@ -111,10 +111,10 @@ export default function PaymentReturnPage() {
 
   const statusConfig: Record<PaymentStatus, { icon: React.ReactNode; title: string; msg: string; color: string }> = {
     loading: {
-      icon: <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />,
+      icon: <Loader2 className="w-10 h-10 text-brand animate-spin" />,
       title: t.loading,
       msg: '',
-      color: 'bg-indigo-100',
+      color: 'bg-brand-light',
     },
     paid: {
       icon: <Check className="w-10 h-10 text-emerald-600" />,
@@ -167,7 +167,7 @@ export default function PaymentReturnPage() {
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <span className="text-lg font-bold text-slate-900">
-            Direct<span className="text-indigo-600">BnB</span>
+            Direct<span className="text-brand">BnB</span>
           </span>
         </div>
       </header>
@@ -193,7 +193,7 @@ export default function PaymentReturnPage() {
             {(status === 'failed' || status === 'canceled' || status === 'expired') && (
               <button
                 onClick={() => window.history.back()}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+                className="bg-brand hover:bg-brand-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
               >
                 {t.backToHome}
               </button>

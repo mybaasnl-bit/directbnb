@@ -166,7 +166,7 @@ export default function EmailTemplateEditorPage() {
             <Send className="w-4 h-4" /> Test
           </button>
 
-          <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+          <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
             <Save className="w-4 h-4" /> {saving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
@@ -193,14 +193,14 @@ export default function EmailTemplateEditorPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label>
-                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="jij@example.com" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="jij@example.com" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
               </div>
               {testStatus === 'success' && <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Test verstuurd!</div>}
               {testStatus === 'error' && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" /> Versturen mislukt.</div>}
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setShowTestModal(false); setTestStatus('idle'); }} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Annuleren</button>
-              <button onClick={handleSendTest} disabled={!testEmail || testSending} className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
+              <button onClick={handleSendTest} disabled={!testEmail || testSending} className="flex-1 flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
                 <Send className="w-4 h-4" /> {testSending ? 'Versturen…' : 'Verstuur test'}
               </button>
             </div>

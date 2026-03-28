@@ -204,29 +204,29 @@ export function PhotoUpload({
             isDragReject
               ? 'border-red-400 bg-red-50'
               : isDragActive
-              ? 'border-indigo-400 bg-indigo-50'
-              : 'border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/40'
+              ? 'border-brand bg-brand-light'
+              : 'border-slate-300 hover:border-brand hover:bg-brand-light/40'
           }`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center gap-2 pointer-events-none">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-              isDragActive ? 'bg-indigo-100' : 'bg-slate-100'
+              isDragActive ? 'bg-brand-light' : 'bg-slate-100'
             }`}>
               {isDragActive
-                ? <Upload className="w-5 h-5 text-indigo-600" />
+                ? <Upload className="w-5 h-5 text-brand" />
                 : <ImagePlus className="w-5 h-5 text-slate-500" />
               }
             </div>
             {isDragReject ? (
               <p className="text-sm font-medium text-red-600">Bestandstype niet ondersteund</p>
             ) : isDragActive ? (
-              <p className="text-sm font-medium text-indigo-700">Laat los om te uploaden</p>
+              <p className="text-sm font-medium text-brand-600">Laat los om te uploaden</p>
             ) : (
               <>
                 <p className="text-sm font-medium text-slate-700">
                   Sleep foto&apos;s hiernaartoe,{' '}
-                  <span className="text-indigo-600">of klik om te kiezen</span>
+                  <span className="text-brand">of klik om te kiezen</span>
                 </p>
                 <p className="text-xs text-slate-400">
                   JPG, PNG, WEBP, GIF · max 8 MB per foto

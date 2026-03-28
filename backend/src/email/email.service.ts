@@ -554,7 +554,7 @@ export class EmailService {
     .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
     .header { background: #0f172a; padding: 24px 32px; }
     .header h1 { color: #ffffff; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-    .header span { color: #6366f1; }
+    .header span { color: #FF5000; }
     .body { padding: 32px; }
     .body h2 { margin: 0 0 16px; font-size: 18px; color: #0f172a; }
     .body p { margin: 0 0 12px; color: #475569; line-height: 1.6; font-size: 15px; }
@@ -563,7 +563,7 @@ export class EmailService {
     .detail-row:last-child { border-bottom: none; }
     .detail-label { color: #64748b; }
     .detail-value { color: #0f172a; font-weight: 500; }
-    .button { display: inline-block; background: #6366f1; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin: 20px 0; }
+    .button { display: inline-block; background: #FF5000; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin: 20px 0; }
     .footer { padding: 20px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
     .footer p { margin: 0; font-size: 13px; color: #94a3b8; }
   </style>

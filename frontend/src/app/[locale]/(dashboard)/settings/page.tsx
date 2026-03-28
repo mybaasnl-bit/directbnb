@@ -53,14 +53,14 @@ export default function SettingsPage() {
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('firstName')}</label>
               <input
                 {...register('firstName')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('lastName')}</label>
               <input
                 {...register('lastName')}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
               />
             </div>
           </div>
@@ -80,7 +80,7 @@ export default function SettingsPage() {
             <input
               {...register('phone')}
               type="tel"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
             />
           </div>
 
@@ -88,7 +88,7 @@ export default function SettingsPage() {
             <label className="block text-sm font-medium text-slate-700 mb-1.5">{t('language')}</label>
             <select
               {...register('preferredLanguage')}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
             >
               <option value="nl">Nederlands</option>
               <option value="en">English</option>
@@ -105,7 +105,7 @@ export default function SettingsPage() {
         <button
           type="submit"
           disabled={isSubmitting || !isDirty || update.isPending}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
+          className="bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
         >
           {update.isPending ? t('saving') : t('save')}
         </button>

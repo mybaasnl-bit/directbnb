@@ -118,7 +118,7 @@ export const HtmlEditor = memo(function HtmlEditor({
         className: 'text-xs',
         action: () =>
           insertAtCursor(
-            '<a href="https://directbnb.nl" class="button" style="display:inline-block;background:#6366f1;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Knoptekst</a>',
+            '<a href="https://directbnb.nl" class="button" style="display:inline-block;background:#FF5000;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Knoptekst</a>',
           ),
       },
       {
@@ -158,7 +158,7 @@ export const HtmlEditor = memo(function HtmlEditor({
           onClick={() => setActiveTab('edit')}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'edit'
-              ? 'border-indigo-500 text-indigo-600'
+              ? 'border-brand text-brand'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -169,7 +169,7 @@ export const HtmlEditor = memo(function HtmlEditor({
           onClick={() => setActiveTab('preview')}
           className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
             activeTab === 'preview'
-              ? 'border-indigo-500 text-indigo-600'
+              ? 'border-brand text-brand'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -200,7 +200,7 @@ export const HtmlEditor = memo(function HtmlEditor({
               <button
                 type="button"
                 onClick={toggleVars}
-                className="px-2.5 py-1 text-sm rounded-md border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors font-mono"
+                className="px-2.5 py-1 text-sm rounded-md border border-brand/20 bg-brand-light text-brand-600 hover:bg-brand-light transition-colors font-mono"
               >
                 {'{{var}} ▾'}
               </button>
@@ -215,9 +215,9 @@ export const HtmlEditor = memo(function HtmlEditor({
                         key={v.label}
                         type="button"
                         onClick={() => handleVarClick(v.label)}
-                        className="w-full text-left px-3 py-2 hover:bg-indigo-50 transition-colors"
+                        className="w-full text-left px-3 py-2 hover:bg-brand-light transition-colors"
                       >
-                        <span className="font-mono text-xs text-indigo-600 font-semibold">
+                        <span className="font-mono text-xs text-brand font-semibold">
                           {v.label}
                         </span>
                         <span className="ml-2 text-xs text-slate-400">{v.description}</span>
@@ -235,7 +235,7 @@ export const HtmlEditor = memo(function HtmlEditor({
             value={localValue}
             onChange={(e) => handleChange(e.target.value)}
             spellCheck={false}
-            className="w-full font-mono text-xs bg-slate-900 text-slate-100 rounded-xl border border-slate-700 p-4 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent leading-relaxed"
+            className="w-full font-mono text-xs bg-slate-900 text-slate-100 rounded-xl border border-slate-700 p-4 resize-none focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent leading-relaxed"
             style={{ height }}
           />
         </>

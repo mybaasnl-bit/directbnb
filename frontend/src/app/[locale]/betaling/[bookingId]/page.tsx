@@ -73,7 +73,7 @@ function PaymentPageContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand" />
       </div>
     );
   }
@@ -204,7 +204,7 @@ function PaymentPageContent() {
                 key={m.id}
                 className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
                   selectedMethod === m.id
-                    ? 'border-indigo-500 bg-indigo-50'
+                    ? 'border-brand bg-brand-light'
                     : 'border-slate-200 hover:border-slate-300'
                 }`}
               >
@@ -216,14 +216,14 @@ function PaymentPageContent() {
                   onChange={() => setSelectedMethod(m.id)}
                   className="sr-only"
                 />
-                <span className={selectedMethod === m.id ? 'text-indigo-600' : 'text-slate-500'}>
+                <span className={selectedMethod === m.id ? 'text-brand' : 'text-slate-500'}>
                   {m.icon}
                 </span>
-                <span className={`font-medium text-sm ${selectedMethod === m.id ? 'text-indigo-900' : 'text-slate-700'}`}>
+                <span className={`font-medium text-sm ${selectedMethod === m.id ? 'text-slate-900' : 'text-slate-700'}`}>
                   {m.label}
                 </span>
                 {selectedMethod === m.id && (
-                  <CheckCircle2 className="w-4 h-4 text-indigo-600 ml-auto" />
+                  <CheckCircle2 className="w-4 h-4 text-brand ml-auto" />
                 )}
               </label>
             ))}
@@ -238,7 +238,7 @@ function PaymentPageContent() {
           <button
             onClick={() => payMutation.mutate()}
             disabled={payMutation.isPending}
-            className="mt-5 w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+            className="mt-5 w-full bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2"
           >
             {payMutation.isPending ? (
               <>
@@ -267,7 +267,7 @@ export default function BetalingPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand" />
         </div>
       }
     >

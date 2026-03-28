@@ -108,7 +108,7 @@ function DetailRow({ label, value, highlight = false }: { label: string; value: 
   return (
     <tr>
       <td style={{ padding: '7px 0', borderTop: '1px solid #e2e8f0', fontSize: 14, color: '#64748b' }}>{label}</td>
-      <td style={{ padding: '7px 0', borderTop: '1px solid #e2e8f0', textAlign: 'right', fontSize: highlight ? 17 : 14, fontWeight: highlight ? 700 : 600, color: highlight ? '#4f46e5' : '#1e293b' }}>{value}</td>
+      <td style={{ padding: '7px 0', borderTop: '1px solid #e2e8f0', textAlign: 'right', fontSize: highlight ? 17 : 14, fontWeight: highlight ? 700 : 600, color: highlight ? '#FF5000' : '#1e293b' }}>{value}</td>
     </tr>
   );
 }
