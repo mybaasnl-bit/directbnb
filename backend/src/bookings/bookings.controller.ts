@@ -34,8 +34,9 @@ export class BookingsController {
   findAll(
     @CurrentUser('id') ownerId: string,
     @Query('status') status?: BookingStatus,
+    @Query('search') search?: string,
   ) {
-    return this.bookingsService.findAllByOwner(ownerId, status);
+    return this.bookingsService.findAllByOwner(ownerId, status, search);
   }
 
   @Get(':id')

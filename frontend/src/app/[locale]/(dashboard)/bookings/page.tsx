@@ -204,7 +204,11 @@ export default function BookingsPage() {
             <CalendarDays className="w-7 h-7 text-brand" />
           </div>
           <p className="text-base font-semibold text-slate-700">Geen boekingen gevonden</p>
-          <p className="text-sm text-slate-400 mt-1">Probeer een ander filter.</p>
+          <p className="text-sm text-slate-400 mt-1">
+            {filter === 'all'
+              ? 'U heeft nog geen boekingen ontvangen. Deel uw boekingslink om gasten aan te trekken.'
+              : 'Geen boekingen met dit filter. Probeer een andere categorie.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-3">

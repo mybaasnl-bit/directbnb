@@ -140,6 +140,7 @@ export function ChatBubble() {
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && canSend) {
+                      submit.reset();
                       submit.mutate();
                     }
                   }}
@@ -159,7 +160,7 @@ export function ChatBubble() {
 
               {/* Verstuur knop */}
               <button
-                onClick={() => submit.mutate()}
+                onClick={() => { submit.reset(); submit.mutate(); }}
                 disabled={!canSend}
                 className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl text-sm transition-colors"
               >

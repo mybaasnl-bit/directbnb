@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import { LanguageSwitcher } from './language-switcher';
-import { Bell, X, CalendarDays, Check, XCircle, ArrowRight, BedDouble, Search } from 'lucide-react';
+import { Bell, X, CalendarDays, Check, XCircle, ArrowRight, BedDouble, Search, Menu } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useParams, useRouter } from 'next/navigation';
@@ -151,7 +151,7 @@ function SearchBar() {
 }
 
 // ── Header ────────────────────────────────────────────────────────────────
-export function DashboardHeader() {
+export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user } = useAuth();
   const { locale } = useParams<{ locale: string }>();
   const currentLocale = useLocale();
@@ -206,7 +206,16 @@ export function DashboardHeader() {
     : '';
 
   return (
-    <header className="bg-white border-b border-slate-100 px-6 h-16 flex items-center gap-4 shrink-0">
+    <header className="bg-white border-b border-slate-100 px-4 md:px-6 h-16 flex items-center gap-3 md:gap-4 shrink-0">
+
+      {/* Hamburger menu — alleen zichtbaar op mobile */}
+      <button
+        onClick={onMenuClick}
+        className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+        aria-label="Open menu"
+      >
+        <Menu className="w-5 h-5 text-slate-600" />
+      </button>
 
       {/* Begroeting (links, verborgen op kleine schermen) */}
       <div className="hidden lg:block shrink-0">
