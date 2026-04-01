@@ -3,32 +3,37 @@
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 
+const LOCALES = [
+  { code: 'nl', label: '🇳🇱 NL' },
+  { code: 'en', label: '🇬🇧 EN' },
+];
+
 export function LanguageSwitcher() {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 
   const switchLocale = (newLocale: string) => {
-    // Replace /nl/ or /en/ at the start of the path
     const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
     router.push(newPath);
   };
 
+  const current = LOCALES.find((l) => l.code === locale);
+
   return (
-    <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-      {(['nl', 'en'] as const).map((l) => (
-        <button
-          key={l}
-          onClick={() => switchLocale(l)}
-          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
-            locale === l
-              ? 'bg-white text-slate-900 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          {l.toUpperCase()}
-        </button>
-      ))}
+    <div className="relative">
+      <select
+        value={locale}
+        onChange={(e) => switchLocale(e.target.value)}
+        className="appearance-none bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg pl-2.5 pr-7 py-1.5 cursor-pointer border-0 outline-none focus:ring-2 focus:ring-brand/30"
+      >
+        {LOCALES.map((l) => (
+          <option key={l.code} value={l.code}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
     </div>
   );
 }

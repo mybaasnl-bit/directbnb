@@ -62,38 +62,37 @@ export default function EmailTemplatesPage() {
   }, []);
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">E-mail Templates</h1>
-          <p className="text-slate-500 mt-1">
-            Beheer de systeemberichten die naar gebruikers worden verstuurd.
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center">
+            <Mail className="w-6 h-6 text-brand" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">E-mail Templates</h1>
+            <p className="text-slate-400 text-sm">Beheer de systeemberichten die naar gebruikers worden verstuurd</p>
+          </div>
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand bg-white px-4 py-2.5 rounded-xl hover:bg-brand-light transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Vernieuwen
         </button>
       </div>
 
-      {/* Variables info box */}
-      <div className="bg-brand-light border border-brand-light rounded-2xl p-4 mb-6 flex items-start gap-3">
-        <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+      {/* Info */}
+      <div className="bg-brand-light rounded-2xl p-5 flex items-start gap-4">
+        <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
           <span className="text-sm">💡</span>
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-900 mb-1">Dynamische variabelen</p>
-          <p className="text-sm text-brand-600">
-            Gebruik{' '}
-            <code className="bg-brand-light px-1.5 py-0.5 rounded font-mono text-xs">
-              {'{{naam}}'}
-            </code>{' '}
-            notatie in de templates. Het systeem vervangt deze automatisch met echte gegevens bij
-            het versturen.
+          <p className="text-sm font-bold text-slate-800 mb-1">Dynamische variabelen</p>
+          <p className="text-sm text-slate-500">
+            Gebruik <code className="bg-white px-1.5 py-0.5 rounded-lg font-mono text-xs text-brand font-bold">{'{{naam}}'}</code> notatie.
+            Het systeem vervangt deze automatisch met echte gegevens bij het versturen.
           </p>
         </div>
       </div>
@@ -101,19 +100,14 @@ export default function EmailTemplatesPage() {
       {/* Content */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 bg-white rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-center">
-          <p className="text-red-600 font-medium">{error}</p>
-          <button
-            onClick={load}
-            className="mt-3 text-sm text-red-500 hover:text-red-700 underline"
-          >
-            Probeer opnieuw
-          </button>
+        <div className="bg-red-50 rounded-2xl p-6 text-center">
+          <p className="text-red-600 font-semibold">{error}</p>
+          <button onClick={load} className="mt-3 text-sm text-red-500 hover:text-red-700 underline">Probeer opnieuw</button>
         </div>
       ) : (
         <div className="space-y-3">
@@ -123,32 +117,22 @@ export default function EmailTemplatesPage() {
               <Link
                 key={tpl.id}
                 href={`/${locale}/admin/email-templates/${tpl.id}`}
-                className="group flex items-center gap-4 bg-white border border-slate-200 hover:border-brand/20 hover:shadow-md rounded-2xl p-5 transition-all duration-150"
+                className="group flex items-center gap-4 bg-white hover:shadow-sm rounded-2xl p-5 transition-all"
               >
-                <div className="w-10 h-10 bg-brand-light group-hover:bg-brand-light rounded-xl flex items-center justify-center flex-shrink-0 transition-colors">
-                  <Mail className="w-5 h-5 text-brand" />
+                <div className="w-11 h-11 bg-brand-light group-hover:bg-brand rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors">
+                  <Mail className="w-5 h-5 text-brand group-hover:text-white transition-colors" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <h3 className="font-semibold text-slate-900 text-sm">
-                      {meta?.nl ?? tpl.name}
-                    </h3>
-                    <code className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded">
-                      {tpl.name}
-                    </code>
+                    <h3 className="font-bold text-slate-900 text-sm">{meta?.nl ?? tpl.name}</h3>
+                    <code className="text-xs text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded-lg">{tpl.name}</code>
                   </div>
-                  <p className="text-xs text-slate-500 truncate">
-                    {meta?.description ?? tpl.subjectNl}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Onderwerp NL: <span className="text-slate-600">{tpl.subjectNl}</span>
-                  </p>
+                  <p className="text-xs text-slate-400 truncate">{meta?.description ?? tpl.subjectNl}</p>
+                  <p className="text-xs text-slate-400 mt-1">Onderwerp: <span className="text-slate-600 font-medium">{tpl.subjectNl}</span></p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-xs text-slate-400">
-                    {new Date(tpl.updatedAt).toLocaleDateString('nl-NL')}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand transition-colors" />
+                  <span className="text-xs text-slate-400">{new Date(tpl.updatedAt).toLocaleDateString('nl-NL')}</span>
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand transition-colors" />
                 </div>
               </Link>
             );
