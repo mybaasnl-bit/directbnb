@@ -206,7 +206,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
     : '';
 
   return (
-    <header className="bg-white border-b border-slate-100 px-4 md:px-6 h-16 flex items-center gap-3 md:gap-4 shrink-0">
+    <header className="bg-white border-b border-slate-100 px-4 md:px-6 h-16 flex items-center gap-3 md:gap-4 shrink-0 sticky top-0 z-30">
 
       {/* Hamburger menu — alleen zichtbaar op mobile */}
       <button
@@ -350,7 +350,7 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
         )}
 
         {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-brand-light flex items-center justify-center text-brand font-bold text-sm cursor-pointer hover:ring-2 hover:ring-brand/30 transition-all">
+        <div className="w-9 h-9 rounded-2xl bg-brand flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:bg-brand-600 transition-all">
           {initials}
         </div>
       </div>

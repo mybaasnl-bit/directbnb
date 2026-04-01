@@ -67,10 +67,12 @@ function SaveButton({ pending, saved }: { pending: boolean; saved: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+      className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-2xl transition-colors ${
+        saved ? 'bg-emerald-500 text-white' : 'bg-brand hover:bg-brand-600 disabled:opacity-50 text-white'
+      }`}
     >
       {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-      {pending ? 'Opslaan…' : saved ? 'Opgeslagen' : 'Opslaan'}
+      {pending ? 'Opslaan…' : saved ? 'Opgeslagen!' : 'Opslaan'}
     </button>
   );
 }
@@ -226,9 +228,9 @@ export default function PropertyDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-4 max-w-3xl">
-        <div className="h-8 w-48 bg-slate-200 rounded animate-pulse" />
-        <div className="h-64 bg-white rounded-xl border border-slate-200 animate-pulse" />
-        <div className="h-48 bg-white rounded-xl border border-slate-200 animate-pulse" />
+        <div className="h-8 w-48 bg-brand-light rounded-2xl animate-pulse" />
+        <div className="h-64 bg-white rounded-3xl animate-pulse" />
+        <div className="h-48 bg-white rounded-3xl animate-pulse" />
       </div>
     );
   }
@@ -295,10 +297,10 @@ export default function PropertyDetailPage() {
           <button
             onClick={() => updateProperty.mutate({ isPublished: !property.isPublished })}
             disabled={updateProperty.isPending}
-            className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg transition-colors border ${
+            className={`flex items-center gap-2 text-sm font-bold px-4 py-2.5 rounded-2xl transition-colors ${
               property.isPublished
-                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
           >
             <Globe className="w-4 h-4" />
@@ -308,7 +310,7 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* ── Details ── */}
-      <form onSubmit={handleDetailsSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+      <form onSubmit={handleDetailsSubmit} className="bg-white rounded-3xl p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">Gegevens</h2>
           <SaveButton pending={updateProperty.isPending} saved={detailsSaved} />
@@ -320,7 +322,7 @@ export default function PropertyDetailPage() {
             value={form.name ?? ''}
             onChange={e => handleField('name', e.target.value)}
             required
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
 
@@ -353,7 +355,7 @@ export default function PropertyDetailPage() {
             value={form.addressStreet ?? ''}
             onChange={e => handleField('addressStreet', e.target.value)}
             placeholder="Prinsengracht 123"
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+            className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -363,7 +365,7 @@ export default function PropertyDetailPage() {
               value={form.addressCity ?? ''}
               onChange={e => handleField('addressCity', e.target.value)}
               placeholder="Amsterdam"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
           <div>
@@ -372,19 +374,19 @@ export default function PropertyDetailPage() {
               value={form.addressZip ?? ''}
               onChange={e => handleField('addressZip', e.target.value)}
               placeholder="1015 DX"
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
         </div>
       </form>
 
       {/* ── Rooms ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+      <div className="bg-white rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">Kamers</h2>
           <button
             onClick={() => setShowAddRoom(v => !v)}
-            className="flex items-center gap-1.5 text-sm font-medium text-brand hover:text-brand-600 px-3 py-1.5 rounded-lg hover:bg-brand-light transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium text-brand hover:text-brand-600 px-3 py-1.5 rounded-xl hover:bg-brand-light transition-colors"
           >
             <Plus className="w-4 h-4" />
             Kamer toevoegen
@@ -392,7 +394,7 @@ export default function PropertyDetailPage() {
         </div>
 
         {showAddRoom && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+          <div className="bg-brand-light rounded-2xl p-4 space-y-3">
             <h3 className="text-sm font-semibold text-slate-700">Nieuwe kamer</h3>
             <div>
               <label className="block text-xs font-medium text-slate-600 mb-1">Naam *</label>
@@ -400,7 +402,7 @@ export default function PropertyDetailPage() {
                 value={roomForm.name}
                 onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))}
                 placeholder="Garden Suite"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -411,7 +413,7 @@ export default function PropertyDetailPage() {
                   value={roomForm.pricePerNight}
                   onChange={e => setRoomForm(f => ({ ...f, pricePerNight: e.target.value }))}
                   placeholder="125.00"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                 />
               </div>
               <div>
@@ -420,7 +422,7 @@ export default function PropertyDetailPage() {
                   type="number" min="1"
                   value={roomForm.maxGuests}
                   onChange={e => setRoomForm(f => ({ ...f, maxGuests: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                 />
               </div>
             </div>
@@ -432,7 +434,7 @@ export default function PropertyDetailPage() {
                   value={roomForm.beds}
                   onChange={e => setRoomForm(f => ({ ...f, beds: e.target.value }))}
                   placeholder="2"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                 />
               </div>
               <div>
@@ -442,7 +444,7 @@ export default function PropertyDetailPage() {
                   value={roomForm.sqm}
                   onChange={e => setRoomForm(f => ({ ...f, sqm: e.target.value }))}
                   placeholder="25"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                 />
               </div>
               <div>
@@ -451,7 +453,7 @@ export default function PropertyDetailPage() {
                   type="number" min="1"
                   value={roomForm.minStay}
                   onChange={e => setRoomForm(f => ({ ...f, minStay: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+                  className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                 />
               </div>
             </div>
@@ -463,7 +465,7 @@ export default function PropertyDetailPage() {
                   setRoomForm({ name: '', pricePerNight: '', maxGuests: '2', beds: '', sqm: '', minStay: '1' });
                   setRoomError('');
                 }}
-                className="px-3 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+                className="px-3 py-2 text-sm text-slate-600 bg-white rounded-xl hover:bg-slate-50"
               >
                 Annuleren
               </button>
@@ -476,7 +478,7 @@ export default function PropertyDetailPage() {
                   addRoom.mutate();
                 }}
                 disabled={addRoom.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold rounded-2xl transition-colors"
               >
                 {addRoom.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Opslaan
@@ -496,7 +498,7 @@ export default function PropertyDetailPage() {
               <div key={room.id}>
                 {editingRoomId === room.id ? (
                   // ── Inline edit form ──
-                  <div className="bg-slate-50 border border-brand/30 rounded-xl p-4 space-y-3">
+                  <div className="bg-brand-light rounded-2xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-slate-700">Kamer bewerken</h3>
                       <button onClick={() => setEditingRoomId(null)} className="text-slate-400 hover:text-slate-600 p-1">
@@ -508,7 +510,7 @@ export default function PropertyDetailPage() {
                       <input
                         value={editRoomForm.name}
                         onChange={e => setEditRoomForm(f => ({ ...f, name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                        className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -518,7 +520,7 @@ export default function PropertyDetailPage() {
                           type="number" min="0.01" step="0.01"
                           value={editRoomForm.pricePerNight}
                           onChange={e => setEditRoomForm(f => ({ ...f, pricePerNight: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                          className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                         />
                       </div>
                       <div>
@@ -527,7 +529,7 @@ export default function PropertyDetailPage() {
                           type="number" min="1"
                           value={editRoomForm.maxGuests}
                           onChange={e => setEditRoomForm(f => ({ ...f, maxGuests: e.target.value }))}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
+                          className="w-full px-3 py-2 bg-white rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30"
                         />
                       </div>
                     </div>
@@ -535,7 +537,7 @@ export default function PropertyDetailPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setEditingRoomId(null)}
-                        className="px-3 py-2 text-sm text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+                        className="px-3 py-2 text-sm text-slate-600 bg-white rounded-xl hover:bg-slate-50"
                       >
                         Annuleren
                       </button>
@@ -548,7 +550,7 @@ export default function PropertyDetailPage() {
                           updateRoom.mutate(room.id);
                         }}
                         disabled={updateRoom.isPending}
-                        className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-semibold rounded-2xl transition-colors"
                       >
                         {updateRoom.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                         Opslaan
@@ -557,7 +559,7 @@ export default function PropertyDetailPage() {
                   </div>
                 ) : (
                   // ── Normal row ──
-                  <div className="flex items-center justify-between gap-3 p-3 border border-slate-100 rounded-lg hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-2xl hover:bg-brand-light/20 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center flex-shrink-0">
                         <BedDouble className="w-4 h-4 text-brand" />
@@ -601,7 +603,7 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* ── Amenities ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+      <div className="bg-white rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">Faciliteiten</h2>
           {amenitiesSaved && (
@@ -634,7 +636,7 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* ── Policies ── */}
-      <form onSubmit={handlePoliciesSubmit} className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+      <form onSubmit={handlePoliciesSubmit} className="bg-white rounded-3xl p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">Huisregels & beleid</h2>
           <SaveButton pending={updateProperty.isPending} saved={policiesSaved} />
@@ -647,7 +649,7 @@ export default function PropertyDetailPage() {
               type="time"
               value={policiesData.checkInTime ?? ''}
               onChange={e => handlePolicyField('checkInTime', e.target.value)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
           <div>
@@ -656,7 +658,7 @@ export default function PropertyDetailPage() {
               type="time"
               value={policiesData.checkOutTime ?? ''}
               onChange={e => handlePolicyField('checkOutTime', e.target.value)}
-              className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30"
             />
           </div>
         </div>
@@ -668,7 +670,7 @@ export default function PropertyDetailPage() {
             value={policiesData.cancellationPolicy ?? ''}
             onChange={e => handlePolicyField('cancellationPolicy', e.target.value)}
             placeholder="Bijv. Gratis annuleren tot 48 uur voor aankomst..."
-            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand resize-none"
+            className="w-full px-4 py-3 bg-brand-light/40 rounded-xl text-sm text-slate-800 border-0 outline-none focus:ring-2 focus:ring-brand/30 resize-none"
           />
         </div>
 
@@ -696,7 +698,7 @@ export default function PropertyDetailPage() {
       </form>
 
       {/* ── Photos ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+      <div className="bg-white rounded-3xl p-6 space-y-4">
         <h2 className="font-semibold text-slate-900">Foto&apos;s</h2>
         <PhotoUpload
           photos={property.photos}

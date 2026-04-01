@@ -16,7 +16,7 @@ import {
 } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 
 export default function CalendarPage() {
   const t = useTranslations('calendar');
@@ -27,7 +27,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
 
-  const year = currentDate.getFullYear();
+  const year  = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
 
   const { data: properties = [] } = useQuery({
@@ -35,7 +35,6 @@ export default function CalendarPage() {
     queryFn: () => api.get('/properties').then((r) => r.data.data),
   });
 
-  // Flatten all rooms for selector
   const allRooms = properties.flatMap((p: any) =>
     (p.rooms ?? []).map((r: any) => ({ ...r, propertyName: p.name })),
   );
@@ -43,8 +42,7 @@ export default function CalendarPage() {
   const { data: calendarData } = useQuery({
     queryKey: ['calendar', selectedRoomId, year, month],
     queryFn: () =>
-      api
-        .get('/availability/calendar', { params: { roomId: selectedRoomId, year, month } })
+      api.get('/availability/calendar', { params: { roomId: selectedRoomId, year, month } })
         .then((r) => r.data.data),
     enabled: !!selectedRoomId,
   });
@@ -66,11 +64,11 @@ export default function CalendarPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar'] }),
   });
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
+  const monthStart    = startOfMonth(currentDate);
+  const monthEnd      = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const calendarEnd   = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const calendarDays  = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const blockedDatesSet = new Set(
     (calendarData?.blockedDates ?? []).map((d: any) =>
@@ -90,8 +88,7 @@ export default function CalendarPage() {
   const handleDayClick = (date: Date) => {
     if (!selectedRoomId) return;
     const key = format(date, 'yyyy-MM-dd');
-    if (bookedDatesMap.has(key)) return; // can't unblock booked dates
-
+    if (bookedDatesMap.has(key)) return;
     if (blockedDatesSet.has(key)) {
       unblockDate.mutate(date);
     } else {
@@ -100,18 +97,26 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
-        <p className="text-slate-500 text-sm mt-0.5">{t('subtitle')}</p>
+    <div className="space-y-6 max-w-4xl">
+
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center">
+          <CalendarDays className="w-6 h-6 text-brand" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+          <p className="text-slate-400 text-sm">{t('subtitle')}</p>
+        </div>
       </div>
 
-      {/* Room selector */}
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* Kamer selector */}
+      <div className="bg-white rounded-2xl px-5 py-4 flex items-center gap-3">
+        <label className="text-sm font-semibold text-slate-600 shrink-0">Kamer:</label>
         <select
           value={selectedRoomId}
           onChange={(e) => setSelectedRoomId(e.target.value)}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white"
+          className="flex-1 appearance-none bg-brand-light text-slate-700 text-sm font-semibold rounded-xl px-4 py-2 border-0 outline-none focus:ring-2 focus:ring-brand/30 cursor-pointer"
         >
           <option value="">{t('selectRoom')}</option>
           {allRooms.map((room: any) => (
@@ -122,43 +127,44 @@ export default function CalendarPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        {/* Calendar header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      {/* Kalender */}
+      <div className="bg-white rounded-3xl overflow-hidden">
+        {/* Maand navigatie */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-50">
           <button
             onClick={() => setCurrentDate(new Date(year, month - 2, 1))}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+            className="w-9 h-9 flex items-center justify-center bg-brand-light hover:bg-brand hover:text-white text-brand rounded-xl transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <h2 className="font-semibold text-slate-900">
+          <h2 className="font-bold text-slate-900 text-lg capitalize">
             {format(currentDate, 'MMMM yyyy', { locale: dateLocale })}
           </h2>
           <button
             onClick={() => setCurrentDate(new Date(year, month, 1))}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+            className="w-9 h-9 flex items-center justify-center bg-brand-light hover:bg-brand hover:text-white text-brand rounded-xl transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Day names */}
-        <div className="grid grid-cols-7 border-b border-slate-100">
+        {/* Dagnamen */}
+        <div className="grid grid-cols-7 bg-brand-light/40">
           {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((d) => (
-            <div key={d} className="py-2 text-center text-xs font-medium text-slate-400">
+            <div key={d} className="py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">
               {d}
             </div>
           ))}
         </div>
 
-        {/* Days */}
+        {/* Dagen grid */}
         <div className="grid grid-cols-7">
           {calendarDays.map((day) => {
-            const key = format(day, 'yyyy-MM-dd');
+            const key       = format(day, 'yyyy-MM-dd');
             const isBlocked = blockedDatesSet.has(key);
-            const booking = bookedDatesMap.get(key);
-            const inMonth = isSameMonth(day, currentDate);
-            const today = isToday(day);
+            const booking   = bookedDatesMap.get(key);
+            const inMonth   = isSameMonth(day, currentDate);
+            const today     = isToday(day);
 
             return (
               <button
@@ -166,41 +172,41 @@ export default function CalendarPage() {
                 onClick={() => handleDayClick(day)}
                 disabled={!selectedRoomId}
                 className={`
-                  relative aspect-square flex flex-col items-center justify-center text-sm border-b border-r border-slate-50 transition-colors
-                  ${!inMonth ? 'opacity-30' : ''}
-                  ${today ? 'font-bold ring-2 ring-brand ring-inset' : ''}
-                  ${booking ? 'bg-brand-light text-brand-600 cursor-default' : ''}
+                  relative aspect-square flex flex-col items-center justify-center text-sm border-b border-r border-slate-50 transition-all
+                  ${!inMonth ? 'opacity-25' : ''}
+                  ${today ? 'font-bold ring-2 ring-brand ring-inset rounded-none' : ''}
+                  ${booking ? 'bg-brand-light text-brand cursor-default' : ''}
                   ${isBlocked && !booking ? 'bg-slate-100 text-slate-400' : ''}
-                  ${!isBlocked && !booking && inMonth ? 'hover:bg-green-50 hover:text-green-700 cursor-pointer' : ''}
+                  ${!isBlocked && !booking && inMonth && selectedRoomId ? 'hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer' : ''}
                   ${!selectedRoomId ? 'cursor-not-allowed' : ''}
                 `}
               >
-                <span>{format(day, 'd')}</span>
+                <span className="font-semibold">{format(day, 'd')}</span>
                 {booking && (
-                  <span className="text-[10px] text-brand mt-0.5 max-w-full truncate px-1">
+                  <span className="text-[9px] text-brand mt-0.5 max-w-full truncate px-1 font-semibold">
                     {booking.guest?.firstName}
                   </span>
                 )}
                 {isBlocked && !booking && (
-                  <span className="text-[10px] text-slate-400">✕</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">✕</span>
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-4 px-6 py-3 border-t border-slate-100 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-brand-light border border-brand/20" />
+        {/* Legenda */}
+        <div className="flex items-center gap-6 px-6 py-4 border-t border-slate-50 bg-slate-50/50">
+          <span className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span className="w-4 h-4 rounded-lg bg-brand-light border border-brand/20 flex-shrink-0" />
             {t('legendBooked')}
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-slate-100 border border-slate-200" />
+          <span className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span className="w-4 h-4 rounded-lg bg-slate-100 border border-slate-200 flex-shrink-0" />
             {t('legendBlocked')}
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-white border border-slate-200" />
+          <span className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span className="w-4 h-4 rounded-lg bg-emerald-50 border border-emerald-200 flex-shrink-0" />
             {t('legendAvailable')}
           </span>
         </div>
