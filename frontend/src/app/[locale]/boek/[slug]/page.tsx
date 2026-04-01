@@ -294,7 +294,7 @@ export default function BookingPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-brand animate-spin" />
       </div>
     );
   }
@@ -317,7 +317,7 @@ export default function BookingPage() {
         <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
           <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
             <span className="text-lg font-bold text-slate-900">
-              Direct<span className="text-indigo-600">BnB</span>
+              Direct<span className="text-brand">BnB</span>
             </span>
             <span className="text-xs text-slate-400 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
@@ -338,7 +338,7 @@ export default function BookingPage() {
               <div className="text-right">
                 <p className="text-xs text-slate-400">{t.total}</p>
                 <p className="font-bold text-slate-900">€{totalPrice}</p>
-                <p className="text-xs text-indigo-600 font-medium">{t.deposit}: €{deposit30}</p>
+                <p className="text-xs text-brand font-medium">{t.deposit}: €{deposit30}</p>
               </div>
             </div>
           </div>
@@ -356,8 +356,8 @@ export default function BookingPage() {
                   onClick={() => setSelectedMethod(pm.id)}
                   className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
                     selectedMethod === pm.id
-                      ? 'border-indigo-500 bg-indigo-50'
-                      : 'border-slate-200 hover:border-indigo-200 bg-white'
+                      ? 'border-brand bg-brand-light'
+                      : 'border-slate-200 hover:border-brand/20 bg-white'
                   }`}
                 >
                   <span className="text-2xl">{pm.icon}</span>
@@ -366,7 +366,7 @@ export default function BookingPage() {
                     <p className="text-xs text-slate-500">{lang === 'nl' ? pm.desc : pm.descEn}</p>
                   </div>
                   {selectedMethod === pm.id && (
-                    <div className="w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <div className="w-5 h-5 bg-brand-light0 rounded-full flex items-center justify-center flex-shrink-0">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
@@ -384,7 +384,7 @@ export default function BookingPage() {
               type="button"
               onClick={handlePay}
               disabled={paymentLoading}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
             >
               {paymentLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />{t.paying}</>
@@ -422,7 +422,7 @@ export default function BookingPage() {
         <h1 className="text-2xl font-bold text-slate-900 mb-3">{t.successTitle}</h1>
         <p className="text-slate-600 max-w-md leading-relaxed">{t.successMsg}</p>
         <div className="mt-6 text-sm text-slate-400 flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-brand inline-block" />
           {t.commission}
         </div>
       </div>
@@ -440,7 +440,7 @@ export default function BookingPage() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <span className="text-lg font-bold text-slate-900">
-            Direct<span className="text-indigo-600">BnB</span>
+            Direct<span className="text-brand">BnB</span>
           </span>
           <span className="text-xs text-slate-400 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
@@ -465,7 +465,7 @@ export default function BookingPage() {
                 />
               </div>
             ) : (
-              <div className="rounded-2xl aspect-video bg-gradient-to-br from-indigo-100 to-slate-200 flex items-center justify-center">
+              <div className="rounded-2xl aspect-video bg-gradient-to-br from-brand-light to-slate-200 flex items-center justify-center">
                 <span className="text-5xl">🏡</span>
               </div>
             )}
@@ -503,8 +503,8 @@ export default function BookingPage() {
                       onClick={() => { setSelectedRoom(room); setNumGuests(Math.min(numGuests, room.maxGuests)); }}
                       className={`w-full text-left flex gap-4 p-4 rounded-2xl border-2 transition-all ${
                         isSelected
-                          ? 'border-indigo-500 bg-indigo-50'
-                          : 'border-slate-200 bg-white hover:border-indigo-200'
+                          ? 'border-brand bg-brand-light'
+                          : 'border-slate-200 bg-white hover:border-brand/20'
                       }`}
                     >
                       {photo ? (
@@ -515,7 +515,7 @@ export default function BookingPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h3 className="font-semibold text-slate-900">{room.name}</h3>
-                          <span className="font-bold text-indigo-600 text-sm flex-shrink-0">
+                          <span className="font-bold text-brand text-sm flex-shrink-0">
                             €{Number(room.pricePerNight).toFixed(0)}<span className="font-normal text-slate-400">/{t.pricePerNight}</span>
                           </span>
                         </div>
@@ -526,7 +526,7 @@ export default function BookingPage() {
                         </p>
                       </div>
                       {isSelected && (
-                        <div className="flex-shrink-0 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                        <div className="flex-shrink-0 w-5 h-5 bg-brand-light0 rounded-full flex items-center justify-center">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
@@ -555,7 +555,7 @@ export default function BookingPage() {
                       min={today()}
                       onChange={e => setCheckIn(e.target.value)}
                       required
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -569,7 +569,7 @@ export default function BookingPage() {
                       min={checkIn || today()}
                       onChange={e => setCheckOut(e.target.value)}
                       required
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -583,7 +583,7 @@ export default function BookingPage() {
                   <select
                     value={numGuests}
                     onChange={e => setNumGuests(Number(e.target.value))}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   >
                     {Array.from({ length: selectedRoom?.maxGuests ?? 4 }, (_, i) => i + 1).map(n => (
                       <option key={n} value={n}>{n} {t.guest}{n !== 1 ? 's' : ''}</option>
@@ -603,7 +603,7 @@ export default function BookingPage() {
                       <span>€{totalPrice}</span>
                     </div>
                     {mollieEnabled && (
-                      <div className="flex justify-between text-indigo-600 text-xs font-medium pt-1">
+                      <div className="flex justify-between text-brand text-xs font-medium pt-1">
                         <span>{t.deposit}</span>
                         <span>€{deposit30}</span>
                       </div>
@@ -626,7 +626,7 @@ export default function BookingPage() {
                         onChange={e => setFirstName(e.target.value)}
                         required
                         placeholder="Jan"
-                        className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -637,7 +637,7 @@ export default function BookingPage() {
                       onChange={e => setLastName(e.target.value)}
                       required
                       placeholder="Jansen"
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -652,7 +652,7 @@ export default function BookingPage() {
                       onChange={e => setEmail(e.target.value)}
                       required
                       placeholder="jan@example.nl"
-                      className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -666,7 +666,7 @@ export default function BookingPage() {
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
                       placeholder="+31 6 12345678"
-                      className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -680,7 +680,7 @@ export default function BookingPage() {
                     value={message}
                     onChange={e => setMessage(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent resize-none"
                   />
                 </div>
 
@@ -693,7 +693,7 @@ export default function BookingPage() {
                 <button
                   type="submit"
                   disabled={submitting || !selectedRoom || nights <= 0}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <><Loader2 className="w-4 h-4 animate-spin" />{t.submitting}</>

@@ -39,6 +39,17 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // DirectBnB brand colours
+        brand: {
+          DEFAULT: '#FF5000',
+          light: '#FFDFD3',
+          50:  '#fff5f0',
+          100: '#FFDFD3',
+          500: '#FF5000',
+          600: '#e64800',
+          700: '#cc4000',
+        },
+        page: '#F6F7FB',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -46,8 +57,9 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'monospace'],
+        sans:    ['var(--font-archivo)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-playfair)', 'Georgia', 'serif'],
+        mono:    ['monospace'],
       },
     },
   },

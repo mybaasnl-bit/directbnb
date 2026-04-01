@@ -6,9 +6,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <header className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold text-slate-900">
-            Direct<span className="text-indigo-600">BnB</span>
+            Direct<span className="text-brand">BnB</span>
           </span>
-          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+          <span className="text-xs bg-brand-light text-brand-600 px-2 py-0.5 rounded-full font-medium">
             Beta
           </span>
         </div>

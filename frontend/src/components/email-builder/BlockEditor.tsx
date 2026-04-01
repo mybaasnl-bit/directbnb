@@ -25,7 +25,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
           value={subject}
           onChange={(e) => onSubjectChange(e.target.value)}
           placeholder="Onderwerp van de e-mail"
-          className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+          className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
         />
       </Section>
 
@@ -58,7 +58,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
             <select
               value={block.props.fontSize}
               onChange={(e) => set({ fontSize: Number(e.target.value) })}
-              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value={13}>Klein (13px)</option>
               <option value={15}>Normaal (15px)</option>
@@ -87,7 +87,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
               value={block.props.label}
               onChange={(e) => set({ label: e.target.value })}
               placeholder="Klik hier"
-              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
             />
           </Section>
           <Section label="Link (URL)">
@@ -96,7 +96,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
               value={block.props.url}
               onChange={(e) => set({ url: e.target.value })}
               placeholder="https://..."
-              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
             />
           </Section>
           <Row label="Uitlijning">
@@ -119,7 +119,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
               value={block.props.src}
               onChange={(e) => set({ src: e.target.value })}
               placeholder="https://..."
-              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
             />
           </Section>
           <Section label="Alt-tekst">
@@ -128,14 +128,14 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
               value={block.props.alt}
               onChange={(e) => set({ alt: e.target.value })}
               placeholder="Beschrijving van de afbeelding"
-              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+              className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
             />
           </Section>
           <Row label="Breedte">
             <select
               value={block.props.width}
               onChange={(e) => set({ width: Number(e.target.value) as 25 | 50 | 75 | 100 })}
-              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value={25}>25%</option>
               <option value={50}>50%</option>
@@ -158,7 +158,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
             <select
               value={block.props.thickness}
               onChange={(e) => set({ thickness: Number(e.target.value) as 1 | 2 | 3 })}
-              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand"
             >
               <option value={1}>Dun (1px)</option>
               <option value={2}>Normaal (2px)</option>
@@ -173,7 +173,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
           <select
             value={block.props.height}
             onChange={(e) => set({ height: Number(e.target.value) as 8 | 16 | 32 | 48 })}
-            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-brand"
           >
             <option value={8}>Heel klein (8px)</option>
             <option value={16}>Klein (16px)</option>
@@ -214,7 +214,7 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
                     type="checkbox"
                     checked={block.props[key]}
                     onChange={(e) => set({ [key]: e.target.checked })}
-                    className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+                    className="w-4 h-4 rounded text-brand focus:ring-brand"
                   />
                   <span className="text-sm text-slate-700">{label}</span>
                 </label>
@@ -263,7 +263,7 @@ function ColorPicker({ value, onChange }: { value: string; onChange: (v: string)
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-24 text-xs font-mono px-2 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+        className="w-24 text-xs font-mono px-2 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
       />
     </div>
   );
@@ -277,7 +277,7 @@ function AlignPicker({ value, onChange }: { value: Align; onChange: (v: Align) =
           key={a}
           type="button"
           onClick={() => onChange(a)}
-          className={`flex-1 py-1.5 text-sm transition-colors ${value === a ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
+          className={`flex-1 py-1.5 text-sm transition-colors ${value === a ? 'bg-brand text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
         >
           {a === 'left' ? '◀' : a === 'center' ? '≡' : '▶'}
         </button>
@@ -291,7 +291,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${value ? 'bg-brand text-white border-brand' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
     >
       B
     </button>
@@ -338,14 +338,14 @@ function TextWithVars({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}
-        className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none"
+        className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white resize-none"
       />
       {variables.length > 0 && (
         <div className="relative mt-1">
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+            className="flex items-center gap-1 text-xs text-brand hover:text-brand-600 font-medium"
           >
             {'{'}{'{'}{'}'}{'}'}variabele invoegen <ChevronDown className="w-3 h-3" />
           </button>
@@ -356,7 +356,7 @@ function TextWithVars({
                   key={v}
                   type="button"
                   onClick={() => insert(v)}
-                  className="w-full text-left px-3 py-1.5 text-xs font-mono hover:bg-indigo-50 hover:text-indigo-700 text-slate-700"
+                  className="w-full text-left px-3 py-1.5 text-xs font-mono hover:bg-brand-light hover:text-brand-600 text-slate-700"
                 >
                   {`{{${v}}}`}
                 </button>

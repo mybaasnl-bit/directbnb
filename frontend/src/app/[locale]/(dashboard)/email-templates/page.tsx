@@ -68,8 +68,8 @@ export default function EmailTemplatesPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-9 h-9 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <Mail className="w-5 h-5 text-indigo-600" />
+          <div className="w-9 h-9 bg-brand-light rounded-xl flex items-center justify-center">
+            <Mail className="w-5 h-5 text-brand" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">E-mail Templates</h1>
         </div>
@@ -79,14 +79,14 @@ export default function EmailTemplatesPage() {
       </div>
 
       {/* Info banner */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6 flex gap-3">
-        <div className="text-indigo-500 mt-0.5">
+      <div className="bg-brand-light border border-brand-light rounded-2xl p-4 mb-6 flex gap-3">
+        <div className="text-brand mt-0.5">
           <Mail className="w-4 h-4" />
         </div>
         <div>
-          <p className="text-sm text-indigo-800 font-medium">Variabelen gebruiken</p>
-          <p className="text-sm text-indigo-600 mt-0.5">
-            Gebruik <code className="font-mono bg-indigo-100 px-1 rounded text-xs">{'{{guest_name}}'}</code>, <code className="font-mono bg-indigo-100 px-1 rounded text-xs">{'{{property_name}}'}</code>, <code className="font-mono bg-indigo-100 px-1 rounded text-xs">{'{{check_in}}'}</code> etc. om automatisch de juiste gegevens in te vullen.
+          <p className="text-sm text-brand-600 font-medium">Variabelen gebruiken</p>
+          <p className="text-sm text-brand mt-0.5">
+            Gebruik <code className="font-mono bg-brand-light px-1 rounded text-xs">{'{{guest_name}}'}</code>, <code className="font-mono bg-brand-light px-1 rounded text-xs">{'{{property_name}}'}</code>, <code className="font-mono bg-brand-light px-1 rounded text-xs">{'{{check_in}}'}</code> etc. om automatisch de juiste gegevens in te vullen.
           </p>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function EmailTemplatesPage() {
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="font-semibold text-slate-900 text-sm">{label}</p>
                   {isCustomized ? (
-                    <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-brand-light text-brand-600 font-medium px-2 py-0.5 rounded-full">
                       Aangepast
                     </span>
                   ) : (
@@ -136,7 +136,7 @@ export default function EmailTemplatesPage() {
                 ) : (
                   <button
                     onClick={() => router.push(`/${locale}/email-templates/${name}`)}
-                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+                    className="flex items-center gap-1.5 bg-brand hover:bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Bewerken

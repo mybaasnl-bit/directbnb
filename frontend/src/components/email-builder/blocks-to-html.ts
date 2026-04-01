@@ -99,7 +99,7 @@ ${rows.join('\n')}
 function detRow(label: string, value: string, highlight = false): string {
   return `<tr>
 <td style="padding:8px 0;border-top:1px solid #e2e8f0;font-size:14px;color:#64748b;">${label}</td>
-<td style="padding:8px 0;border-top:1px solid #e2e8f0;text-align:right;font-size:${highlight ? 18 : 14}px;font-weight:${highlight ? 700 : 600};color:${highlight ? '#4f46e5' : '#1e293b'};">${value}</td>
+<td style="padding:8px 0;border-top:1px solid #e2e8f0;text-align:right;font-size:${highlight ? 18 : 14}px;font-weight:${highlight ? 700 : 600};color:${highlight ? '#FF5000' : '#1e293b'};">${value}</td>
 </tr>`;
 }
 

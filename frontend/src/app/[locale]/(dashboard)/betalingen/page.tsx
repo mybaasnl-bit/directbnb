@@ -181,7 +181,7 @@ export default function BetalingenPage() {
                   <button
                     onClick={() => startOnboarding()}
                     disabled={onboardingPending}
-                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                    className="inline-flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
                   >
                     {onboardingPending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

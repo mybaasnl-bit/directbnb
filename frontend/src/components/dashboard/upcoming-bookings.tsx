@@ -19,7 +19,7 @@ export function UpcomingBookings({ bookings }: { bookings: any[] }) {
           bookings.map((b: any) => (
             <div key={b.id} className="px-5 py-3.5 flex items-start gap-4">
               <div className="w-10 text-center shrink-0">
-                <p className="text-xs font-medium text-indigo-500 uppercase">
+                <p className="text-xs font-medium text-brand uppercase">
                   {format(new Date(b.checkIn), 'MMM', { locale: dateLocale })}
                 </p>
                 <p className="text-xl font-bold text-slate-900 leading-none">

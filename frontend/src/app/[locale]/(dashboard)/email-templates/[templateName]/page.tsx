@@ -200,7 +200,7 @@ export default function HostEmailTemplateEditorPage() {
     return (
       <div className="max-w-3xl mx-auto text-center py-16">
         <p className="text-slate-500">Template niet gevonden.</p>
-        <button onClick={() => router.push(`/${locale}/email-templates`)} className="mt-4 text-indigo-600 hover:underline text-sm">
+        <button onClick={() => router.push(`/${locale}/email-templates`)} className="mt-4 text-brand hover:underline text-sm">
           Terug naar overzicht
         </button>
       </div>
@@ -219,7 +219,7 @@ export default function HostEmailTemplateEditorPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold text-slate-900">{meta.label}</h1>
               {isCustomized ? (
-                <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full">Aangepast</span>
+                <span className="text-xs bg-brand-light text-brand-600 font-medium px-2 py-0.5 rounded-full">Aangepast</span>
               ) : (
                 <span className="text-xs bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Sparkles className="w-3 h-3" /> Standaard
@@ -251,7 +251,7 @@ export default function HostEmailTemplateEditorPage() {
             <Send className="w-4 h-4" /> Test
           </button>
 
-          <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+          <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
             <Save className="w-4 h-4" /> {saving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
@@ -277,14 +277,14 @@ export default function HostEmailTemplateEditorPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label>
-                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="uw@emailadres.nl" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="uw@emailadres.nl" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
               </div>
               {testStatus === 'success' && <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Test e-mail verstuurd!</div>}
               {testStatus === 'error' && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" /> Versturen mislukt. Probeer het opnieuw.</div>}
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setShowTestModal(false); setTestStatus('idle'); }} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Annuleren</button>
-              <button onClick={handleSendTest} disabled={!testEmail || testSending} className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
+              <button onClick={handleSendTest} disabled={!testEmail || testSending} className="flex-1 flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
                 <Send className="w-4 h-4" /> {testSending ? 'Versturen…' : 'Verstuur test'}
               </button>
             </div>

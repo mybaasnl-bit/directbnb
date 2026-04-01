@@ -81,15 +81,15 @@ export default function EmailTemplatesPage() {
       </div>
 
       {/* Variables info box */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
-        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+      <div className="bg-brand-light border border-brand-light rounded-2xl p-4 mb-6 flex items-start gap-3">
+        <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
           <span className="text-sm">💡</span>
         </div>
         <div>
-          <p className="text-sm font-semibold text-indigo-900 mb-1">Dynamische variabelen</p>
-          <p className="text-sm text-indigo-700">
+          <p className="text-sm font-semibold text-slate-900 mb-1">Dynamische variabelen</p>
+          <p className="text-sm text-brand-600">
             Gebruik{' '}
-            <code className="bg-indigo-100 px-1.5 py-0.5 rounded font-mono text-xs">
+            <code className="bg-brand-light px-1.5 py-0.5 rounded font-mono text-xs">
               {'{{naam}}'}
             </code>{' '}
             notatie in de templates. Het systeem vervangt deze automatisch met echte gegevens bij
@@ -123,10 +123,10 @@ export default function EmailTemplatesPage() {
               <Link
                 key={tpl.id}
                 href={`/${locale}/admin/email-templates/${tpl.id}`}
-                className="group flex items-center gap-4 bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-md rounded-2xl p-5 transition-all duration-150"
+                className="group flex items-center gap-4 bg-white border border-slate-200 hover:border-brand/20 hover:shadow-md rounded-2xl p-5 transition-all duration-150"
               >
-                <div className="w-10 h-10 bg-indigo-50 group-hover:bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors">
-                  <Mail className="w-5 h-5 text-indigo-500" />
+                <div className="w-10 h-10 bg-brand-light group-hover:bg-brand-light rounded-xl flex items-center justify-center flex-shrink-0 transition-colors">
+                  <Mail className="w-5 h-5 text-brand" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -148,7 +148,7 @@ export default function EmailTemplatesPage() {
                   <span className="text-xs text-slate-400">
                     {new Date(tpl.updatedAt).toLocaleDateString('nl-NL')}
                   </span>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand transition-colors" />
                 </div>
               </Link>
             );
