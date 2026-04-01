@@ -4,6 +4,11 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTransition } from 'react';
 
+const LOCALES = [
+  { code: 'nl', label: '🇳🇱 NL' },
+  { code: 'en', label: '🇬🇧 EN' },
+];
+
 interface LanguageSwitcherProps {
   dark?: boolean;
 }
@@ -16,7 +21,6 @@ export default function LanguageSwitcher({ dark = false }: LanguageSwitcherProps
 
   const handleSwitch = (newLocale: string) => {
     startTransition(() => {
-      // Strip existing locale prefix and add new one
       const segments = pathname.split('/');
       const locales = ['nl', 'en'];
       if (locales.includes(segments[1])) {
@@ -29,31 +33,25 @@ export default function LanguageSwitcher({ dark = false }: LanguageSwitcherProps
     });
   };
 
-  const base =
-    'flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all duration-150';
-  const activeClass = dark
-    ? 'bg-white/20 text-white'
-    : 'bg-slate-100 text-slate-900';
-  const inactiveClass = dark
-    ? 'text-white/50 hover:text-white/80'
-    : 'text-slate-400 hover:text-slate-600';
-
   return (
-    <div
-      className={`flex items-center rounded-xl p-1 gap-0.5 ${
-        dark ? 'bg-white/10' : 'bg-slate-100'
-      }`}
-    >
-      {(['nl', 'en'] as const).map((l) => (
-        <button
-          key={l}
-          onClick={() => handleSwitch(l)}
-          disabled={isPending}
-          className={`${base} ${locale === l ? activeClass : inactiveClass}`}
-        >
-          {l === 'nl' ? '🇳🇱 NL' : '🇬🇧 EN'}
-        </button>
-      ))}
+    <div className="relative">
+      <select
+        value={locale}
+        onChange={(e) => handleSwitch(e.target.value)}
+        disabled={isPending}
+        className={`appearance-none text-xs font-semibold rounded-lg pl-2.5 pr-7 py-1.5 cursor-pointer border-0 outline-none focus:ring-2 ${
+          dark
+            ? 'bg-white/10 text-white focus:ring-white/30'
+            : 'bg-slate-100 text-slate-700 focus:ring-brand/30'
+        }`}
+      >
+        {LOCALES.map((l) => (
+          <option key={l.code} value={l.code} className="bg-white text-slate-900">
+            {l.label}
+          </option>
+        ))}
+      </select>
+      <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs ${dark ? 'text-white/50' : 'text-slate-400'}`}>▾</span>
     </div>
   );
 }

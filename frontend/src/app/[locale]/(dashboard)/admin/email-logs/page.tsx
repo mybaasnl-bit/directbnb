@@ -50,18 +50,21 @@ export default function EmailLogsPage() {
   const failedCount = logs.filter(l => l.status === 'FAILED').length;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">E-mail Logs</h1>
-          <p className="text-slate-500 mt-1">
-            Overzicht van alle verstuurde en mislukte e-mails.
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center">
+            <Mail className="w-6 h-6 text-brand" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">E-mail Logs</h1>
+            <p className="text-slate-400 text-sm">Overzicht van alle verstuurde en mislukte e-mails</p>
+          </div>
         </div>
         <button
           onClick={load}
-          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+          className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand bg-white px-4 py-2.5 rounded-xl hover:bg-brand-light transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
           Vernieuwen
@@ -69,31 +72,32 @@ export default function EmailLogsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {[
-          { label: 'Totaal verzonden', value: logs.length, color: 'text-slate-700', bg: 'bg-slate-50' },
-          { label: 'Succesvol', value: sentCount, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'Mislukt', value: failedCount, color: 'text-red-600', bg: 'bg-red-50' },
-        ].map(stat => (
-          <div key={stat.label} className={`${stat.bg} rounded-2xl p-5 border border-slate-100`}>
-            <p className="text-sm text-slate-500 mb-1">{stat.label}</p>
-            <p className={`text-3xl font-bold ${stat.color}`}>{loading ? '—' : stat.value}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-brand rounded-3xl p-5">
+          <p className="text-xs text-white/70 font-semibold uppercase tracking-wide mb-2">Totaal</p>
+          <p className="text-3xl font-bold text-white">{loading ? '—' : logs.length}</p>
+        </div>
+        <div className="bg-brand-light rounded-3xl p-5">
+          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Succesvol</p>
+          <p className="text-3xl font-bold text-emerald-600">{loading ? '—' : sentCount}</p>
+        </div>
+        <div className="bg-brand-light rounded-3xl p-5">
+          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Mislukt</p>
+          <p className="text-3xl font-bold text-red-500">{loading ? '—' : failedCount}</p>
+        </div>
       </div>
 
       {/* Filter */}
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2">
         <Filter className="w-4 h-4 text-slate-400" />
-        <span className="text-sm text-slate-500">Filter:</span>
         {(['ALL', 'SENT', 'FAILED'] as const).map(f => (
           <button
             key={f}
             onClick={() => setStatusFilter(f)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
               statusFilter === f
                 ? 'bg-brand text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                : 'bg-white text-slate-500 hover:bg-brand-light hover:text-brand'
             }`}
           >
             {f === 'ALL' ? 'Alles' : f === 'SENT' ? 'Succesvol' : 'Mislukt'}
@@ -104,94 +108,68 @@ export default function EmailLogsPage() {
       {/* Content */}
       {loading ? (
         <div className="space-y-2">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="h-16 bg-slate-100 rounded-xl animate-pulse" />
+          {[1,2,3,4].map(i => (
+            <div key={i} className="h-16 bg-white rounded-2xl animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-6 text-center">
-          <p className="text-red-600 font-medium">{error}</p>
-          <button onClick={load} className="mt-3 text-sm text-red-500 hover:text-red-700 underline">
-            Probeer opnieuw
-          </button>
+        <div className="bg-red-50 rounded-2xl p-6 text-center">
+          <p className="text-red-600 font-semibold">{error}</p>
+          <button onClick={load} className="mt-3 text-sm text-red-500 hover:text-red-700 underline">Probeer opnieuw</button>
         </div>
       ) : logs.length === 0 ? (
-        <div className="text-center py-20 text-slate-400">
-          <Mail className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="font-medium">Geen e-mail logs gevonden</p>
+        <div className="bg-white rounded-3xl p-16 text-center">
+          <div className="w-14 h-14 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-7 h-7 text-brand" />
+          </div>
+          <p className="font-bold text-slate-700">Geen e-mail logs gevonden</p>
         </div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+        <div className="bg-white rounded-3xl overflow-hidden">
           {logs.map((log, i) => (
             <div key={log.id}>
               <div
-                className={`flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors ${
-                  i < logs.length - 1 ? 'border-b border-slate-100' : ''
-                }`}
+                className={`flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-brand-light/20 transition-colors ${i < logs.length - 1 ? 'border-b border-slate-50' : ''}`}
                 onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}
               >
-                {/* Status icon */}
-                {log.status === 'SENT' ? (
-                  <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                )}
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${log.status === 'SENT' ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                  {log.status === 'SENT'
+                    ? <CheckCircle className="w-5 h-5 text-emerald-500" />
+                    : <XCircle className="w-5 h-5 text-red-500" />
+                  }
+                </div>
 
-                {/* Main info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900 text-sm truncate">
-                      {log.recipientEmail}
-                    </span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      log.status === 'SENT'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-red-100 text-red-700'
+                    <span className="font-semibold text-slate-900 text-sm truncate">{log.recipientEmail}</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-xl text-xs font-bold ${
+                      log.status === 'SENT' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
                     }`}>
                       {log.status === 'SENT' ? 'Verstuurd' : 'Mislukt'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {TEMPLATE_LABELS[log.templateName] ?? log.templateName}
-                    {' · '}
-                    {log.language.toUpperCase()}
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {TEMPLATE_LABELS[log.templateName] ?? log.templateName} · {log.language.toUpperCase()}
                   </p>
                 </div>
 
-                {/* Date */}
                 <span className="text-xs text-slate-400 flex-shrink-0">
-                  {new Date(log.createdAt).toLocaleString('nl-NL', {
-                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                  })}
+                  {new Date(log.createdAt).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
 
-              {/* Expanded detail */}
               {expandedId === log.id && (
-                <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 text-xs space-y-2">
+                <div className="px-5 py-4 bg-brand-light/30 border-b border-brand/10 text-xs space-y-2">
                   {log.providerMessageId && (
-                    <div>
-                      <span className="font-semibold text-slate-600">Resend Message ID: </span>
-                      <code className="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded font-mono">
-                        {log.providerMessageId}
-                      </code>
+                    <div><span className="font-bold text-slate-600">Resend ID: </span>
+                      <code className="text-slate-700 bg-white px-1.5 py-0.5 rounded-lg font-mono">{log.providerMessageId}</code>
                     </div>
                   )}
                   {log.errorMessage && (
-                    <div>
-                      <span className="font-semibold text-red-600">Foutmelding: </span>
-                      <span className="text-red-700">{log.errorMessage}</span>
-                    </div>
+                    <div><span className="font-bold text-red-600">Fout: </span><span className="text-red-700">{log.errorMessage}</span></div>
                   )}
-                  <div>
-                    <span className="font-semibold text-slate-600">Template: </span>
-                    <code className="text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded font-mono">
-                      {log.templateName}
-                    </code>
-                  </div>
-                  <div>
-                    <span className="font-semibold text-slate-600">Log ID: </span>
-                    <code className="text-slate-500 font-mono">{log.id}</code>
+                  <div><span className="font-bold text-slate-600">Template: </span>
+                    <code className="text-slate-700 bg-white px-1.5 py-0.5 rounded-lg font-mono">{log.templateName}</code>
                   </div>
                 </div>
               )}

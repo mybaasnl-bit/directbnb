@@ -114,8 +114,8 @@ export default function EmailTemplateEditorPage() {
   if (loading) {
     return (
       <div className="space-y-4 h-[calc(100vh-120px)]">
-        <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse" />
-        <div className="flex-1 h-full bg-slate-100 rounded-2xl animate-pulse" />
+        <div className="h-10 w-64 bg-brand-light rounded-2xl animate-pulse" />
+        <div className="flex-1 h-full bg-white rounded-3xl animate-pulse" />
       </div>
     );
   }
@@ -136,7 +136,7 @@ export default function EmailTemplateEditorPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-1 pb-4 shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push(`/${locale}/admin/email-templates`)} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors">
+          <button onClick={() => router.push(`/${locale}/admin/email-templates`)} className="p-2 rounded-xl hover:bg-brand-light text-slate-500 hover:text-brand transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
@@ -193,7 +193,7 @@ export default function EmailTemplateEditorPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mailadres</label>
-                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="jij@example.com" className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
+                <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="jij@example.com" className="w-full px-4 py-2.5 bg-brand-light/40 rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30" />
               </div>
               {testStatus === 'success' && <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Test verstuurd!</div>}
               {testStatus === 'error' && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" /> Versturen mislukt.</div>}
