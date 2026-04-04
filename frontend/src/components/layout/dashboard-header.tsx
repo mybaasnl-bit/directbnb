@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
-import { LanguageSwitcher } from './language-switcher';
 import { Bell, X, CalendarDays, Check, XCircle, ArrowRight, BedDouble, Search, Menu } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -21,25 +20,17 @@ interface Booking {
   room: { name: string; property: { name: string; id: string } };
 }
 
-function getGreeting(name: string): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return `Goedemorgen, ${name} 👋`;
-  if (hour < 18) return `Goedemiddag, ${name} 👋`;
-  return `Goedenavond, ${name} 👋`;
-}
-
 // ── Zoekbalk ─────────────────────────────────────────────────────────────
 function SearchBar() {
-  const [query, setQuery]   = useState('');
-  const [open, setOpen]     = useState(false);
+  const [query, setQuery]     = useState('');
+  const [open, setOpen]       = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef  = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { locale } = useParams<{ locale: string }>();
   const router = useRouter();
 
-  // Sluit op klik buiten
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
@@ -81,7 +72,7 @@ function SearchBar() {
     new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
 
   return (
-    <div ref={wrapRef} className="relative flex-1 max-w-md">
+    <div ref={wrapRef} className="relative flex-1 max-w-2xl">
       <form onSubmit={handleSubmit}>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -90,13 +81,12 @@ function SearchBar() {
             value={query}
             onChange={handleChange}
             onFocus={() => { if (query) setOpen(true); }}
-            placeholder="Zoek naar boekingen, gasten..."
-            className="w-full pl-11 pr-4 py-2.5 bg-page border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all"
+            placeholder="Zoeken..."
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/30 transition-all"
           />
         </div>
       </form>
 
-      {/* Zoekresultaten dropdown */}
       {open && query.trim().length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden">
           {loading ? (
@@ -154,7 +144,6 @@ function SearchBar() {
 export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user } = useAuth();
   const { locale } = useParams<{ locale: string }>();
-  const currentLocale = useLocale();
   const qc = useQueryClient();
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -195,9 +184,8 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
     },
   });
 
-  const dateLocale = currentLocale === 'nl' ? 'nl-NL' : 'en-GB';
   const fmt = (d: string) =>
-    new Date(d).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' });
+    new Date(d).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
   const nights = (ci: string, co: string) =>
     Math.round((new Date(co).getTime() - new Date(ci).getTime()) / 86_400_000);
 
@@ -205,10 +193,12 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
     ? `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase()
     : '';
 
-  return (
-    <header className="bg-white border-b border-slate-100 px-4 md:px-6 h-16 flex items-center gap-3 md:gap-4 shrink-0 sticky top-0 z-30">
+  const roleLabel = isAdmin ? 'Administrator' : 'Eigenaar';
 
-      {/* Hamburger menu — alleen zichtbaar op mobile */}
+  return (
+    <header className="bg-white border-b border-slate-100 px-4 md:px-6 h-16 flex items-center gap-4 shrink-0 sticky top-0 z-30">
+
+      {/* Hamburger — alleen op mobile */}
       <button
         onClick={onMenuClick}
         className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
@@ -217,28 +207,13 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
         <Menu className="w-5 h-5 text-slate-600" />
       </button>
 
-      {/* Begroeting (links, verborgen op kleine schermen) */}
-      <div className="hidden lg:block shrink-0">
-        {user && (
-          <p className="text-sm font-semibold text-slate-700 whitespace-nowrap">
-            {getGreeting(user.firstName)}
-          </p>
-        )}
-      </div>
-
-      {/* Scheidingslijn */}
-      <div className="hidden lg:block w-px h-6 bg-slate-200 shrink-0" />
-
-      {/* Zoekbalk (neemt beschikbare ruimte) */}
+      {/* Zoekbalk — neemt beschikbare ruimte */}
       <SearchBar />
 
       {/* Rechtergedeelte */}
-      <div className="flex items-center gap-2 shrink-0 ml-auto lg:ml-0">
+      <div className="flex items-center gap-3 shrink-0 ml-auto">
 
-        {/* Taalwisselaar */}
-        <LanguageSwitcher />
-
-        {/* Notificaties */}
+        {/* Notificatiebel */}
         {!isAdmin && (
           <div className="relative" ref={notifRef}>
             <button
@@ -248,11 +223,9 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
               }`}
               aria-label="Meldingen"
             >
-              <Bell className={`w-5 h-5 ${pendingCount > 0 ? 'text-slate-700' : 'text-slate-400'}`} />
+              <Bell className="w-5 h-5 text-slate-500" />
               {pendingCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-brand text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {pendingCount > 9 ? '9+' : pendingCount}
-                </span>
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-brand rounded-full border-2 border-white" />
               )}
             </button>
 
@@ -349,10 +322,19 @@ export function DashboardHeader({ onMenuClick }: { onMenuClick?: () => void }) {
           </div>
         )}
 
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-2xl bg-brand flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:bg-brand-600 transition-all">
-          {initials}
+        {/* Gebruiker naam + rol + avatar */}
+        <div className="flex items-center gap-3">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold text-slate-900 leading-tight">
+              {user?.firstName} {user?.lastName}
+            </p>
+            <p className="text-xs text-slate-400">{roleLabel}</p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-brand flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:bg-brand-600 transition-all shrink-0">
+            {initials}
+          </div>
         </div>
+
       </div>
     </header>
   );
