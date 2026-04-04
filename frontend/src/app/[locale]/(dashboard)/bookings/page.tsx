@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { BookingStatusBadge } from '@/components/bookings/booking-status-badge';
@@ -9,12 +9,12 @@ import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import {
   Check, X, Link2, Loader2, CheckCircle2, CalendarDays,
-  BedDouble, Users, Clock, BookOpen,
+  BedDouble, Users, Clock, Filter, FileText, TrendingUp,
 } from 'lucide-react';
 
-const FILTERS = [
-  { key: 'all',             label: 'Alle' },
-  { key: 'PENDING',         label: 'Actie vereist' },
+const STATUS_FILTERS = [
+  { key: 'all',             label: 'Alle statussen' },
+  { key: 'PENDING',         label: 'In afwachting' },
   { key: 'CONFIRMED',       label: 'Bevestigd' },
   { key: 'PAYMENT_PENDING', label: 'Wacht op betaling' },
   { key: 'PAID',            label: 'Betaald' },
@@ -22,7 +22,21 @@ const FILTERS = [
   { key: 'CANCELLED',       label: 'Geannuleerd' },
 ] as const;
 
-type FilterKey = (typeof FILTERS)[number]['key'];
+type FilterKey = (typeof STATUS_FILTERS)[number]['key'];
+
+function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ElementType }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-5">
+      <div className="flex items-start justify-between mb-4">
+        <p className="text-sm text-slate-500">{label}</p>
+        <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+      </div>
+      <p className="text-3xl font-bold text-slate-900">{value}</p>
+    </div>
+  );
+}
 
 export default function BookingsPage() {
   const locale = useLocale();
@@ -57,232 +71,157 @@ export default function BookingsPage() {
     },
   });
 
-  const pendingBookings = (bookings as any[]).filter((b) => b.status === 'PENDING');
-  const otherBookings   = (bookings as any[]).filter((b) => b.status !== 'PENDING');
+  const allBookings = bookings as any[];
+  const totalCount = allBookings.length;
+  const confirmedCount = allBookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PAID' || b.status === 'COMPLETED').length;
+  const pendingCount = allBookings.filter(b => b.status === 'PENDING').length;
+  const cancelledCount = allBookings.filter(b => b.status === 'CANCELLED').length;
 
-  const fmt    = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: dateLocale });
+  const fmt = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: dateLocale });
   const nights = (ci: string, co: string) =>
     Math.round((new Date(co).getTime() - new Date(ci).getTime()) / 86_400_000);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-6xl">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center">
-            <BookOpen className="w-6 h-6 text-brand" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Boekingen</h1>
-            <p className="text-slate-400 text-sm">Beheer alle reserveringen van uw gasten</p>
-          </div>
-        </div>
+      {/* Title */}
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Boekingen</h1>
+        <p className="text-slate-400 mt-1">Beheer al je reserveringen</p>
       </div>
 
-      {/* Openstaande aanvragen */}
-      {filter === 'all' && pendingBookings.length > 0 && (
-        <div className="bg-brand-light rounded-3xl p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center">
-              <Clock className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-900">Wachten op uw reactie</h2>
-              <p className="text-sm text-slate-500">{pendingBookings.length} aanvra{pendingBookings.length === 1 ? 'ag' : 'gen'} open</p>
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {pendingBookings.map((booking: any) => {
-              const checkIn  = new Date(booking.checkIn);
-              const checkOut = new Date(booking.checkOut);
-              const n = nights(booking.checkIn, booking.checkOut);
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Totale Boekingen" value={totalCount} icon={FileText} />
+        <StatCard label="Bevestigd" value={confirmedCount} icon={CheckCircle2} />
+        <StatCard label="In afwachting" value={pendingCount} icon={Clock} />
+        <StatCard label="Geannuleerd" value={cancelledCount} icon={TrendingUp} />
+      </div>
 
-              return (
-                <div key={booking.id} className="bg-white rounded-2xl p-5 space-y-4">
-                  {/* Gast + prijs */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-brand text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
-                        {booking.guest.firstName[0]}{booking.guest.lastName[0]}
-                      </div>
-                      <div>
-                        <p className="font-bold text-slate-900">{booking.guest.firstName} {booking.guest.lastName}</p>
-                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                          <BedDouble className="w-3 h-3" />
-                          {booking.room.property.name} — {booking.room.name}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-lg font-bold text-slate-900">€{Number(booking.totalPrice).toFixed(0)}</p>
-                      <p className="text-xs text-slate-400">{booking.numGuests} gast{booking.numGuests !== 1 ? 'en' : ''}</p>
-                    </div>
-                  </div>
-
-                  {/* Datumrij */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { label: 'Inchecken', val: format(checkIn, 'd MMM', { locale: dateLocale }) },
-                      { label: 'Uitchecken', val: format(checkOut, 'd MMM', { locale: dateLocale }) },
-                      { label: 'Nachten', val: String(n) },
-                    ].map(({ label, val }) => (
-                      <div key={label} className="bg-brand-light rounded-xl p-2.5">
-                        <p className="text-[10px] text-slate-400 font-semibold uppercase">{label}</p>
-                        <p className="text-sm font-bold text-slate-800 mt-0.5">{val}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {booking.guestMessage && (
-                    <div className="bg-brand-light rounded-xl px-4 py-3">
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase mb-1">Bericht van gast</p>
-                      <p className="text-sm text-slate-600 italic">"{booking.guestMessage}"</p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => updateStatus.mutate({ id: booking.id, status: 'CONFIRMED' })}
-                      disabled={updateStatus.isPending}
-                      className="flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition-colors"
-                    >
-                      <Check className="w-4 h-4" /> Accepteren
-                    </button>
-                    <button
-                      onClick={() => updateStatus.mutate({ id: booking.id, status: 'REJECTED' })}
-                      disabled={updateStatus.isPending}
-                      className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 disabled:opacity-60 text-slate-600 font-bold py-3 rounded-xl text-sm transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Weigeren
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {/* Filter bar */}
+      <div className="bg-white rounded-2xl border border-slate-100 px-4 py-3 flex items-center gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 border border-slate-200 rounded-xl px-3 py-2 hover:bg-slate-50 cursor-pointer">
+          <Filter className="w-4 h-4" />
+          Filter
         </div>
-      )}
-
-      {/* Filter tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {FILTERS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              filter === key
-                ? 'bg-brand text-white'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-brand-light hover:border-brand/20 hover:text-brand'
-            }`}
+        <div className="relative">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as FilterKey)}
+            className="appearance-none bg-white border border-slate-200 text-sm font-semibold text-slate-700 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30 cursor-pointer"
           >
-            {label}
-          </button>
-        ))}
+            {STATUS_FILTERS.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
+        </div>
+        <div className="flex-1" />
+        <button className="bg-brand hover:bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors">
+          + Nieuwe Boeking
+        </button>
       </div>
 
-      {/* Boekingenlijst */}
+      {/* Table */}
       {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />
-          ))}
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-white rounded-2xl border border-slate-100 animate-pulse" />)}
         </div>
-      ) : (filter === 'all' ? otherBookings : bookings as any[]).length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center">
+      ) : allBookings.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center">
           <div className="w-14 h-14 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
             <CalendarDays className="w-7 h-7 text-brand" />
           </div>
           <p className="font-bold text-slate-700">Geen boekingen gevonden</p>
           <p className="text-sm text-slate-400 mt-1">
-            {filter === 'all'
-              ? 'U heeft nog geen boekingen ontvangen.'
-              : 'Geen boekingen met dit filter.'}
+            {filter === 'all' ? 'U heeft nog geen boekingen ontvangen.' : 'Geen boekingen met dit filter.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {(filter === 'all' ? otherBookings : bookings as any[]).map((booking: any) => {
-            const linkSent  = sentLinks.has(booking.id);
-            const isSending = sendPaymentLink.isPending && sendPaymentLink.variables?.id === booking.id;
-            const n         = nights(booking.checkIn, booking.checkOut);
+        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-3 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wide">
+            <div>Gast</div>
+            <div>Kamer</div>
+            <div>Check-in</div>
+            <div>Check-out</div>
+            <div>Gasten</div>
+            <div>Status</div>
+            <div>Totaal</div>
+            <div>Acties</div>
+          </div>
 
+          {/* Pending bookings - actionable rows first */}
+          {filter === 'all' && allBookings.filter(b => b.status === 'PENDING').map((booking: any) => (
+            <div key={booking.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-4 border-b border-slate-50 hover:bg-brand-light/10 transition-colors items-center bg-amber-50/30">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                  {booking.guest.firstName[0]}{booking.guest.lastName[0]}
+                </div>
+                <span className="font-semibold text-sm text-slate-900 truncate">{booking.guest.firstName} {booking.guest.lastName}</span>
+              </div>
+              <div className="text-sm text-slate-600 truncate">{booking.room?.name}</div>
+              <div className="text-sm text-slate-600">{fmt(booking.checkIn)}</div>
+              <div className="text-sm text-slate-600">{fmt(booking.checkOut)}</div>
+              <div className="text-sm text-slate-600">{booking.numGuests}</div>
+              <div><BookingStatusBadge status={booking.status} /></div>
+              <div className="font-bold text-sm text-slate-900">€{Number(booking.totalPrice).toFixed(0)}</div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => updateStatus.mutate({ id: booking.id, status: 'CONFIRMED' })}
+                  disabled={updateStatus.isPending}
+                  title="Accepteren"
+                  className="w-7 h-7 bg-brand hover:bg-brand-600 text-white rounded-lg flex items-center justify-center disabled:opacity-60 transition-colors"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => updateStatus.mutate({ id: booking.id, status: 'REJECTED' })}
+                  disabled={updateStatus.isPending}
+                  title="Weigeren"
+                  className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center disabled:opacity-60 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Regular rows */}
+          {(filter === 'all' ? allBookings.filter(b => b.status !== 'PENDING') : allBookings).map((booking: any) => {
+            const linkSent = sentLinks.has(booking.id);
+            const isSending = sendPaymentLink.isPending && sendPaymentLink.variables?.id === booking.id;
             return (
-              <div
-                key={booking.id}
-                className="bg-white rounded-2xl hover:shadow-sm transition-shadow overflow-hidden"
-              >
-                <div className="flex items-start gap-4 p-5">
-                  {/* Avatar */}
-                  <div className="w-11 h-11 rounded-2xl bg-brand flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              <div key={booking.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-4 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors items-center">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
                     {booking.guest.firstName[0]}{booking.guest.lastName[0]}
                   </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                      <span className="font-bold text-slate-900">
-                        {booking.guest.firstName} {booking.guest.lastName}
-                      </span>
-                      <BookingStatusBadge status={booking.status} />
-                    </div>
-                    <p className="text-sm text-slate-400 flex items-center gap-1.5">
-                      <BedDouble className="w-3.5 h-3.5 flex-shrink-0" />
-                      {booking.room.property.name} — {booking.room.name}
-                    </p>
-                    <div className="flex items-center gap-3 mt-2 text-sm text-slate-500">
-                      <span className="flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 text-slate-300" />
-                        {fmt(booking.checkIn)} → {fmt(booking.checkOut)}
-                      </span>
-                      <span className="text-slate-200">·</span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-slate-300" />
-                        {booking.numGuests}
-                      </span>
-                      <span className="text-slate-200">·</span>
-                      <span className="font-bold text-slate-800">€{Number(booking.totalPrice).toFixed(0)}</span>
-                    </div>
-                    {booking.guestMessage && (
-                      <p className="text-sm text-slate-400 mt-1.5 italic">"{booking.guestMessage}"</p>
-                    )}
-                  </div>
-
-                  {/* Acties */}
-                  <div className="flex flex-col gap-2 shrink-0 items-end">
-                    {booking.status === 'CONFIRMED' && (
-                      <>
-                        {linkSent ? (
-                          <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 text-xs font-semibold px-3 py-1.5 rounded-xl">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Link verstuurd
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => sendPaymentLink.mutate({ id: booking.id, method: 'ideal' })}
-                            disabled={isSending}
-                            className="flex items-center gap-1.5 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors"
-                          >
-                            {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
-                            Betaallink sturen
-                          </button>
-                        )}
-                        <button
-                          onClick={() => updateStatus.mutate({ id: booking.id, status: 'CANCELLED' })}
-                          className="text-xs text-slate-400 hover:text-red-500 transition-colors"
-                        >
-                          Annuleren
-                        </button>
-                      </>
-                    )}
-                    {booking.status === 'PAYMENT_PENDING' && (
+                  <span className="font-semibold text-sm text-slate-900 truncate">{booking.guest.firstName} {booking.guest.lastName}</span>
+                </div>
+                <div className="text-sm text-slate-600 truncate">{booking.room?.name}</div>
+                <div className="text-sm text-slate-600">{fmt(booking.checkIn)}</div>
+                <div className="text-sm text-slate-600">{fmt(booking.checkOut)}</div>
+                <div className="text-sm text-slate-600">{booking.numGuests}</div>
+                <div><BookingStatusBadge status={booking.status} /></div>
+                <div className="font-bold text-sm text-slate-900">€{Number(booking.totalPrice).toFixed(0)}</div>
+                <div>
+                  {booking.status === 'CONFIRMED' && (
+                    linkSent ? (
+                      <span className="text-xs font-semibold text-emerald-600">✓ Verstuurd</span>
+                    ) : (
                       <button
-                        onClick={() => updateStatus.mutate({ id: booking.id, status: 'CANCELLED' })}
-                        className="text-xs text-slate-400 hover:text-red-500 transition-colors"
+                        onClick={() => sendPaymentLink.mutate({ id: booking.id, method: 'ideal' })}
+                        disabled={isSending}
+                        className="text-xs font-bold text-brand hover:underline disabled:opacity-60"
                       >
-                        Annuleren
+                        {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Betaallink'}
                       </button>
-                    )}
-                  </div>
+                    )
+                  )}
+                  {booking.status !== 'CONFIRMED' && (
+                    <span className="text-xs font-bold text-brand cursor-pointer hover:underline">Details</span>
+                  )}
                 </div>
               </div>
             );
