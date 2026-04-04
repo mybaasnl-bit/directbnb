@@ -183,7 +183,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden md:flex shrink-0 min-h-screen">
+      <div className="hidden md:flex shrink-0 h-screen sticky top-0">
         {sidebarContent}
       </div>
 
