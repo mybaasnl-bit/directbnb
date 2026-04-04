@@ -1,250 +1,221 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
-  CalendarCheck,
-  TrendingUp,
+  FileText,
   Users,
+  TrendingUp,
+  Star,
   AlertCircle,
-  Plus,
-  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
   Check,
   X,
-  BedDouble,
-  CalendarDays,
-  Sparkles,
   Clock,
 } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isSameDay, addMonths, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
+import { useState } from 'react';
 
-// ── Skeleton ────────────────────────────────────────────────────────────────
+// ── Skeleton ─────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
     <div className="space-y-6">
+      <div>
+        <div className="h-8 w-48 bg-slate-100 rounded-xl animate-pulse mb-2" />
+        <div className="h-4 w-72 bg-slate-100 rounded-lg animate-pulse" />
+      </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-36 bg-brand-light/60 rounded-3xl animate-pulse" />
-        ))}
+        {[1, 2, 3, 4].map((i) => <div key={i} className="h-36 bg-white rounded-2xl border border-slate-100 animate-pulse" />)}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 h-80 bg-white rounded-3xl animate-pulse" />
-        <div className="h-80 bg-brand-light/60 rounded-3xl animate-pulse" />
-      </div>
-    </div>
-  );
-}
-
-// ── Onboarding banner ────────────────────────────────────────────────────────
-function OnboardingBanner({ locale }: { locale: string }) {
-  const steps = [
-    { label: 'Account aangemaakt', done: true },
-    { label: 'Accommodatie toevoegen', done: false },
-    { label: 'Eerste kamer instellen', done: false },
-    { label: 'Klaar voor boekingen!', done: false },
-  ];
-
-  return (
-    <div className="bg-brand rounded-3xl p-7 text-white">
-      <div className="flex items-start gap-5">
-        <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-7 h-7 text-white" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-xl font-bold">Welkom bij DirectBnB! 🎉</h2>
-          <p className="text-white/70 mt-1 text-sm">Volg deze stappen om uw B&B klaar te zetten voor gasten.</p>
-
-          <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {steps.map((step, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                  step.done
-                    ? 'bg-white/20 text-white'
-                    : 'bg-white/10 text-white/60'
-                }`}
-              >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
-                  step.done ? 'bg-white text-brand' : 'bg-white/20 text-white/60'
-                }`}>
-                  {step.done ? '✓' : i + 1}
-                </span>
-                <span className="leading-tight text-xs">{step.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5">
-            <Link
-              href={`/${locale}/properties/new`}
-              className="inline-flex items-center gap-2 bg-white text-brand text-sm font-bold px-5 py-3 rounded-xl hover:bg-white/90 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Voeg uw eerste accommodatie toe
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
+      <div className="h-28 bg-white rounded-2xl border border-slate-100 animate-pulse" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-96 bg-white rounded-2xl border border-slate-100 animate-pulse" />
+        <div className="h-96 bg-white rounded-2xl border border-slate-100 animate-pulse" />
       </div>
     </div>
   );
 }
 
-// ── Stat card ────────────────────────────────────────────────────────────────
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent = false,
-  sublabel,
-}: {
+// ── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ label, value, sublabel, icon: Icon, trend }: {
   label: string;
   value: string | number;
-  icon: React.ElementType;
-  accent?: boolean;
   sublabel?: string;
+  icon: React.ElementType;
+  trend?: { value: string; positive: boolean };
 }) {
   return (
-    <div className={`rounded-3xl p-6 flex flex-col gap-4 ${accent ? 'bg-brand' : 'bg-brand-light'}`}>
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${accent ? 'bg-white/20' : 'bg-brand'}`}>
-        <Icon className={`w-6 h-6 ${accent ? 'text-white' : 'text-white'}`} />
+    <div className="bg-white rounded-2xl border border-slate-100 p-5">
+      <div className="flex items-start justify-between mb-4">
+        <p className="text-sm text-slate-500">{label}</p>
+        <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-white" />
+        </div>
       </div>
-      <div>
-        <p className={`text-3xl font-bold ${accent ? 'text-white' : 'text-slate-900'}`}>{value}</p>
-        <p className={`text-sm font-semibold mt-1 ${accent ? 'text-white/80' : 'text-slate-600'}`}>{label}</p>
-        {sublabel && (
-          <p className={`text-xs mt-0.5 ${accent ? 'text-white/60' : 'text-slate-400'}`}>{sublabel}</p>
+      <div className="flex items-end gap-2">
+        <p className="text-3xl font-bold text-slate-900">{value}</p>
+        {trend && (
+          <span className={`flex items-center gap-0.5 text-xs font-semibold mb-1 ${trend.positive ? 'text-emerald-600' : 'text-red-500'}`}>
+            <TrendingUp className="w-3 h-3" />
+            {trend.value}
+          </span>
         )}
       </div>
+      {sublabel && <p className="text-xs text-slate-400 mt-1">{sublabel}</p>}
     </div>
   );
 }
 
-// ── Upcoming check-in row ────────────────────────────────────────────────────
-function UpcomingRow({ booking }: { booking: any }) {
-  const checkIn  = new Date(booking.checkIn);
-  const checkOut = new Date(booking.checkOut);
-  const nights   = Math.round((checkOut.getTime() - checkIn.getTime()) / 86_400_000);
+// ── Mini Calendar ─────────────────────────────────────────────────────────────
+function MiniCalendar({ bookedDates }: { bookedDates: Date[] }) {
+  const [current, setCurrent] = useState(new Date());
+  const monthStart = startOfMonth(current);
+  const monthEnd = endOfMonth(current);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const startDow = monthStart.getDay(); // 0=Sun
+  const blanks = Array(startDow).fill(null);
 
   return (
-    <div className="flex items-center gap-4 py-4 border-b border-slate-50 last:border-0">
-      {/* Datum blok */}
-      <div className="w-12 h-12 bg-brand-light rounded-2xl flex flex-col items-center justify-center flex-shrink-0">
-        <span className="text-[10px] font-bold text-brand uppercase leading-none">
-          {format(checkIn, 'MMM', { locale: nl })}
-        </span>
-        <span className="text-lg font-bold text-brand leading-none mt-0.5">
-          {format(checkIn, 'd')}
-        </span>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-slate-900">
+          {format(current, 'MMMM yyyy', { locale: nl })}
+        </h3>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setCurrent(subMonths(current, 1))} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button onClick={() => setCurrent(addMonths(current, 1))} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Info */}
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'].map((d) => (
+          <div key={d} className="text-center text-xs font-semibold text-slate-400 py-1">{d}</div>
+        ))}
+      </div>
+
+      {/* Days */}
+      <div className="grid grid-cols-7 gap-1">
+        {blanks.map((_, i) => <div key={`b${i}`} />)}
+        {days.map((day) => {
+          const isBooked = bookedDates.some((d) => isSameDay(d, day));
+          const today = isToday(day);
+          return (
+            <div
+              key={day.toISOString()}
+              className={`aspect-square flex items-center justify-center rounded-xl text-sm font-semibold transition-colors
+                ${today ? 'bg-brand text-white' : ''}
+                ${isBooked && !today ? 'bg-brand-light text-brand' : ''}
+                ${!today && !isBooked ? 'text-slate-600 hover:bg-slate-50' : ''}
+              `}
+            >
+              {format(day, 'd')}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-50">
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-brand" />
+          <span className="text-xs text-slate-500">Vandaag</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm bg-brand-light" />
+          <span className="text-xs text-slate-500">Geboekt</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Aankomende boeking rij ───────────────────────────────────────────────────
+function BookingRow({ booking }: { booking: any }) {
+  const checkIn = new Date(booking.checkIn);
+  const checkOut = new Date(booking.checkOut);
+  const initials = `${booking.guest.firstName?.[0] ?? ''}${booking.guest.lastName?.[0] ?? ''}`;
+
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-slate-50 last:border-0">
+      <div className="w-9 h-9 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+        {initials}
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="font-bold text-slate-900 text-sm">
+        <p className="text-sm font-bold text-slate-900 truncate">
           {booking.guest.firstName} {booking.guest.lastName}
         </p>
-        <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-          <BedDouble className="w-3 h-3" />
-          {booking.room?.property?.name} — {booking.room?.name}
-        </p>
+        <div className="flex items-center gap-1 mt-0.5">
+          <MapPin className="w-3 h-3 text-slate-400 flex-shrink-0" />
+          <p className="text-xs text-slate-400 truncate">{booking.room?.name ?? '—'}</p>
+        </div>
       </div>
-
-      {/* Meta */}
       <div className="text-right shrink-0">
-        <p className="font-bold text-slate-900 text-sm">€{Number(booking.totalPrice).toFixed(0)}</p>
-        <p className="text-xs text-slate-400">{nights} nacht{nights !== 1 ? 'en' : ''}</p>
+        <p className="text-xs font-semibold text-slate-700">
+          {format(checkIn, 'd MMM', { locale: nl })} – {format(checkOut, 'd MMM', { locale: nl })}
+        </p>
+        <span className="inline-block mt-0.5 text-[10px] font-bold bg-brand-light text-brand px-2 py-0.5 rounded-full">
+          Aankomend
+        </span>
       </div>
     </div>
   );
 }
 
-// ── Pending request card ─────────────────────────────────────────────────────
+// ── Pending request card ──────────────────────────────────────────────────────
 function PendingCard({ booking, onConfirm, onReject, isPending }: {
-  booking: any;
-  onConfirm: () => void;
-  onReject: () => void;
-  isPending: boolean;
+  booking: any; onConfirm: () => void; onReject: () => void; isPending: boolean;
 }) {
-  const checkIn  = new Date(booking.checkIn);
+  const checkIn = new Date(booking.checkIn);
   const checkOut = new Date(booking.checkOut);
-  const nights   = Math.round((checkOut.getTime() - checkIn.getTime()) / 86_400_000);
+  const nights = Math.round((checkOut.getTime() - checkIn.getTime()) / 86_400_000);
+  const initials = `${booking.guest.firstName?.[0] ?? ''}${booking.guest.lastName?.[0] ?? ''}`;
 
   return (
-    <div className="bg-brand-light rounded-2xl p-5">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-full bg-brand text-white font-bold flex items-center justify-center text-sm flex-shrink-0">
-            {booking.guest.firstName[0]}{booking.guest.lastName[0]}
-          </div>
-          <div>
-            <p className="font-bold text-slate-900 text-sm">
-              {booking.guest.firstName} {booking.guest.lastName}
-            </p>
-            <p className="text-xs text-slate-500">{booking.room?.property?.name} — {booking.room?.name}</p>
-          </div>
+    <div className="bg-brand-light rounded-2xl p-4">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-brand text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
+          {initials}
         </div>
-        <p className="text-lg font-bold text-slate-900 shrink-0">
-          €{Number(booking.totalPrice).toFixed(0)}
-        </p>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-900 text-sm">{booking.guest.firstName} {booking.guest.lastName}</p>
+          <p className="text-xs text-slate-500 truncate">{booking.room?.name}</p>
+        </div>
+        <p className="font-bold text-slate-900 text-sm shrink-0">€{Number(booking.totalPrice).toFixed(0)}</p>
       </div>
-
-      {/* Details */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="bg-white rounded-xl px-3 py-2">
-          <p className="text-[10px] text-slate-400 font-semibold uppercase">Inchecken</p>
-          <p className="text-xs font-bold text-slate-800 mt-0.5">
-            {format(checkIn, 'd MMM', { locale: nl })}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl px-3 py-2">
-          <p className="text-[10px] text-slate-400 font-semibold uppercase">Uitchecken</p>
-          <p className="text-xs font-bold text-slate-800 mt-0.5">
-            {format(checkOut, 'd MMM', { locale: nl })}
-          </p>
-        </div>
-        <div className="bg-white rounded-xl px-3 py-2">
-          <p className="text-[10px] text-slate-400 font-semibold uppercase">Duur</p>
-          <p className="text-xs font-bold text-slate-800 mt-0.5">
-            {nights}n
-          </p>
-        </div>
+      <div className="flex items-center gap-2 text-xs text-slate-500 mb-3">
+        <span>{format(checkIn, 'd MMM', { locale: nl })} – {format(checkOut, 'd MMM', { locale: nl })}</span>
+        <span className="w-1 h-1 rounded-full bg-slate-300" />
+        <span>{nights} nacht{nights !== 1 ? 'en' : ''}</span>
       </div>
-
-      {/* Knoppen */}
       <div className="grid grid-cols-2 gap-2">
-        <button
-          onClick={onConfirm}
-          disabled={isPending}
-          className="flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition-colors"
-        >
-          <Check className="w-4 h-4" /> Accepteren
+        <button onClick={onConfirm} disabled={isPending}
+          className="flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold py-2 rounded-xl text-xs transition-colors">
+          <Check className="w-3.5 h-3.5" /> Accepteren
         </button>
-        <button
-          onClick={onReject}
-          disabled={isPending}
-          className="flex items-center justify-center gap-2 bg-white border-2 border-transparent hover:border-red-200 hover:text-red-600 disabled:opacity-60 text-slate-500 font-bold py-3 rounded-xl text-sm transition-colors"
-        >
-          <X className="w-4 h-4" /> Weigeren
+        <button onClick={onReject} disabled={isPending}
+          className="flex items-center justify-center gap-1.5 bg-white hover:bg-red-50 hover:text-red-600 disabled:opacity-60 text-slate-500 font-bold py-2 rounded-xl text-xs transition-colors">
+          <X className="w-3.5 h-3.5" /> Weigeren
         </button>
       </div>
-
-      {booking.guestMessage && (
-        <div className="mt-3 bg-white rounded-xl px-4 py-3">
-          <p className="text-[10px] text-slate-400 font-semibold uppercase mb-1">Bericht van gast</p>
-          <p className="text-sm text-slate-600 italic">"{booking.guestMessage}"</p>
-        </div>
-      )}
     </div>
   );
 }
 
-// ── Hoofdpagina ──────────────────────────────────────────────────────────────
+// ── Hoofdpagina ───────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { locale } = useParams<{ locale: string }>();
+  const router = useRouter();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -272,113 +243,118 @@ export default function DashboardPage() {
   if (isLoading) return <Skeleton />;
 
   const stats = data?.stats;
-  const showOnboarding = !isLoading && (stats?.totalProperties ?? 0) === 0;
   const upcoming: any[] = data?.upcomingBookings ?? [];
+
+  // Collect booked dates for the mini-calendar
+  const bookedDates: Date[] = upcoming.flatMap((b: any) => {
+    const checkIn = new Date(b.checkIn);
+    const checkOut = new Date(b.checkOut);
+    return eachDayOfInterval({ start: checkIn, end: checkOut });
+  });
+
+  const occupancyPct = stats?.totalBookings > 0
+    ? Math.round((stats.confirmedBookings / Math.max(stats.totalBookings, 1)) * 100)
+    : 0;
 
   return (
     <div className="space-y-6 max-w-6xl">
 
-      {/* Onboarding */}
-      {showOnboarding && <OnboardingBanner locale={locale} />}
+      {/* Page title */}
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+        <p className="text-slate-400 mt-1">Welkom terug! Hier is een overzicht van je accommodatie.</p>
+      </div>
 
-      {/* ── Statistieken ── */}
+      {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Opbrengst deze maand"
-          value={`€${(stats?.revenueThisMonth ?? 0).toFixed(0)}`}
-          icon={TrendingUp}
-          accent
-          sublabel="excl. kosten"
+          label="Totale Boekingen"
+          value={stats?.totalBookings ?? 0}
+          sublabel="Deze maand"
+          icon={FileText}
+          trend={{ value: '+12%', positive: true }}
         />
         <StatCard
-          label="Boekingen deze maand"
-          value={stats?.confirmedBookings ?? 0}
-          icon={CalendarCheck}
-          sublabel="bevestigd"
-        />
-        <StatCard
-          label="Gasten dit jaar"
-          value={stats?.totalGuests ?? 0}
+          label="Bezettingsgraad"
+          value={`${occupancyPct}%`}
+          sublabel="Komende 30 dagen"
           icon={Users}
-          sublabel="unieke gasten"
+          trend={{ value: '+5%', positive: true }}
         />
         <StatCard
-          label="Open aanvragen"
-          value={pendingBookings.length}
-          icon={Clock}
-          sublabel={pendingBookings.length === 1 ? 'wacht op actie' : 'wachten op actie'}
+          label="Totale Inkomsten"
+          value={`€${(stats?.revenueThisMonth ?? 0).toLocaleString('nl-NL', { minimumFractionDigits: 0 })}`}
+          sublabel="Deze maand"
+          icon={TrendingUp}
+          trend={{ value: '+18%', positive: true }}
+        />
+        <StatCard
+          label="Gasten Score"
+          value="4.8"
+          sublabel="Gemiddelde beoordeling"
+          icon={Star}
+          trend={{ value: '+0.2', positive: true }}
         />
       </div>
 
-      {/* ── Hoofdcontent: Agenda + Aankomende gast ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ── Vereiste Acties banner ── */}
+      {pendingBookings.length > 0 && (
+        <div className="bg-brand-light rounded-2xl p-5 flex items-start gap-4">
+          <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-slate-900">Vereiste Acties</p>
+            <p className="text-sm text-slate-600 mt-0.5">
+              Je hebt {pendingBookings.length} nieuwe boekingsverzoek{pendingBookings.length !== 1 ? 'en' : ''} die wachten op bevestiging.
+              Reageer binnen 24 uur om je antwoordsnelheid hoog te houden.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push(`/${locale}/bookings`)}
+            className="flex-shrink-0 bg-brand hover:bg-brand-600 text-white font-bold text-sm px-4 py-2.5 rounded-xl transition-colors flex items-center gap-1.5"
+          >
+            <Clock className="w-4 h-4" />
+            Bekijk Verzoeken
+          </button>
+        </div>
+      )}
 
-        {/* Aankomende inchecks */}
-        <div className="lg:col-span-2 bg-white rounded-3xl overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-slate-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-light rounded-2xl flex items-center justify-center">
-                <CalendarDays className="w-5 h-5 text-brand" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900">Aankomende inchecks</h2>
-                <p className="text-xs text-slate-400">De eerstvolgende boekingen</p>
-              </div>
-            </div>
-            <Link
-              href={`/${locale}/bookings`}
-              className="text-sm font-semibold text-brand hover:text-brand-600 flex items-center gap-1"
-            >
-              Alles <ArrowRight className="w-4 h-4" />
+      {/* ── Calendar + Aankomende boekingen ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Mini calendar */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6">
+          <MiniCalendar bookedDates={bookedDates} />
+        </div>
+
+        {/* Aankomende boekingen */}
+        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
+            <h3 className="font-bold text-slate-900">Aankomende Boekingen</h3>
+            <Link href={`/${locale}/bookings`} className="text-xs font-semibold text-brand hover:underline">
+              Alles bekijken →
             </Link>
           </div>
 
           <div className="px-6">
             {upcoming.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="w-14 h-14 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <CalendarDays className="w-7 h-7 text-brand" />
-                </div>
-                <p className="font-bold text-slate-700">Geen aankomende boekingen</p>
-                <p className="text-sm text-slate-400 mt-1">Zodra gasten boeken ziet u dat hier.</p>
+              <div className="py-12 text-center">
+                <p className="text-sm font-semibold text-slate-500">Geen aankomende boekingen</p>
+                <p className="text-xs text-slate-400 mt-1">Zodra gasten boeken ziet u dat hier.</p>
               </div>
             ) : (
-              upcoming.slice(0, 6).map((b: any) => (
-                <UpcomingRow key={b.id} booking={b} />
-              ))
+              upcoming.slice(0, 5).map((b: any) => <BookingRow key={b.id} booking={b} />)
             )}
           </div>
-        </div>
 
-        {/* Vereiste acties / open aanvragen */}
-        <div className="bg-brand-light rounded-3xl overflow-hidden">
-          <div className="px-6 py-5 border-b border-brand/10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand rounded-2xl flex items-center justify-center">
-                <AlertCircle className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="font-bold text-slate-900">Vereiste acties</h2>
-                <p className="text-xs text-slate-500">
-                  {pendingBookings.length === 0
-                    ? 'Alles bijgewerkt'
-                    : `${pendingBookings.length} openstaande aanvra${pendingBookings.length === 1 ? 'ag' : 'gen'}`}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
-            {pendingBookings.length === 0 ? (
-              <div className="py-10 text-center">
-                <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Check className="w-6 h-6 text-brand" />
-                </div>
-                <p className="text-sm font-bold text-slate-700">Niets te doen!</p>
-                <p className="text-xs text-slate-400 mt-1">Geen openstaande aanvragen.</p>
-              </div>
-            ) : (
-              pendingBookings.map((b: any) => (
+          {/* Openstaande aanvragen onderaan */}
+          {pendingBookings.length > 0 && (
+            <div className="px-6 pb-6 space-y-3 mt-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                Openstaande aanvragen ({pendingBookings.length})
+              </p>
+              {pendingBookings.slice(0, 2).map((b: any) => (
                 <PendingCard
                   key={b.id}
                   booking={b}
@@ -386,9 +362,9 @@ export default function DashboardPage() {
                   onReject={() => updateStatus.mutate({ id: b.id, status: 'REJECTED' })}
                   isPending={updateStatus.isPending}
                 />
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
