@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
   LayoutDashboard,
-  Building2,
+  BedDouble,
   CalendarDays,
   BookOpen,
   Users,
@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Euro,
   Banknote,
+  Flame,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -47,10 +48,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const navItems = [
     { href: `/${locale}/dashboard`,        label: 'Dashboard',       icon: LayoutDashboard },
     { href: `/${locale}/bookings`,         label: 'Boekingen',       icon: BookOpen, badge: pendingCount },
-    { href: `/${locale}/calendar`,         label: 'Kalender',        icon: CalendarDays },
-    { href: `/${locale}/properties`,       label: 'Accommodaties',   icon: Building2 },
+    { href: `/${locale}/calendar`,         label: 'Agenda',          icon: CalendarDays },
+    { href: `/${locale}/properties`,       label: 'Kamers',          icon: BedDouble },
     { href: `/${locale}/guests`,           label: 'Gasten',          icon: Users },
-    ...(!isAdmin ? [{ href: `/${locale}/email-templates`, label: 'E-mails', icon: Mail }] : []),
+    ...(!isAdmin ? [{ href: `/${locale}/email-templates`, label: 'Emails', icon: Mail }] : []),
     { href: `/${locale}/betalingen`,       label: 'Uitbetalingen',   icon: Banknote },
   ];
 
@@ -69,10 +70,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     <aside className="w-[260px] h-full bg-white flex flex-col border-r border-slate-100">
 
       {/* Logo */}
-      <div className="px-6 pt-7 pb-6">
+      <div className="px-6 pt-7 pb-5">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-sm">
-            <span className="text-white font-bold text-sm">D</span>
+            <Flame className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold text-slate-900 tracking-tight">
             Direct<span className="text-brand">BnB</span>
@@ -85,11 +86,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         )}
       </div>
 
-      {/* Sectielabel */}
-      <div className="px-6 pb-2">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menu</p>
-      </div>
-
       {/* Main nav */}
       <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, badge }: any) => {
@@ -100,23 +96,21 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               href={href}
               onClick={onClose}
               className={cn(
-                'group flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold transition-all duration-150',
+                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150',
                 isActive
-                  ? 'bg-brand-light text-brand'
+                  ? 'bg-brand text-white'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50',
               )}
             >
-              <span className={cn(
-                'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
-                isActive ? 'bg-brand' : 'bg-slate-100 group-hover:bg-slate-200',
-              )}>
-                <Icon className={cn('w-4 h-4', isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600')} />
-              </span>
+              <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600')} />
 
               <span className="flex-1">{label}</span>
 
               {badge > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand text-white text-[10px] font-bold">
+                <span className={cn(
+                  'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold',
+                  isActive ? 'bg-white/20 text-white' : 'bg-brand text-white'
+                )}>
                   {badge > 9 ? '9+' : badge}
                 </span>
               )}
@@ -127,7 +121,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         {/* Admin sectie */}
         {isAdmin && (
           <>
-            <div className="pt-5 pb-2 px-3">
+            <div className="pt-5 pb-2 px-1">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Admin</p>
             </div>
             {adminItems.map(({ href, label, icon: Icon }) => {
@@ -138,18 +132,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   href={href}
                   onClick={onClose}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-2xl text-sm font-semibold transition-all',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all',
                     isActive
-                      ? 'bg-brand-light text-brand'
+                      ? 'bg-brand text-white'
                       : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50',
                   )}
                 >
-                  <span className={cn(
-                    'w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0',
-                    isActive ? 'bg-brand' : 'bg-slate-100',
-                  )}>
-                    <Icon className={cn('w-3.5 h-3.5', isActive ? 'text-white' : 'text-slate-400')} />
-                  </span>
+                  <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400')} />
                   {label}
                 </Link>
               );
@@ -159,7 +148,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       </nav>
 
       {/* Bottom */}
-      <div className="px-3 pb-6 pt-3 space-y-0.5 border-t border-slate-50">
+      <div className="px-3 pb-6 pt-3 space-y-1 border-t border-slate-100">
         {bottomItems.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href || pathname.startsWith(href + '/');
           return (
@@ -168,18 +157,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               href={href}
               onClick={onClose}
               className={cn(
-                'flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold transition-all',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all',
                 isActive
-                  ? 'bg-brand-light text-brand'
+                  ? 'bg-brand text-white'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50',
               )}
             >
-              <span className={cn(
-                'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0',
-                isActive ? 'bg-brand' : 'bg-slate-100',
-              )}>
-                <Icon className={cn('w-4 h-4', isActive ? 'text-white' : 'text-slate-400')} />
-              </span>
+              <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400')} />
               {label}
             </Link>
           );
@@ -187,11 +171,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
         <button
           onClick={() => { logout(); onClose?.(); }}
-          className="flex items-center gap-3 px-3 py-3 w-full rounded-2xl text-sm font-semibold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+          className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-semibold text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
         >
-          <span className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-            <LogOut className="w-4 h-4 text-slate-400" />
-          </span>
+          <LogOut className="w-5 h-5 flex-shrink-0 text-slate-400" />
           Uitloggen
         </button>
       </div>
@@ -201,7 +183,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden md:flex shrink-0 min-h-screen">
+      <div className="hidden md:flex shrink-0 h-screen sticky top-0">
         {sidebarContent}
       </div>
 

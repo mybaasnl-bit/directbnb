@@ -13,11 +13,11 @@ import {
   Coffee, Wind, Thermometer, UtensilsCrossed, WashingMachine,
   Tv, Waves, Flower2, Sun, Bike, ArrowUpDown, Flame,
   Monitor, Lock, Droplets, Zap, Baby, Star, BedDouble,
-  SquareStack, Shield, CheckCircle2, X, CalendarDays,
+  SquareStack, CheckCircle2, X, CalendarDays,
   MessageSquare, ChevronDown, ChevronUp, Minus, Plus,
   ArrowRight, Camera, Clock, Cigarette, PawPrint,
+  Share2, Heart, ChevronDown as ChevronDownIcon, User,
 } from 'lucide-react';
-import { LanguageSwitcher } from '@/components/layout/language-switcher';
 import type { Property, Room } from '@/types';
 
 // ─── Amenity configuration ───────────────────────────────────────────────────
@@ -280,34 +280,46 @@ function MobileHeroGallery({
 
       {/* ── Desktop hero grid (hidden on mobile) ── */}
       <div className="hidden lg:block max-w-6xl mx-auto px-4 pt-6">
-        <div
-          className="grid gap-2 rounded-2xl overflow-hidden cursor-pointer"
-          style={{
-            gridTemplateColumns: photos.length >= 3 ? '2fr 1fr' : '1fr',
-            gridTemplateRows: 'auto',
-          }}
-          onClick={() => setShowAll(true)}
-        >
-          <div className="relative" style={{ aspectRatio: '4/3' }}>
-            <Image src={photos[0].url} alt={name} fill className="object-cover" priority sizes="(min-width: 1024px) 66vw, 100vw" />
-          </div>
-          {photos.length >= 3 && (
-            <div className="grid grid-rows-2 gap-2">
-              {photos.slice(1, 3).map((p, i) => (
-                <div key={p.id} className="relative">
-                  <Image src={p.url} alt={`${name} ${i + 2}`} fill className="object-cover" sizes="33vw" />
-                  {i === 1 && photos.length > 3 && (
+        <div className="relative">
+          <div
+            className="grid gap-2 rounded-2xl overflow-hidden cursor-pointer"
+            style={{ gridTemplateColumns: '3fr 2fr', height: 420 }}
+            onClick={() => setShowAll(true)}
+          >
+            {/* Main large photo */}
+            <div className="relative">
+              <Image src={photos[0]?.url ?? ''} alt={name} fill className="object-cover" priority sizes="60vw" />
+            </div>
+            {/* Right: 2x2 grid */}
+            <div className="grid grid-cols-2 grid-rows-2 gap-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="relative overflow-hidden">
+                  {photos[i] ? (
+                    <Image src={photos[i].url} alt={`${name} ${i + 1}`} fill className="object-cover" sizes="20vw" />
+                  ) : (
+                    <div className="w-full h-full bg-slate-100" />
+                  )}
+                  {/* Overlay on last cell */}
+                  {i === 4 && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                       <span className="text-white font-semibold text-sm flex items-center gap-1.5">
                         <Camera className="w-4 h-4" />
-                        +{photos.length - 3} {isNl ? "foto's" : 'photos'}
+                        {isNl ? "Alle foto's" : 'All photos'}
                       </span>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-          )}
+          </div>
+          {/* "Alle foto's bekijken" button overlay */}
+          <button
+            onClick={() => setShowAll(true)}
+            className="absolute bottom-4 right-4 bg-white text-slate-800 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 shadow-sm flex items-center gap-2 transition-colors"
+          >
+            <Camera className="w-4 h-4" />
+            {isNl ? "Alle foto's bekijken" : 'View all photos'}
+          </button>
         </div>
       </div>
 
@@ -634,76 +646,115 @@ function BookingWidget({
   const todayStr = new Date().toISOString().split('T')[0];
   const isNl = locale === 'nl';
 
+  const [guestsOpen, setGuestsOpen] = useState(false);
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 space-y-4">
-      {selectedRoom ? (
-        <div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-slate-900">€{fmtPrice(selectedRoom.pricePerNight)}</span>
-            <span className="text-slate-500 text-sm">{t('perNight')}</span>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+      {/* Price + rating header */}
+      <div className="p-5 border-b border-slate-100">
+        <div className="flex items-baseline gap-1 mb-1">
+          <span className="text-2xl font-extrabold text-slate-900">
+            €{selectedRoom ? fmtPrice(selectedRoom.pricePerNight) : '–'}
+          </span>
+          <span className="text-slate-500 text-sm">{isNl ? 'per nacht' : 'per night'}</span>
+        </div>
+        {selectedRoom && <p className="text-xs text-slate-400">{selectedRoom.name}</p>}
+      </div>
+
+      {/* Date pickers */}
+      <div className="grid grid-cols-2 border-b border-slate-100">
+        <div className="p-4 border-r border-slate-100">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">{isNl ? 'Check-in' : 'Check-in'}</p>
+          <input
+            type="date"
+            value={checkIn}
+            min={todayStr}
+            onChange={e => onCheckIn(e.target.value)}
+            className="w-full text-sm font-semibold text-slate-900 bg-transparent focus:outline-none cursor-pointer"
+          />
+          {!checkIn && <p className="text-sm text-slate-400 -mt-5 pointer-events-none">{isNl ? 'Selecteer datum' : 'Select date'}</p>}
+        </div>
+        <div className="p-4">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">{isNl ? 'Check-out' : 'Check-out'}</p>
+          <input
+            type="date"
+            value={checkOut}
+            min={checkIn || todayStr}
+            onChange={e => onCheckOut(e.target.value)}
+            className="w-full text-sm font-semibold text-slate-900 bg-transparent focus:outline-none cursor-pointer"
+          />
+          {!checkOut && <p className="text-sm text-slate-400 -mt-5 pointer-events-none">{isNl ? 'Selecteer datum' : 'Select date'}</p>}
+        </div>
+      </div>
+
+      {/* Guests */}
+      <div className="border-b border-slate-100">
+        <button
+          type="button"
+          onClick={() => setGuestsOpen(o => !o)}
+          className="w-full p-4 flex items-center justify-between text-left"
+        >
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{isNl ? 'Gasten' : 'Guests'}</p>
+            <p className="text-sm font-semibold text-slate-900 mt-0.5">
+              {numGuests} {numGuests === 1 ? (isNl ? 'gast' : 'guest') : (isNl ? 'gasten' : 'guests')}
+            </p>
           </div>
-          <p className="text-xs text-slate-400 mt-0.5">{selectedRoom.name}</p>
-        </div>
-      ) : (
-        <p className="text-slate-600 font-medium text-sm">{t('selectRoomFirst')}</p>
-      )}
-
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">{t('checkIn')}</label>
-          <input type="date" value={checkIn} min={todayStr} onChange={e => onCheckIn(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">{t('checkOut')}</label>
-          <input type="date" value={checkOut} min={checkIn || todayStr} onChange={e => onCheckOut(e.target.value)}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand" />
-        </div>
+          <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${guestsOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {guestsOpen && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-700">{isNl ? 'Gasten' : 'Guests'}</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => onGuests(Math.max(1, numGuests - 1))}
+                  disabled={numGuests <= 1}
+                  className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center disabled:opacity-30"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-5 text-center font-bold text-slate-900">{numGuests}</span>
+                <button
+                  type="button"
+                  onClick={() => onGuests(Math.min(selectedRoom?.maxGuests ?? 10, numGuests + 1))}
+                  disabled={numGuests >= (selectedRoom?.maxGuests ?? 10)}
+                  className="w-8 h-8 rounded-full border border-brand bg-brand-light flex items-center justify-center disabled:opacity-30"
+                >
+                  <Plus className="w-3.5 h-3.5 text-brand" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1">{t('guests')}</label>
-        <select value={numGuests} onChange={e => onGuests(Number(e.target.value))}
-          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand bg-white">
-          {Array.from({ length: selectedRoom?.maxGuests ?? 4 }, (_, i) => i + 1).map(n => (
-            <option key={n} value={n}>{n} {n === 1 ? t('guest') : t('guestsPlural')}</option>
-          ))}
-        </select>
-      </div>
-
+      {/* Price breakdown */}
       {selectedRoom && nights > 0 && (
-        <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 text-sm">
+        <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 text-sm space-y-1">
           <div className="flex justify-between text-slate-600">
             <span>€{fmtPrice(selectedRoom.pricePerNight)} × {nights} {nights === 1 ? (isNl ? 'nacht' : 'night') : (isNl ? 'nachten' : 'nights')}</span>
-            <span>€{total.toFixed(2)}</span>
+            <span>€{total.toFixed(0)}</span>
           </div>
-          <hr className="border-slate-200" />
-          <div className="flex justify-between font-semibold text-slate-900">
-            <span>{isNl ? 'Totaal' : 'Total'}</span>
-            <span>€{total.toFixed(2)}</span>
+          <div className="flex justify-between font-bold text-slate-900 pt-1 border-t border-slate-200">
+            <span>Totaal</span>
+            <span>€{total.toFixed(0)}</span>
           </div>
         </div>
       )}
 
-      <button
-        onClick={onBook}
-        disabled={!selectedRoom}
-        className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl text-sm transition-colors"
-      >
-        {isNl ? 'Boek nu — gratis aanvragen' : 'Book now — request for free'}
-      </button>
-
-      <div className="space-y-1.5 pt-1">
-        {[
-          isNl ? '0% commissie — betaal de eigenaar direct' : '0% commission — pay the owner directly',
-          isNl ? 'Directe reservering bij de eigenaar' : 'Direct booking with the owner',
-          isNl ? 'Gratis aanvragen, geen verplichtingen' : 'Free to request, no obligations',
-        ].map(msg => (
-          <div key={msg} className="flex items-center gap-2 text-xs text-slate-500">
-            <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
-            <span>{msg}</span>
-          </div>
-        ))}
+      <div className="p-5 space-y-3">
+        <button
+          onClick={onBook}
+          disabled={!selectedRoom}
+          className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl text-base transition-colors"
+        >
+          {isNl ? 'Boek nu' : 'Book now'}
+        </button>
+        <p className="text-center text-xs text-slate-400">
+          {isNl ? 'Je wordt nog niet meteen belast' : 'You won\'t be charged yet'}
+        </p>
       </div>
     </div>
   );
@@ -1276,17 +1327,20 @@ export function PropertyPageClient({ property }: Props) {
     <div className="min-h-screen bg-white">
 
       {/* ── Sticky header ── */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3">
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <span className="text-lg font-bold text-slate-900">
             Direct<span className="text-brand">BnB</span>
           </span>
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-1.5 bg-brand-light text-brand-600 text-xs font-semibold px-3 py-1.5 rounded-full">
-              <Shield className="w-3.5 h-3.5" />
-              {isNl ? 'Boek direct bij de eigenaar' : 'Book direct with the owner'}
-            </div>
-            <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors">
+              <Share2 className="w-4 h-4" />
+              {isNl ? 'Delen' : 'Share'}
+            </button>
+            <button className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors">
+              <Heart className="w-4 h-4" />
+              {isNl ? 'Bewaren' : 'Save'}
+            </button>
           </div>
         </div>
       </header>
@@ -1398,9 +1452,44 @@ export function PropertyPageClient({ property }: Props) {
               </section>
             )}
 
+            {/* ── Amenities (Faciliteiten) — BEFORE rooms ── */}
+            {property.amenities.length > 0 && (
+              <section className="border-b border-slate-100 pb-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4">{isNl ? 'Faciliteiten' : 'Amenities'}</h2>
+                <CollapsibleSection expanded={amenitiesExpanded} maxCollapsedHeight="max-h-48">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {property.amenities.map(key => {
+                      const cfg = AMENITIES[key];
+                      if (!cfg) return null;
+                      const Icon = cfg.icon;
+                      return (
+                        <div key={key} className="flex items-center gap-3 p-3 border border-slate-100 rounded-xl">
+                          <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center shrink-0">
+                            <Icon className="w-4 h-4 text-brand" />
+                          </div>
+                          <span className="text-sm text-slate-700 font-medium">{isNl ? cfg.labelNl : cfg.labelEn}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CollapsibleSection>
+                {property.amenities.length > 6 && (
+                  <button
+                    onClick={() => setAmenitiesExpanded(e => !e)}
+                    className="flex items-center gap-1.5 text-brand text-sm font-semibold mt-4"
+                  >
+                    {amenitiesExpanded
+                      ? (isNl ? 'Minder tonen' : 'Show less')
+                      : (isNl ? `Toon alle ${property.amenities.length} faciliteiten` : `Show all ${property.amenities.length} amenities`)}
+                    {amenitiesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                )}
+              </section>
+            )}
+
             {/* ── Rooms ── */}
             <section className="border-b border-slate-100 pb-6">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">{t('availableRooms')}</h2>
+              <h2 className="text-lg font-bold text-slate-900 mb-4">{isNl ? 'Kies je kamer' : 'Choose your room'}</h2>
 
               {/* Mobile: horizontal scroll cards */}
               <div className="lg:hidden -mx-4 px-4">
@@ -1483,19 +1572,33 @@ export function PropertyPageClient({ property }: Props) {
                         <div className="p-5 flex-1 flex flex-col justify-between gap-3">
                           <div>
                             <div className="flex items-start justify-between gap-4">
-                              <h3 className="font-bold text-slate-900 text-lg">{room.name}</h3>
-                              <div className="text-right shrink-0">
-                                <p className="text-2xl font-extrabold text-slate-900">€{fmtPrice(room.pricePerNight)}</p>
-                                <p className="text-xs text-slate-400">{t('perNight')}</p>
+                              <div>
+                                <h3 className="font-bold text-slate-900 text-lg">{room.name}</h3>
+                                {roomDesc && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{roomDesc}</p>}
+                                <div className="flex flex-wrap gap-3 mt-2">
+                                  <span className="flex items-center gap-1.5 text-xs text-slate-500"><Users className="w-3.5 h-3.5" />{room.maxGuests} {isNl ? 'gasten' : 'guests'}</span>
+                                  {room.beds && <span className="flex items-center gap-1.5 text-xs text-slate-500"><BedDouble className="w-3.5 h-3.5" />{room.beds} {room.beds === 1 ? (isNl ? 'bed' : 'bed') : (isNl ? 'bedden' : 'beds')}</span>}
+                                  {room.sqm && <span className="flex items-center gap-1.5 text-xs text-slate-500"><SquareStack className="w-3.5 h-3.5" />{room.sqm} m²</span>}
+                                  {room.minStay > 1 && <span className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="w-3.5 h-3.5" />{isNl ? `Min. ${room.minStay} nachten` : `Min. ${room.minStay} nights`}</span>}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0 flex flex-col items-end gap-3">
+                                <div>
+                                  <p className="text-2xl font-extrabold text-slate-900">€{fmtPrice(room.pricePerNight)}</p>
+                                  <p className="text-xs text-slate-400">{t('perNight')}</p>
+                                </div>
+                                <button
+                                  onClick={e => { e.stopPropagation(); handleSelectRoom(room); openSheet(1); }}
+                                  className={`px-5 py-2 rounded-xl text-sm font-bold transition-colors ${
+                                    isSelected
+                                      ? 'bg-brand text-white'
+                                      : 'bg-brand hover:bg-brand-600 text-white'
+                                  }`}
+                                >
+                                  {isSelected ? (isNl ? '✓ Geselecteerd' : '✓ Selected') : (isNl ? 'Selecteer' : 'Select')}
+                                </button>
                               </div>
                             </div>
-                            {roomDesc && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{roomDesc}</p>}
-                          </div>
-                          <div className="flex flex-wrap gap-3">
-                            <span className="flex items-center gap-1.5 text-xs text-slate-500"><Users className="w-3.5 h-3.5" />{t('maxGuests', { count: room.maxGuests })}</span>
-                            {room.beds && <span className="flex items-center gap-1.5 text-xs text-slate-500"><BedDouble className="w-3.5 h-3.5" />{room.beds} {room.beds === 1 ? (isNl ? 'bed' : 'bed') : (isNl ? 'bedden' : 'beds')}</span>}
-                            {room.sqm && <span className="flex items-center gap-1.5 text-xs text-slate-500"><SquareStack className="w-3.5 h-3.5" />{room.sqm} m²</span>}
-                            {room.minStay > 1 && <span className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="w-3.5 h-3.5" />{isNl ? `Min. ${room.minStay} nachten` : `Min. ${room.minStay} nights`}</span>}
                           </div>
                         </div>
                       </div>
@@ -1511,41 +1614,6 @@ export function PropertyPageClient({ property }: Props) {
               </div>
             </section>
 
-            {/* ── Amenities ── */}
-            {property.amenities.length > 0 && (
-              <section className="border-b border-slate-100 pb-6">
-                <h2 className="text-lg font-bold text-slate-900 mb-4">{isNl ? 'Faciliteiten' : 'Amenities'}</h2>
-                <CollapsibleSection expanded={amenitiesExpanded} maxCollapsedHeight="max-h-48">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {property.amenities.map(key => {
-                      const cfg = AMENITIES[key];
-                      if (!cfg) return null;
-                      const Icon = cfg.icon;
-                      return (
-                        <div key={key} className="flex items-center gap-3 p-3 border border-slate-100 rounded-xl">
-                          <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center shrink-0">
-                            <Icon className="w-4 h-4 text-brand" />
-                          </div>
-                          <span className="text-sm text-slate-700 font-medium">{isNl ? cfg.labelNl : cfg.labelEn}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CollapsibleSection>
-                {property.amenities.length > 6 && (
-                  <button
-                    onClick={() => setAmenitiesExpanded(e => !e)}
-                    className="flex items-center gap-1.5 text-brand text-sm font-semibold mt-4"
-                  >
-                    {amenitiesExpanded
-                      ? (isNl ? 'Minder tonen' : 'Show less')
-                      : (isNl ? `Toon alle ${property.amenities.length} faciliteiten` : `Show all ${property.amenities.length} amenities`)}
-                    {amenitiesExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
-                )}
-              </section>
-            )}
-
             {/* ── Availability calendar ── */}
             <section className="border-b border-slate-100 pb-6">
               <h2 className="text-lg font-bold text-slate-900 mb-2">{isNl ? 'Beschikbaarheid' : 'Availability'}</h2>
@@ -1560,56 +1628,52 @@ export function PropertyPageClient({ property }: Props) {
             {/* ── Reviews ── */}
             <section className="border-b border-slate-100 pb-6">
               <div className="flex items-center gap-3 mb-5">
-                <h2 className="text-lg font-bold text-slate-900">{isNl ? 'Beoordelingen' : 'Reviews'}</h2>
+                <h2 className="text-lg font-bold text-slate-900">{isNl ? 'Gastenreviews' : 'Guest reviews'}</h2>
                 {avgRating && (
                   <div className="flex items-center gap-1.5">
-                    <StarRating rating={avgRating} size="sm" />
-                    <span className="font-bold text-slate-900 text-sm">{avgRating}</span>
-                    <span className="text-slate-400 text-xs">({reviewCount})</span>
+                    <span className="font-bold text-slate-900 text-sm">{(avgRating * 2).toFixed(1)}</span>
+                    <span className="text-slate-400 text-xs">({reviewCount} {isNl ? 'reviews' : 'reviews'})</span>
                   </div>
                 )}
               </div>
 
               {reviews.length > 0 ? (
                 <>
-                  {(avgCleanliness || avgLocation || avgValue) && (
-                    <div className="bg-slate-50 rounded-2xl p-4 mb-5 space-y-3">
-                      <ScoreBar label={isNl ? 'Netheid' : 'Cleanliness'} score={avgCleanliness} />
-                      <ScoreBar label={isNl ? 'Locatie' : 'Location'} score={avgLocation} />
-                      <ScoreBar label={isNl ? 'Prijs/kwaliteit' : 'Value'} score={avgValue} />
-                    </div>
-                  )}
                   <CollapsibleSection expanded={reviewsExpanded} maxCollapsedHeight="max-h-[500px]">
                     <div className="grid sm:grid-cols-2 gap-4">
-                      {reviews.slice(0, reviewsExpanded ? 20 : 4).map(review => (
+                      {reviews.slice(0, reviewsExpanded ? 20 : 6).map(review => (
                         <div key={review.id} className="border border-slate-100 rounded-2xl p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-brand-light rounded-full flex items-center justify-center text-brand-600 font-bold text-sm">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-10 h-10 bg-brand-light rounded-full flex items-center justify-center text-brand font-bold text-sm shrink-0">
                                 {review.guestFirstName[0]}
                               </div>
-                              <span className="font-semibold text-slate-900 text-sm">{review.guestFirstName}</span>
+                              <div>
+                                <p className="font-semibold text-slate-900 text-sm">{review.guestFirstName}</p>
+                                <p className="text-xs text-slate-400">
+                                  {new Date(review.createdAt).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB', { month: 'long', year: 'numeric' })}
+                                </p>
+                              </div>
                             </div>
-                            <StarRating rating={review.rating} size="sm" />
+                            <div className="bg-slate-800 text-white text-sm font-bold w-9 h-9 rounded-xl flex items-center justify-center shrink-0">
+                              {Math.round(review.rating * 2)}
+                            </div>
                           </div>
                           {review.comment && (
                             <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">{review.comment}</p>
                           )}
-                          <p className="text-xs text-slate-400 mt-2">
-                            {new Date(review.createdAt).toLocaleDateString(isNl ? 'nl-NL' : 'en-GB', { month: 'long', year: 'numeric' })}
-                          </p>
                         </div>
                       ))}
                     </div>
                   </CollapsibleSection>
-                  {reviews.length > 4 && (
+                  {reviews.length > 6 && (
                     <button
                       onClick={() => setReviewsExpanded(e => !e)}
                       className="flex items-center gap-1.5 text-brand text-sm font-semibold mt-4"
                     >
                       {reviewsExpanded
                         ? (isNl ? 'Minder tonen' : 'Show less')
-                        : (isNl ? `Alle ${reviewCount} beoordelingen tonen` : `Show all ${reviewCount} reviews`)}
+                        : (isNl ? `Bekijk alle ${reviewCount} reviews` : `View all ${reviewCount} reviews`)}
                       {reviewsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                   )}
@@ -1620,6 +1684,35 @@ export function PropertyPageClient({ property }: Props) {
                   <p className="text-sm">{isNl ? 'Nog geen beoordelingen. Wees de eerste!' : 'No reviews yet. Be the first!'}</p>
                 </div>
               )}
+            </section>
+
+            {/* ── Ervaringen (Experiences) ── */}
+            <section className="border-b border-slate-100 pb-6">
+              <h2 className="text-lg font-bold text-slate-900 mb-1">{isNl ? 'Ontdek extra ervaringen' : 'Discover extra experiences'}</h2>
+              <p className="text-sm text-slate-400 mb-4">{isNl ? 'Maak je verblijf nog specialer' : 'Make your stay even more special'}</p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  { emoji: '🛶', title: isNl ? 'Kanotocht door de plassen' : 'Canoe trip through the lakes', desc: isNl ? '2 uur begeleide kanotocht' : '2-hour guided canoe trip', price: 35 },
+                  { emoji: '🚲', title: isNl ? 'Fietstocht Groene Hart' : 'Cycling Green Heart', desc: isNl ? 'E-bike huren incl. route' : 'E-bike rental incl. route', price: 25 },
+                  { emoji: '🧘', title: isNl ? 'Yoga in de natuur' : 'Yoga in nature', desc: isNl ? 'Ochtend yoga op het terras' : 'Morning yoga on the terrace', price: 20 },
+                ].map((exp) => (
+                  <div key={exp.title} className="border border-slate-100 rounded-2xl p-4 flex flex-col gap-3">
+                    <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center text-2xl">
+                      {exp.emoji}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900 text-sm">{exp.title}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{exp.desc}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900">€{exp.price} <span className="text-xs font-normal text-slate-400">p.p.</span></span>
+                      <button className="text-xs font-bold text-brand border border-brand px-3 py-1.5 rounded-lg hover:bg-brand-light transition-colors">
+                        {isNl ? 'Toevoegen' : 'Add'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </section>
 
             {/* ── Policies ── */}
@@ -1681,9 +1774,16 @@ export function PropertyPageClient({ property }: Props) {
 
             {/* ── Location ── */}
             {property.addressCity && (
-              <section>
-                <h2 className="text-lg font-bold text-slate-900 mb-4">{isNl ? 'Locatie' : 'Location'}</h2>
-                <div className="rounded-2xl overflow-hidden border border-slate-200 h-52">
+              <section className="border-b border-slate-100 pb-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-2">{isNl ? 'Locatie' : 'Location'}</h2>
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-700">{property.addressCity}, {property.addressCountry}</span>
+                </div>
+                {property.addressStreet && (
+                  <p className="text-sm text-slate-400 mb-4">{property.addressStreet}</p>
+                )}
+                <div className="rounded-2xl overflow-hidden border border-slate-200 h-52 mb-3">
                   <iframe
                     title="Location map"
                     width="100%"
@@ -1698,14 +1798,43 @@ export function PropertyPageClient({ property }: Props) {
                     style={{ border: 0 }}
                   />
                 </div>
-                {property.addressStreet && (
-                  <p className="flex items-center gap-1.5 text-sm text-slate-500 mt-3">
-                    <MapPin className="w-4 h-4" />
-                    {property.addressStreet}, {property.addressCity}
-                  </p>
-                )}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.addressStreet ?? ''} ${property.addressCity}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-brand hover:underline"
+                >
+                  Google Maps →
+                </a>
               </section>
             )}
+
+            {/* ── Host profile ── */}
+            <section>
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-brand flex items-center justify-center text-white text-xl font-bold shrink-0">
+                  <User className="w-7 h-7" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold text-slate-900">
+                    {isNl ? 'Eigenaar' : 'Host'}: {property.name.split(' ')[0]}
+                  </h2>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-slate-500">
+                    <span>{isNl ? 'Lid sinds' : 'Member since'} {new Date(property.createdAt).getFullYear()}</span>
+                    {reviewCount > 0 && <span>{reviewCount} reviews</span>}
+                  </div>
+                  <p className="text-sm text-slate-600 mt-3 leading-relaxed">
+                    {isNl
+                      ? `Welkom! Ik ben de eigenaar van ${property.name} en zorg graag dat uw verblijf perfect is. Of u nu lokale tips zoekt of vragen heeft, ik help u graag.`
+                      : `Welcome! I'm the owner of ${property.name} and love making sure your stay is perfect. Whether you need local tips or have questions, I'm happy to help.`}
+                  </p>
+                  <button className="mt-4 flex items-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors">
+                    <MessageSquare className="w-4 h-4" />
+                    {isNl ? `Contact met eigenaar` : 'Contact host'}
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* ── RIGHT: Desktop booking widget ── */}
@@ -1731,6 +1860,24 @@ export function PropertyPageClient({ property }: Props) {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Bottom CTA banner ── */}
+      <div className="hidden lg:block bg-brand-light border-t border-brand-light/50">
+        <div className="max-w-6xl mx-auto px-4 py-10 flex items-center justify-between gap-6">
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900">{isNl ? 'Reserveer jouw verblijf' : 'Reserve your stay'}</h3>
+            <p className="text-slate-500 text-sm mt-1">
+              {isNl ? 'Ontsnap naar rust en natuur. Beschikbare data vullen snel!' : 'Escape to peace and nature. Available dates fill up fast!'}
+            </p>
+          </div>
+          <button
+            onClick={() => openSheet(1)}
+            className="shrink-0 bg-brand hover:bg-brand-600 text-white font-bold px-8 py-4 rounded-2xl text-base transition-colors shadow-lg shadow-brand/20"
+          >
+            {isNl ? 'Boek nu →' : 'Book now →'}
+          </button>
         </div>
       </div>
 

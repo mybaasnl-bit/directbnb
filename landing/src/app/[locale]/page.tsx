@@ -19,9 +19,9 @@ export default function HomePage() {
         <Solution />
         <HowItWorks />
         <Features />
+        <SocialProof />
         <BetaProgram />
         <SignupForm />
-        <SocialProof />
       </main>
       <Footer />
     </>
