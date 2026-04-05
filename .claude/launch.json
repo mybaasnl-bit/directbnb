@@ -10,8 +10,8 @@
     {
       "name": "frontend",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "cd '/Users/jessebaas/Documents/01-Sorteermap/Werk/02-Mybaas/Saas B&B/frontend' && npm install && npm run dev"],
-      "port": 3000
+      "runtimeArgs": ["-c", "cd '/Users/jessebaas/Documents/01-Sorteermap/Werk/02-Mybaas/Saas B&B/frontend' && npm install && PORT=3003 npm run dev -- -p 3003"],
+      "port": 3003
     },
     {
       "name": "landing",

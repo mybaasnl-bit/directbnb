@@ -87,7 +87,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, badge }: any) => {
           const isActive = pathname === href || (href !== `/${locale}/dashboard` && pathname.startsWith(href));
           return (
@@ -183,7 +183,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <div className="hidden md:flex shrink-0 min-h-screen">
+      <div className="hidden md:flex shrink-0 h-screen sticky top-0">
         {sidebarContent}
       </div>
 
