@@ -5,20 +5,39 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { ChatBubble } from '@/components/layout/chat-bubble';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const { locale } = useParams();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push(`/${locale}/login`);
+      return;
     }
-  }, [user, isLoading, router, locale]);
+
+    // Redirect new users to onboarding if they haven't completed it
+    if (!isLoading && user && user.role !== 'ADMIN') {
+      const key = `onboarding_${user.id}`;
+      try {
+        const saved = localStorage.getItem(key);
+        const parsed = saved ? JSON.parse(saved) : null;
+        const noProperties = (user._count?.properties ?? 0) === 0;
+
+        if (!parsed?.completed && noProperties) {
+          router.push(`/${locale}/onboarding`);
+          return;
+        }
+      } catch {
+        // ignore corrupt localStorage
+      }
+    }
+  }, [user, isLoading, router, locale, pathname]);
 
   if (isLoading) {
     return (
