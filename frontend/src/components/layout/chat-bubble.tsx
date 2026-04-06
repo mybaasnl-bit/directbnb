@@ -175,7 +175,7 @@ export function ChatBubble() {
       {/* Floating knop */}
       <button
         onClick={handleOpen}
-        className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${
+        className={`flex items-center gap-2.5 px-5 py-3 rounded-full shadow-lg font-semibold text-sm text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
           step !== 'idle'
             ? 'bg-slate-700 hover:bg-slate-800'
             : 'bg-brand hover:bg-brand-600'
@@ -183,9 +183,15 @@ export function ChatBubble() {
         aria-label={step !== 'idle' ? 'Sluit chat' : 'Open chat'}
       >
         {step !== 'idle' ? (
-          <ChevronDown className="w-6 h-6 text-white" />
+          <>
+            <ChevronDown className="w-4 h-4" />
+            Sluiten
+          </>
         ) : (
-          <MessageCircle className="w-6 h-6 text-white" />
+          <>
+            <MessageCircle className="w-4 h-4" />
+            Feedback geven
+          </>
         )}
       </button>
     </div>
