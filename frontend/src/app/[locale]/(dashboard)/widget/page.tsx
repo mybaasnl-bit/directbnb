@@ -111,7 +111,7 @@ export default function WidgetPage() {
     ? `${FRONTEND_BASE}/${lang}/embed/${selectedSlug}${params ? `?${params}` : ''}`
     : '';
   const iframeCode = embedUrl
-    ? `<iframe\n  src="${embedUrl}"\n  width="360"\n  height="520"\n  frameborder="0"\n  scrolling="no"\n  style="border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.10);"\n></iframe>`
+    ? `<iframe\n  src="${embedUrl}"\n  width="360"\n  height="640"\n  frameborder="0"\n  scrolling="no"\n  style="border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.10);"\n></iframe>`
     : '';
 
   const handleCopy = async () => {
@@ -295,7 +295,7 @@ export default function WidgetPage() {
                     key={embedUrl}
                     src={embedUrl}
                     width={340}
-                    height={500}
+                    height={620}
                     frameBorder={0}
                     scrolling="no"
                     style={{ borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,.10)' }}

@@ -56,6 +56,7 @@ export default function EmailTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [resetting, setResetting] = useState<string | null>(null);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [emailStats, setEmailStats] = useState<{ SENT?: number; FAILED?: number; total?: number } | null>(null);
 
   useEffect(() => {
     api.get('/email-templates/host/mine').then(({ data }) => {
@@ -64,9 +65,14 @@ export default function EmailTemplatesPage() {
       setLoading(false);
     });
 
-    // Load recent email logs
-    api.get('/email-logs', { params: { limit: 5 } })
-      .then(({ data }) => setEmailLogs(data?.data ?? []))
+    // Load host-scoped email stats
+    api.get('/email-logs/my/stats')
+      .then(({ data }) => setEmailStats(data?.data ?? data ?? null))
+      .catch(() => {});
+
+    // Load recent host email logs
+    api.get('/email-logs/my')
+      .then(({ data }) => setEmailLogs(data?.data ?? data ?? []))
       .catch(() => {});
   }, []);
 
@@ -96,10 +102,30 @@ export default function EmailTemplatesPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Verzonden" value="248" sublabel="Deze maand" icon={Send} />
-        <StatCard label="Concepten" value="5" icon={FileText} />
-        <StatCard label="Gepland" value="12" icon={Clock} />
-        <StatCard label="Open Rate" value="78%" icon={TrendingUp} />
+        <StatCard
+          label="Verzonden"
+          value={emailStats ? (emailStats.SENT ?? 0) : '—'}
+          sublabel="Totaal verstuurd"
+          icon={Send}
+        />
+        <StatCard
+          label="Mislukt"
+          value={emailStats ? (emailStats.FAILED ?? 0) : '—'}
+          sublabel="Leveringsfouten"
+          icon={FileText}
+        />
+        <StatCard
+          label="Totaal"
+          value={emailStats ? (emailStats.total ?? 0) : '—'}
+          sublabel="Alle emails"
+          icon={Clock}
+        />
+        <StatCard
+          label="Templates"
+          value={customized.size}
+          sublabel="Aangepast"
+          icon={TrendingUp}
+        />
       </div>
 
       {/* Filter + search bar */}

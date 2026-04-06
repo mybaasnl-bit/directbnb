@@ -368,6 +368,7 @@ model EmailLog {
   templateName      String
   language          String
   status            EmailLogStatus
+  hostId            String?
   providerMessageId String?
   errorMessage      String?        @db.Text
   createdAt         DateTime       @default(now())
@@ -375,6 +376,7 @@ model EmailLog {
   @@index([recipientEmail])
   @@index([status])
   @@index([templateName])
+  @@index([hostId])
   @@map("email_logs")
 }
 

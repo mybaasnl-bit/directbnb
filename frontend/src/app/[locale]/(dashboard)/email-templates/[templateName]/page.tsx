@@ -257,6 +257,20 @@ export default function HostEmailTemplateEditorPage() {
         </div>
       </div>
 
+      {/* Subject row — above the builder */}
+      <div className="flex items-center gap-3 px-1 pb-3 shrink-0">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap w-24 shrink-0">
+          Onderwerp
+        </label>
+        <input
+          type="text"
+          value={subjectNl}
+          onChange={(e) => markDirty(() => setSubjectNl(e.target.value))}
+          placeholder="Bijv. Je boeking is bevestigd 🎉"
+          className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
+        />
+      </div>
+
       {/* Builder */}
       <div className="flex-1 overflow-hidden">
         <EmailBuilder

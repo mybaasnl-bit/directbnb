@@ -44,7 +44,7 @@ export function ChatBubble() {
     },
   });
 
-  const handleOpen  = () => setStep(s => s === 'open' ? 'idle' : 'open');
+  const handleOpen  = () => { window.location.href = 'mailto:jesse@directbnb.nl'; };
   const handleClose = () => { setStep('idle'); setMessage(''); submit.reset(); };
   const handleSent  = () => { setStep('idle'); setMessage(''); submit.reset(); };
 
@@ -175,24 +175,13 @@ export function ChatBubble() {
       {/* Floating knop */}
       <button
         onClick={handleOpen}
-        className={`flex items-center gap-2.5 px-5 py-3 rounded-full shadow-lg font-semibold text-sm text-white transition-all duration-200 hover:scale-105 active:scale-95 ${
-          step !== 'idle'
-            ? 'bg-slate-700 hover:bg-slate-800'
-            : 'bg-brand hover:bg-brand-600'
-        }`}
-        aria-label={step !== 'idle' ? 'Sluit chat' : 'Open chat'}
+        className="flex items-center gap-2.5 px-5 py-3 rounded-full shadow-lg font-semibold text-sm text-white transition-all duration-200 hover:scale-105 active:scale-95 bg-brand hover:bg-brand-600"
+        aria-label="Stuur feedback"
       >
-        {step !== 'idle' ? (
-          <>
-            <ChevronDown className="w-4 h-4" />
-            Sluiten
-          </>
-        ) : (
-          <>
+        <>
             <MessageCircle className="w-4 h-4" />
             Feedback geven
           </>
-        )}
       </button>
     </div>
   );
