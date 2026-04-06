@@ -663,27 +663,43 @@ function BookingWidget({
 
       {/* Date pickers */}
       <div className="grid grid-cols-2 border-b border-slate-100">
-        <div className="p-4 border-r border-slate-100">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">{isNl ? 'Check-in' : 'Check-in'}</p>
+        <div className="p-4 border-r border-slate-100 relative">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+            {isNl ? 'Check-in' : 'Check-in'}
+          </p>
+          {checkIn ? (
+            <p className="text-sm font-semibold text-slate-900">
+              {new Date(checkIn).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          ) : (
+            <p className="text-sm text-slate-400">{isNl ? 'Selecteer datum' : 'Select date'}</p>
+          )}
           <input
             type="date"
             value={checkIn}
             min={todayStr}
             onChange={e => onCheckIn(e.target.value)}
-            className="w-full text-sm font-semibold text-slate-900 bg-transparent focus:outline-none cursor-pointer"
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
-          {!checkIn && <p className="text-sm text-slate-400 -mt-5 pointer-events-none">{isNl ? 'Selecteer datum' : 'Select date'}</p>}
         </div>
-        <div className="p-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">{isNl ? 'Check-out' : 'Check-out'}</p>
+        <div className="p-4 relative">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">
+            {isNl ? 'Check-out' : 'Check-out'}
+          </p>
+          {checkOut ? (
+            <p className="text-sm font-semibold text-slate-900">
+              {new Date(checkOut).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
+            </p>
+          ) : (
+            <p className="text-sm text-slate-400">{isNl ? 'Selecteer datum' : 'Select date'}</p>
+          )}
           <input
             type="date"
             value={checkOut}
             min={checkIn || todayStr}
             onChange={e => onCheckOut(e.target.value)}
-            className="w-full text-sm font-semibold text-slate-900 bg-transparent focus:outline-none cursor-pointer"
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
-          {!checkOut && <p className="text-sm text-slate-400 -mt-5 pointer-events-none">{isNl ? 'Selecteer datum' : 'Select date'}</p>}
         </div>
       </div>
 
@@ -1687,7 +1703,7 @@ export function PropertyPageClient({ property }: Props) {
             </section>
 
             {/* ── Ervaringen (Experiences) ── */}
-            <section className="border-b border-slate-100 pb-6">
+            {property.showExtraServices !== false && <section className="border-b border-slate-100 pb-6">
               <h2 className="text-lg font-bold text-slate-900 mb-1">{isNl ? 'Ontdek extra ervaringen' : 'Discover extra experiences'}</h2>
               <p className="text-sm text-slate-400 mb-4">{isNl ? 'Maak je verblijf nog specialer' : 'Make your stay even more special'}</p>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -1713,7 +1729,7 @@ export function PropertyPageClient({ property }: Props) {
                   </div>
                 ))}
               </div>
-            </section>
+            </section>}
 
             {/* ── Policies ── */}
             {(property.checkInTime || property.checkOutTime || property.cancellationPolicy) && (

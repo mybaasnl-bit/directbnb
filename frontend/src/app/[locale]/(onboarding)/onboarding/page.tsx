@@ -947,25 +947,38 @@ export default function OnboardingPage() {
 
           {/* ── Navigation buttons (steps 1–7) ── */}
           {state.step >= 1 && state.step <= 7 && (
-            <div className="flex gap-3">
-              <button
-                onClick={handlePrev}
-                className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-semibold hover:bg-slate-50 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Vorige
-              </button>
-              <button
-                onClick={handleNext}
-                disabled={isPending}
-                className="flex-1 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-3 rounded-2xl text-sm transition-colors"
-              >
-                {isPending
-                  ? 'Bezig...'
-                  : state.step === 7
-                  ? 'Afronden'
-                  : 'Volgende stap'}
-              </button>
+            <div className="space-y-2">
+              <div className="flex gap-3">
+                <button
+                  onClick={handlePrev}
+                  className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl text-sm font-semibold hover:bg-slate-50 transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Vorige
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={isPending}
+                  className="flex-1 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-3 rounded-2xl text-sm transition-colors"
+                >
+                  {isPending
+                    ? 'Bezig...'
+                    : state.step === 7
+                    ? 'Afronden'
+                    : 'Volgende stap'}
+                </button>
+              </div>
+
+              {/* Skip for opt-in steps: Payments (6) and Emails (7) */}
+              {(state.step === 6 || state.step === 7) && (
+                <button
+                  type="button"
+                  onClick={() => { setFieldErrors({}); setStep(state.step + 1); }}
+                  className="w-full py-2.5 text-sm text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  Overslaan — ik doe dit later
+                </button>
+              )}
             </div>
           )}
 

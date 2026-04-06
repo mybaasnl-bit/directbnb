@@ -9,7 +9,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, CreditCard, Sparkles } from 'lucide-react';
 
 const TABS = [
   { key: 'bnb',      label: 'B&B Instellingen',    icon: Home },
@@ -77,9 +77,14 @@ function BnbTab() {
   const [city, setCity]             = useState(property?.addressCity ?? '');
   const [address, setAddress]       = useState(property?.addressLine1 ?? '');
   const [description, setDescription] = useState(property?.descriptionNl ?? '');
-  const [checkIn, setCheckIn]       = useState(property?.checkInTime ?? '14:00');
-  const [checkOut, setCheckOut]     = useState(property?.checkOutTime ?? '10:00');
-  const [saved, setSaved]           = useState(false);
+  const [checkIn, setCheckIn]           = useState(property?.checkInTime ?? '14:00');
+  const [checkOut, setCheckOut]         = useState(property?.checkOutTime ?? '10:00');
+  const [iban, setIban]                 = useState('');
+  const [ibanHolder, setIbanHolder]     = useState('');
+  const [showExtraServices, setShowExtraServices] = useState<boolean>(
+    property?.showExtraServices !== false
+  );
+  const [saved, setSaved]               = useState(false);
 
   const update = useMutation({
     mutationFn: (data: any) => api.patch(`/properties/${property?.id}`, data),
@@ -163,6 +168,77 @@ function BnbTab() {
 
       <SectionCard icon={Coffee} title="Services & Voorzieningen" subtitle="Wat bied je aan je gasten?">
         <p className="text-sm text-slate-400">Beheer voorzieningen via de Kamers pagina bij het bewerken van een accommodatie.</p>
+      </SectionCard>
+
+      {/* Extra Services toggle */}
+      <SectionCard icon={Sparkles} title="Extra Ervaringen" subtitle="Toon of verberg de ervaringsmodule op je boekingspagina">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Ontdek extra ervaringen</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Laat gasten extra activiteiten ontdekken op je boekingspagina
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !showExtraServices;
+              setShowExtraServices(next);
+              update.mutate({ showExtraServices: next });
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+              showExtraServices ? 'bg-brand' : 'bg-slate-200'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                showExtraServices ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-xs text-slate-400">
+          {showExtraServices ? '✅ Zichtbaar voor gasten' : '🚫 Verborgen voor gasten'}
+        </p>
+      </SectionCard>
+
+      {/* Betalingen opt-in */}
+      <SectionCard icon={CreditCard} title="Betalingen instellen" subtitle="Ontvang betalingen direct op je rekening">
+        <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-start gap-3 mb-4">
+          <span className="text-amber-500 text-lg">💡</span>
+          <p className="text-sm text-amber-700">
+            Stel je bankgegevens in om directe betalingen van gasten te ontvangen. Je kunt dit ook later invullen.
+          </p>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <FieldLabel>IBAN nummer</FieldLabel>
+            <input
+              value={iban}
+              onChange={e => setIban(e.target.value)}
+              placeholder="NL00 ABCD 0123 4567 89"
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
+            />
+          </div>
+          <div>
+            <FieldLabel>Naam rekeninghouder</FieldLabel>
+            <input
+              value={ibanHolder}
+              onChange={e => setIbanHolder(e.target.value)}
+              placeholder="Naam op je bankrekening"
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => update.mutate({ iban, ibanHolder })}
+              disabled={!iban.trim() || !ibanHolder.trim() || update.isPending}
+              className="bg-brand hover:bg-brand-600 disabled:opacity-40 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              Betalingen activeren
+            </button>
+          </div>
+        </div>
       </SectionCard>
 
       {saved && (
