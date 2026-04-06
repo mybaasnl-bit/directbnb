@@ -42,6 +42,8 @@ export interface Property {
   avgRating?: number | null;
   reviewCount?: number;
 
+  showExtraServices?: boolean;
+
   _count?: { rooms: number };
   createdAt: string;
   updatedAt: string;

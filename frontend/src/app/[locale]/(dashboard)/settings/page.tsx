@@ -5,11 +5,14 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, Sparkles, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 
 const TABS = [
   { key: 'bnb',      label: 'B&B Instellingen',    icon: Home },
@@ -77,9 +80,18 @@ function BnbTab() {
   const [city, setCity]             = useState(property?.addressCity ?? '');
   const [address, setAddress]       = useState(property?.addressLine1 ?? '');
   const [description, setDescription] = useState(property?.descriptionNl ?? '');
-  const [checkIn, setCheckIn]       = useState(property?.checkInTime ?? '14:00');
-  const [checkOut, setCheckOut]     = useState(property?.checkOutTime ?? '10:00');
-  const [saved, setSaved]           = useState(false);
+  const { locale } = useParams<{ locale: string }>();
+  const [checkIn, setCheckIn]           = useState(property?.checkInTime ?? '14:00');
+  const [checkOut, setCheckOut]         = useState(property?.checkOutTime ?? '10:00');
+  const [showExtraServices, setShowExtraServices] = useState<boolean>(
+    property?.showExtraServices !== false
+  );
+  const [saved, setSaved]               = useState(false);
+
+  const { data: paymentAccount } = useQuery<{ status: string; payoutsEnabled: boolean } | null>({
+    queryKey: ['payout-account-status'],
+    queryFn: () => api.get('/payouts/account-status').then((r) => r.data.data).catch(() => null),
+  });
 
   const update = useMutation({
     mutationFn: (data: any) => api.patch(`/properties/${property?.id}`, data),
@@ -163,6 +175,72 @@ function BnbTab() {
 
       <SectionCard icon={Coffee} title="Services & Voorzieningen" subtitle="Wat bied je aan je gasten?">
         <p className="text-sm text-slate-400">Beheer voorzieningen via de Kamers pagina bij het bewerken van een accommodatie.</p>
+      </SectionCard>
+
+      {/* Extra Services toggle */}
+      <SectionCard icon={Sparkles} title="Extra Ervaringen" subtitle="Toon of verberg de ervaringsmodule op je boekingspagina">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Ontdek extra ervaringen</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Laat gasten extra activiteiten ontdekken op je boekingspagina
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !showExtraServices;
+              setShowExtraServices(next);
+              update.mutate({ showExtraServices: next });
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+              showExtraServices ? 'bg-brand' : 'bg-slate-200'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                showExtraServices ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-xs text-slate-400">
+          {showExtraServices ? '✅ Zichtbaar voor gasten' : '🚫 Verborgen voor gasten'}
+        </p>
+      </SectionCard>
+
+      {/* Betalingen */}
+      <SectionCard icon={Banknote} title="Betalingen" subtitle="Ontvang betalingen direct op je bankrekening">
+        {paymentAccount?.payoutsEnabled ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Betalingen actief ✅</p>
+                <p className="text-xs text-slate-400 mt-0.5">Je ontvangt betalingen automatisch na check-in</p>
+              </div>
+            </div>
+            <Link
+              href={`/${locale}/betalingen`}
+              className="text-sm font-bold text-brand hover:underline"
+            >
+              Beheren →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">
+              Koppel je bankrekening om betalingen van gasten te ontvangen — direct na elke check-in.
+            </p>
+            <Link
+              href={`/${locale}/betalingen`}
+              className="inline-flex items-center gap-2 bg-brand hover:bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" />
+              Koppel mijn bankrekening
+            </Link>
+          </div>
+        )}
       </SectionCard>
 
       {saved && (

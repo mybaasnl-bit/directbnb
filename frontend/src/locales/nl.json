@@ -348,45 +348,38 @@
   },
   "betalingen": {
     "title": "Uitbetalingen",
-    "subtitle": "Beheer uw bankrekening en bekijk uw uitbetalingsgeschiedenis",
+    "subtitle": "Ontvang betalingen direct op je bankrekening",
+    "connectTitle": "Ontvang betalingen op je bankrekening",
+    "connectSubtitle": "Koppel je bankrekening en ontvang betalingen van gasten automatisch na elke check-in — geen commissies, geen wachttijden.",
+    "connectButton": "Koppel mijn bankrekening",
+    "activeStatus": "Betalingen actief ✅",
+    "activeSubtitle": "Je ontvangt betalingen automatisch na check-in",
     "accountCard": {
       "title": "Bankrekening",
-      "statusNone": "Nog niet gekoppeld",
-      "statusPending": "In behandeling",
-      "statusOnboarding": "Verificatie loopt",
-      "statusVerified": "Geverifieerd",
-      "statusRejected": "Afgewezen",
-      "statusSuspended": "Opgeschort",
-      "connectButton": "Bankrekening koppelen",
-      "refreshButton": "Verificatie hervatten",
-      "connectedAs": "Verbonden via Stripe",
+      "statusNone": "Niet gekoppeld ❌",
+      "statusPending": "Niet gekoppeld ❌",
+      "statusOnboarding": "Verificatie loopt nog",
+      "statusVerified": "Betalingen actief ✅",
+      "statusRejected": "Verificatie mislukt",
+      "statusSuspended": "Tijdelijk geblokkeerd",
+      "connectButton": "Koppel mijn bankrekening",
+      "refreshButton": "Koppeling afronden",
       "detailsSubmitted": "Gegevens ingediend",
       "chargesEnabled": "Betalingen ingeschakeld",
-      "payoutsEnabled": "Uitbetalingen ingeschakeld"
-    },
-    "summary": {
-      "totalPaidOut": "Totaal uitbetaald",
-      "pending": "In behandeling",
-      "inTransit": "Onderweg"
+      "payoutsEnabled": "Uitbetalingen actief"
     },
     "history": {
-      "title": "Uitbetalingsgeschiedenis",
+      "title": "Recente uitbetalingen",
       "empty": "Nog geen uitbetalingen",
       "emptyDesc": "Zodra er boekingen zijn uitbetaald, verschijnen ze hier.",
-      "colDate": "Datum",
+      "colPeriod": "Periode",
+      "colAmount": "Netto bedrag",
       "colDescription": "Omschrijving",
-      "colAmount": "Bedrag",
-      "colFee": "Platformkosten",
-      "colNet": "Netto",
-      "colStatus": "Status",
-      "statusPending": "In behandeling",
-      "statusInTransit": "Onderweg",
-      "statusPaid": "Uitbetaald",
-      "statusFailed": "Mislukt",
-      "statusCancelled": "Geannuleerd"
+      "colDate": "Aankomstdatum",
+      "colStatus": "Status"
     },
-    "onboardingSuccess": "Uw bankrekening is succesvol gekoppeld.",
-    "onboardingRefresh": "De verificatie is verlopen. Klik hieronder om opnieuw te starten.",
-    "connectError": "Er is iets misgegaan bij het koppelen van uw bankrekening."
+    "onboardingSuccess": "Bankrekening succesvol gekoppeld! Je ontvangt betalingen automatisch na elke check-in.",
+    "onboardingRefresh": "Het koppelen is nog niet afgerond. Klik op de knop om verder te gaan.",
+    "connectError": "Er is iets misgegaan. Probeer het opnieuw of neem contact op."
   }
 }

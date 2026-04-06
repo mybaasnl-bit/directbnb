@@ -1,16 +1,18 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
-  Banknote, CheckCircle2, Clock, AlertCircle, ArrowRight,
-  RefreshCw, TrendingUp, XCircle, Loader2, Euro, CalendarDays, CreditCard,
+  CheckCircle2, AlertCircle, ArrowRight, Loader2, Euro,
+  TrendingUp, CalendarDays, CreditCard, Banknote, XCircle,
+  ShieldCheck, Zap, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addMonths, subMonths, startOfMonth } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 type AccountStatus = 'NONE' | 'PENDING' | 'ONBOARDING' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED';
 
@@ -40,8 +42,10 @@ interface PayoutSummary {
   inTransitCount: number;
 }
 
-function StatCard({ label, value, sublabel, icon: Icon, trend }: {
-  label: string; value: string | number; sublabel?: string; icon: React.ElementType; trend?: string;
+// ─── Sub-components ────────────────────────────────────────────────────────────
+
+function StatCard({ label, value, sublabel, icon: Icon }: {
+  label: string; value: string | number; sublabel?: string; icon: React.ElementType;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
@@ -51,38 +55,29 @@ function StatCard({ label, value, sublabel, icon: Icon, trend }: {
           <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
-      <div className="flex items-end gap-2">
-        <p className="text-3xl font-bold text-slate-900">{value}</p>
-        {trend && (
-          <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-600 mb-1">
-            <TrendingUp className="w-3 h-3" />{trend}
-          </span>
-        )}
-      </div>
+      <p className="text-3xl font-bold text-slate-900">{value}</p>
       {sublabel && <p className="text-xs text-slate-400 mt-1">{sublabel}</p>}
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: Payout['status'] }) {
-  const config: Record<Payout['status'], { label: string; className: string }> = {
-    PENDING:    { label: 'In behandeling', className: 'bg-amber-50 text-amber-700' },
-    IN_TRANSIT: { label: 'Onderweg',       className: 'bg-blue-50 text-blue-700' },
-    PAID:       { label: 'Voltooid',       className: 'bg-emerald-100 text-emerald-700' },
-    FAILED:     { label: 'Mislukt',        className: 'bg-red-50 text-red-700' },
-    CANCELLED:  { label: 'Geannuleerd',   className: 'bg-slate-50 text-slate-500' },
+  const map: Record<Payout['status'], { label: string; cls: string }> = {
+    PENDING:    { label: 'In behandeling', cls: 'bg-amber-50 text-amber-700' },
+    IN_TRANSIT: { label: 'Onderweg',       cls: 'bg-blue-50 text-blue-700' },
+    PAID:       { label: 'Uitbetaald',     cls: 'bg-emerald-50 text-emerald-700' },
+    FAILED:     { label: 'Mislukt',        cls: 'bg-red-50 text-red-700' },
+    CANCELLED:  { label: 'Geannuleerd',   cls: 'bg-slate-50 text-slate-500' },
   };
-  const c = config[status];
+  const c = map[status];
   return (
-    <span className={cn('inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold', c.className)}>
+    <span className={cn('inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold', c.cls)}>
       {c.label}
     </span>
   );
 }
 
-// Simple SVG bar/line chart
 function RevenueChart({ payouts }: { payouts: Payout[] }) {
-  // Build 6 months of data
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = subMonths(new Date(), 5 - i);
     const key = format(d, 'yyyy-MM');
@@ -92,7 +87,6 @@ function RevenueChart({ payouts }: { payouts: Payout[] }) {
       .reduce((s, p) => s + Number(p.netAmount), 0);
     return { label, total };
   });
-
   const max = Math.max(...months.map(m => m.total), 1);
 
   return (
@@ -100,6 +94,9 @@ function RevenueChart({ payouts }: { payouts: Payout[] }) {
       <div className="flex items-end justify-between gap-2 h-32">
         {months.map((m, i) => (
           <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+            <span className="text-xs text-slate-400">
+              {m.total > 0 ? `€${Math.round(m.total)}` : ''}
+            </span>
             <div
               className="w-full bg-brand rounded-t-lg transition-all"
               style={{ height: `${Math.max(4, (m.total / max) * 100)}%` }}
@@ -107,7 +104,6 @@ function RevenueChart({ payouts }: { payouts: Payout[] }) {
           </div>
         ))}
       </div>
-      {/* X labels */}
       <div className="flex items-center justify-between mt-2">
         {months.map((m, i) => (
           <div key={i} className="flex-1 text-center">
@@ -115,17 +111,116 @@ function RevenueChart({ payouts }: { payouts: Payout[] }) {
           </div>
         ))}
       </div>
-      {/* Y guide labels */}
-      <div className="flex justify-between mt-1">
-        <span className="text-xs text-slate-300">€0k</span>
-        <span className="text-xs text-slate-300">€{Math.round(max / 1000)}k</span>
+    </div>
+  );
+}
+
+// ─── Not-connected hero ────────────────────────────────────────────────────────
+
+function ConnectHero({ onConnect, isPending }: { onConnect: () => void; isPending: boolean }) {
+  return (
+    <div className="space-y-6 max-w-2xl mx-auto py-4">
+
+      {/* Hero card */}
+      <div className="bg-white rounded-3xl border border-slate-100 p-8 text-center space-y-5">
+        <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center mx-auto">
+          <Banknote className="w-8 h-8 text-brand" />
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
+            Ontvang betalingen op je bankrekening
+          </h2>
+          <p className="text-slate-500 text-base leading-relaxed max-w-md mx-auto">
+            Koppel je bankrekening en ontvang betalingen van gasten automatisch na elke check-in —
+            geen commissies, geen wachttijden.
+          </p>
+        </div>
+
+        {/* Primary CTA */}
+        <button
+          onClick={onConnect}
+          disabled={isPending}
+          className="inline-flex items-center justify-center gap-3 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl text-base transition-colors shadow-lg shadow-brand/20 w-full sm:w-auto"
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Doorsturen naar verificatie…
+            </>
+          ) : (
+            <>
+              <ArrowRight className="w-5 h-5" />
+              Koppel mijn bankrekening
+            </>
+          )}
+        </button>
+
+        {/* Trust signals */}
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <Lock className="w-3.5 h-3.5" />
+            Bankgegevens worden veilig verwerkt
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Geen commissie op uitbetalingen
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <Zap className="w-3.5 h-3.5" />
+            Geld binnen 2 werkdagen op rekening
+          </div>
+        </div>
+
+        {/* Powered by Stripe */}
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <span className="text-xs text-slate-300">Beveiligd door</span>
+          <svg viewBox="0 0 60 25" className="h-5 text-slate-400 fill-current" aria-label="Stripe">
+            <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.07zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.9z"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-white rounded-3xl border border-slate-100 p-6">
+        <h3 className="font-bold text-slate-900 mb-5">Hoe werkt het?</h3>
+        <div className="space-y-4">
+          {[
+            {
+              step: '1',
+              title: 'Koppel je bankrekening',
+              desc: 'Klik op de knop en vul je bankgegevens in via een beveiligde omgeving. Duurt ongeveer 5 minuten.',
+            },
+            {
+              step: '2',
+              title: 'Gasten betalen bij het boeken',
+              desc: 'Zodra een gast boekt, wordt de betaling veilig verwerkt en voor je vastgehouden.',
+            },
+            {
+              step: '3',
+              title: 'Geld op je rekening na check-in',
+              desc: 'Na elke check-in wordt het bedrag automatisch op jouw bankrekening gestort — binnen 2 werkdagen.',
+            },
+          ].map((s) => (
+            <div key={s.step} className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-brand-light rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-extrabold text-brand">{s.step}</span>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-900 text-sm">{s.title}</p>
+                <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{s.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
 export default function BetalingenPage() {
-  const t = useTranslations('betalingen');
   const { locale } = useParams<{ locale: string }>();
   const searchParams = useSearchParams();
   const onboardingResult = searchParams.get('onboarding');
@@ -133,11 +228,8 @@ export default function BetalingenPage() {
   const { data: accountData, isLoading: accountLoading, refetch: refetchAccount } = useQuery<AccountStatusData>({
     queryKey: ['payout-account-status'],
     queryFn: () => api.get('/payouts/account-status').then((r) => r.data.data),
-  });
-
-  const { data: summary } = useQuery<PayoutSummary>({
-    queryKey: ['payout-summary'],
-    queryFn: () => api.get('/payouts/summary').then((r) => r.data.data),
+    // Re-check after returning from Stripe
+    refetchOnMount: true,
   });
 
   const { data: payoutsData, isLoading: payoutsLoading } = useQuery<{ items: Payout[]; total: number }>({
@@ -151,7 +243,9 @@ export default function BetalingenPage() {
         returnUrl:  `${window.location.origin}/${locale}/betalingen?onboarding=success`,
         refreshUrl: `${window.location.origin}/${locale}/betalingen?onboarding=refresh`,
       }).then((r) => r.data.data),
-    onSuccess: (data: { url: string }) => { window.location.href = data.url; },
+    onSuccess: (data: { url: string }) => {
+      window.location.href = data.url;
+    },
   });
 
   const accountStatus   = accountData?.status ?? 'NONE';
@@ -177,147 +271,196 @@ export default function BetalingenPage() {
       {/* Title */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Uitbetalingen</h1>
-        <p className="text-slate-400 mt-1">Overzicht van je inkomsten</p>
+        <p className="text-slate-400 mt-1">Ontvang betalingen direct op je bankrekening</p>
       </div>
 
-      {/* Onboarding alerts */}
+      {/* Return banners from Stripe */}
       {onboardingResult === 'success' && (
-        <div className="flex items-center gap-3 bg-emerald-50 rounded-2xl px-5 py-4 text-sm text-emerald-800 font-semibold">
-          <CheckCircle2 className="w-5 h-5 shrink-0" /> {t('onboardingSuccess')}
-        </div>
-      )}
-      {onboardingResult === 'refresh' && (
-        <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-5 py-4 text-sm text-amber-800 font-semibold">
-          <AlertCircle className="w-5 h-5 shrink-0" /> {t('onboardingRefresh')}
-        </div>
-      )}
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Totaal Dit Jaar" value={`€${totalThisYear.toLocaleString('nl-NL', { minimumFractionDigits: 0 })}`} sublabel="" icon={Euro} trend="+24%" />
-        <StatCard label="Deze Maand"      value={`€${thisMonth.toLocaleString('nl-NL', { minimumFractionDigits: 0 })}`}      icon={TrendingUp} trend="+12%" />
-        <StatCard label="In behandeling"  value={`€${pendingAmount.toLocaleString('nl-NL', { minimumFractionDigits: 0 })}`} icon={CalendarDays} />
-        <StatCard label="Volgende Uitbetaling" value={nextPayout?.arrivalDate ? format(new Date(nextPayout.arrivalDate), 'd MMM', { locale: nl }) : '—'} icon={CreditCard} />
-      </div>
-
-      {/* Revenue chart */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6">
-        <h3 className="font-bold text-slate-900 mb-6">Inkomsten Overzicht</h3>
-        <RevenueChart payouts={payouts} />
-      </div>
-
-      {/* Account / Bankrekening */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-4">
+          <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
           <div>
-            <p className="font-bold text-slate-900">Bankrekening</p>
-            {accountLoading ? (
-              <div className="h-4 w-40 bg-slate-100 rounded-lg animate-pulse mt-1.5" />
-            ) : (
-              <div className="flex items-center gap-2 mt-1">
-                {accountStatus === 'VERIFIED'
-                  ? <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  : <Clock className="w-4 h-4 text-amber-500" />
-                }
-                <span className="text-sm text-slate-500">
-                  {accountData?.providerAccountId ?? (accountStatus === 'VERIFIED' ? 'Verbonden' : 'Nog niet ingesteld')}
-                </span>
-              </div>
-            )}
+            <p className="text-sm font-bold text-emerald-800">Bankrekening succesvol gekoppeld! ✅</p>
+            <p className="text-sm text-emerald-700 mt-0.5">
+              Je ontvangt betalingen automatisch na elke check-in.
+            </p>
           </div>
-          {!accountLoading && (needsOnboarding || needsRefresh) && (
+        </div>
+      )}
+
+      {onboardingResult === 'refresh' && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-5 py-4">
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-800">Het koppelen is nog niet afgerond</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Je verificatie is verlopen. Klik op de knop om opnieuw te starten — je gegevens worden bewaard.
+            </p>
+          </div>
+          <button
+            onClick={() => startOnboarding()}
+            disabled={onboardingPending}
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors flex-shrink-0"
+          >
+            {onboardingPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+            Opnieuw koppelen
+          </button>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {accountLoading && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-28 bg-white rounded-2xl border border-slate-100 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* NOT CONNECTED: show hero */}
+      {!accountLoading && needsOnboarding && onboardingResult !== 'refresh' && (
+        <ConnectHero onConnect={() => startOnboarding()} isPending={onboardingPending} />
+      )}
+
+      {/* ONBOARDING IN PROGRESS (no banner shown yet) */}
+      {!accountLoading && needsRefresh && onboardingResult !== 'refresh' && (
+        <div className="bg-white rounded-2xl border border-amber-200 p-6 flex items-start gap-4">
+          <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="w-6 h-6 text-amber-500" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-slate-900 mb-1">Koppeling nog niet volledig afgerond</p>
+            <p className="text-sm text-slate-500 mb-4">
+              Je bent gestart maar hebt het proces nog niet voltooid. Klik op de knop om verder te gaan waar je gebleven was.
+            </p>
             <button
               onClick={() => startOnboarding()}
               disabled={onboardingPending}
-              className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors"
+              className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
             >
               {onboardingPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-              {needsRefresh ? t('accountCard.refreshButton') : t('accountCard.connectButton')}
+              Koppeling afronden
             </button>
-          )}
-          {isVerified && (
-            <button
-              onClick={() => refetchAccount()}
-              className="text-sm font-bold text-slate-500 hover:text-brand bg-slate-100 hover:bg-brand-light px-4 py-2 rounded-xl transition-colors"
-            >
-              Wijzigen
-            </button>
-          )}
+          </div>
         </div>
+      )}
 
-        {accountData && accountStatus !== 'NONE' && accountStatus !== 'PENDING' && (
-          <div className="mt-4 pt-4 border-t border-slate-50 grid grid-cols-3 gap-3">
-            {[
-              { label: 'Gegevens ingediend', value: accountData.detailsSubmitted },
-              { label: 'Betalingen actief',  value: accountData.chargesEnabled },
-              { label: 'Uitbetalingen actief', value: accountData.payoutsEnabled },
-            ].map(({ label, value }) => (
-              <div key={label} className={`flex items-center gap-2 px-3 py-2 rounded-xl ${value ? 'bg-emerald-50' : 'bg-slate-50'}`}>
-                {value
-                  ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  : <Clock className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                }
-                <span className={cn('text-xs font-semibold', value ? 'text-emerald-700' : 'text-slate-400')}>{label}</span>
+      {/* VERIFIED: full dashboard */}
+      {!accountLoading && isVerified && (
+        <>
+          {/* Status banner */}
+          <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-emerald-800">Betalingen actief ✅</p>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  Je ontvangt betalingen automatisch na check-in
+                </p>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Uitbetalingen tabel */}
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
-          <h3 className="font-bold text-slate-900">Recente Uitbetalingen</h3>
-          <button className="text-sm font-bold text-brand hover:underline">Exporteer →</button>
-        </div>
-
-        {payoutsLoading ? (
-          <div className="space-y-2 p-4">
-            {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-slate-50 rounded-xl animate-pulse" />)}
-          </div>
-        ) : !payouts.length ? (
-          <div className="py-16 text-center">
-            <div className="w-14 h-14 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Banknote className="w-7 h-7 text-brand" />
             </div>
-            <p className="font-bold text-slate-700">{t('history.empty')}</p>
-            <p className="text-sm text-slate-400 mt-1">{t('history.emptyDesc')}</p>
+            <button
+              onClick={() => startOnboarding()}
+              disabled={onboardingPending}
+              className="text-xs font-semibold text-emerald-700 hover:underline"
+            >
+              Bankrekening wijzigen
+            </button>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-50">
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">Periode</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">Bedrag</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">Boekingen</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">Datum</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">Status</th>
-                  <th className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">Acties</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {payouts.map((payout) => (
-                  <tr key={payout.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-5 py-4 text-slate-700 font-medium">
-                      {format(new Date(payout.createdAt), 'MMMM yyyy', { locale: nl })}
-                    </td>
-                    <td className="px-5 py-4 font-bold text-slate-900">€{Number(payout.netAmount).toFixed(2)}</td>
-                    <td className="px-5 py-4 text-slate-500">{payout.description ?? '—'}</td>
-                    <td className="px-5 py-4 text-slate-500">
-                      {format(new Date(payout.createdAt), 'd MMM yyyy', { locale: nl })}
-                    </td>
-                    <td className="px-5 py-4"><StatusBadge status={payout.status} /></td>
-                    <td className="px-5 py-4">
-                      <button className="text-xs font-bold text-brand hover:underline">Details</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Totaal dit jaar"
+              value={`€${totalThisYear.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
+              icon={Euro}
+            />
+            <StatCard
+              label="Deze maand"
+              value={`€${thisMonth.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
+              icon={TrendingUp}
+            />
+            <StatCard
+              label="In behandeling"
+              value={`€${pendingAmount.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
+              sublabel="Wordt uitbetaald na check-in"
+              icon={CalendarDays}
+            />
+            <StatCard
+              label="Volgende uitbetaling"
+              value={nextPayout?.arrivalDate
+                ? format(new Date(nextPayout.arrivalDate), 'd MMM', { locale: nl })
+                : '—'}
+              sublabel={nextPayout ? 'Verwachte aankomstdatum' : 'Geen uitbetaling gepland'}
+              icon={CreditCard}
+            />
           </div>
-        )}
-      </div>
+
+          {/* Chart */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-6">
+            <h3 className="font-bold text-slate-900 mb-6">Inkomsten overzicht</h3>
+            <RevenueChart payouts={payouts} />
+          </div>
+
+          {/* Payout history */}
+          <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
+              <h3 className="font-bold text-slate-900">Recente uitbetalingen</h3>
+              <button className="text-sm font-bold text-brand hover:underline">Exporteer →</button>
+            </div>
+
+            {payoutsLoading ? (
+              <div className="space-y-2 p-4">
+                {[1, 2, 3].map(i => <div key={i} className="h-10 bg-slate-50 rounded-xl animate-pulse" />)}
+              </div>
+            ) : !payouts.length ? (
+              <div className="py-16 text-center">
+                <div className="w-14 h-14 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Banknote className="w-7 h-7 text-brand" />
+                </div>
+                <p className="font-bold text-slate-700">Nog geen uitbetalingen</p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Zodra er boekingen zijn uitbetaald, verschijnen ze hier.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-50">
+                      {['Periode', 'Netto bedrag', 'Omschrijving', 'Aankomstdatum', 'Status'].map(h => (
+                        <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {payouts.map(p => (
+                      <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="px-5 py-4 text-slate-700 font-medium">
+                          {format(new Date(p.createdAt), 'MMMM yyyy', { locale: nl })}
+                        </td>
+                        <td className="px-5 py-4 font-bold text-slate-900">
+                          €{Number(p.netAmount).toFixed(2)}
+                        </td>
+                        <td className="px-5 py-4 text-slate-500">{p.description ?? '—'}</td>
+                        <td className="px-5 py-4 text-slate-500">
+                          {p.arrivalDate
+                            ? format(new Date(p.arrivalDate), 'd MMM yyyy', { locale: nl })
+                            : '—'}
+                        </td>
+                        <td className="px-5 py-4"><StatusBadge status={p.status} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
