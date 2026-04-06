@@ -16,7 +16,8 @@ import {
   SquareStack, CheckCircle2, X, CalendarDays,
   MessageSquare, ChevronDown, ChevronUp, Minus, Plus,
   ArrowRight, Camera, Clock, Cigarette, PawPrint,
-  Share2, Heart, ChevronDown as ChevronDownIcon, User,
+  Share2, ChevronDown as ChevronDownIcon, User, Copy, CheckCircle,
+  Phone, Globe,
 } from 'lucide-react';
 import type { Property, Room } from '@/types';
 
@@ -1304,6 +1305,35 @@ export function PropertyPageClient({ property }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetStep, setSheetStep] = useState(1);
 
+  // Share state
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShare = useCallback(async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: property.name,
+      text: isNl
+        ? `Bekijk ${property.name} op DirectBnB`
+        : `Check out ${property.name} on DirectBnB`,
+      url,
+    };
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User cancelled share — no-op
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
+      } catch {
+        // Clipboard not available
+      }
+    }
+  }, [property.name, isNl]);
+
 
   // UI toggles
   const [descExpanded, setDescExpanded] = useState(false);
@@ -1324,6 +1354,33 @@ export function PropertyPageClient({ property }: Props) {
     if (!selectedRoom) return;
     openSheet(3);
   };
+
+  // Map coordinates — use stored lat/lng or geocode via Nominatim
+  const [mapCoords, setMapCoords] = useState<{ lat: number; lon: number } | null>(
+    property.latitude && property.longitude
+      ? { lat: Number(property.latitude), lon: Number(property.longitude) }
+      : null,
+  );
+
+  useEffect(() => {
+    if (mapCoords) return; // Already have coordinates from DB
+    const address = [property.addressStreet, property.addressCity, property.addressCountry]
+      .filter(Boolean)
+      .join(', ');
+    if (!address) return;
+    fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'nl' } },
+    )
+      .then((r) => r.json())
+      .then((results: any[]) => {
+        if (results[0]) {
+          setMapCoords({ lat: parseFloat(results[0].lat), lon: parseFloat(results[0].lon) });
+        }
+      })
+      .catch(() => {}); // Fail silently — map will just skip the marker
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Avg sub-scores
   const avgCleanliness = useMemo(() => {
@@ -1349,13 +1406,21 @@ export function PropertyPageClient({ property }: Props) {
             Direct<span className="text-brand">BnB</span>
           </span>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors">
-              <Share2 className="w-4 h-4" />
-              {isNl ? 'Delen' : 'Share'}
-            </button>
-            <button className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors">
-              <Heart className="w-4 h-4" />
-              {isNl ? 'Bewaren' : 'Save'}
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 px-3 py-2 rounded-xl transition-colors"
+            >
+              {shareCopied ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600">{isNl ? 'Gekopieerd!' : 'Copied!'}</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  {isNl ? 'Delen' : 'Share'}
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -1800,19 +1865,30 @@ export function PropertyPageClient({ property }: Props) {
                   <p className="text-sm text-slate-400 mb-4">{property.addressStreet}</p>
                 )}
                 <div className="rounded-2xl overflow-hidden border border-slate-200 h-52 mb-3">
-                  <iframe
-                    title="Location map"
-                    width="100%"
-                    height="100%"
-                    loading="lazy"
-                    frameBorder="0"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${
-                      property.longitude
-                        ? `${Number(property.longitude) - 0.01},${Number(property.latitude) - 0.01},${Number(property.longitude) + 0.01},${Number(property.latitude) + 0.01}`
-                        : '4.85,52.35,4.95,52.40'
-                    }&layer=mapnik${property.latitude && property.longitude ? `&marker=${property.latitude},${property.longitude}` : ''}`}
-                    style={{ border: 0 }}
-                  />
+                  {mapCoords ? (
+                    <iframe
+                      title="Location map"
+                      width="100%"
+                      height="100%"
+                      loading="lazy"
+                      frameBorder="0"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${
+                        mapCoords.lon - 0.012
+                      },${mapCoords.lat - 0.008},${mapCoords.lon + 0.012},${
+                        mapCoords.lat + 0.008
+                      }&layer=mapnik&marker=${mapCoords.lat},${mapCoords.lon}`}
+                      style={{ border: 0 }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                      <div className="text-center">
+                        <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm text-slate-400">
+                          {property.addressCity}, {property.addressCountry}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.addressStreet ?? ''} ${property.addressCity}`)}`}
@@ -1896,6 +1972,147 @@ export function PropertyPageClient({ property }: Props) {
           </button>
         </div>
       </div>
+
+      {/* ── Footer ── */}
+      <footer className="bg-slate-900 text-white mt-0">
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+
+            {/* Col 1: B&B name + address */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-white text-base">{property.name}</h4>
+              {property.addressStreet && (
+                <p className="text-slate-400 text-sm">{property.addressStreet}</p>
+              )}
+              {property.addressCity && (
+                <p className="text-slate-400 text-sm">
+                  {property.addressZip ? `${property.addressZip} ` : ''}{property.addressCity}
+                </p>
+              )}
+              {property.addressCountry && (
+                <p className="text-slate-400 text-sm">{property.addressCountry}</p>
+              )}
+              {(property.addressCity || property.addressStreet) && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    [property.addressStreet, property.addressCity, property.addressCountry].filter(Boolean).join(', ')
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-brand hover:text-brand-light transition-colors mt-1"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  {isNl ? 'Bekijk op Google Maps' : 'View on Google Maps'}
+                </a>
+              )}
+            </div>
+
+            {/* Col 2: Check-in / check-out */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-white text-sm uppercase tracking-wide">
+                {isNl ? 'Aankomst & vertrek' : 'Arrival & departure'}
+              </h4>
+              {property.checkInTime ? (
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <Clock className="w-4 h-4 text-brand shrink-0" />
+                  <span>{isNl ? `Inchecken vanaf ${property.checkInTime}` : `Check-in from ${property.checkInTime}`}</span>
+                </div>
+              ) : null}
+              {property.checkOutTime ? (
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <CalendarDays className="w-4 h-4 text-brand shrink-0" />
+                  <span>{isNl ? `Uitchecken voor ${property.checkOutTime}` : `Check-out before ${property.checkOutTime}`}</span>
+                </div>
+              ) : null}
+              {!property.checkInTime && !property.checkOutTime && (
+                <p className="text-sm text-slate-500">{isNl ? 'Neem contact op voor tijden' : 'Contact host for times'}</p>
+              )}
+              <div className="pt-2 flex flex-wrap gap-2">
+                {[
+                  { key: 'smokingAllowed', val: property.smokingAllowed, labelNl: 'Roken toegestaan', labelEn: 'Smoking OK', Icon: Cigarette },
+                  { key: 'petsAllowed', val: property.petsAllowed, labelNl: 'Huisdieren welkom', labelEn: 'Pets OK', Icon: PawPrint },
+                  { key: 'childrenAllowed', val: property.childrenAllowed, labelNl: 'Kinderen welkom', labelEn: 'Children OK', Icon: Baby },
+                ].filter(r => r.val).map(({ key, labelNl, labelEn, Icon }) => (
+                  <span key={key} className="inline-flex items-center gap-1 text-xs text-emerald-400 bg-emerald-900/30 px-2 py-1 rounded-full">
+                    <Icon className="w-3 h-3" />
+                    {isNl ? labelNl : labelEn}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Col 3: Rooms */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-white text-sm uppercase tracking-wide">
+                {isNl ? 'Kamers' : 'Rooms'}
+              </h4>
+              {rooms.length > 0 ? (
+                <div className="space-y-2">
+                  {rooms.slice(0, 4).map(room => (
+                    <div key={room.id} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400 truncate pr-2">{room.name}</span>
+                      <span className="text-white font-semibold shrink-0">
+                        €{Number(room.pricePerNight).toFixed(0)}{isNl ? '/nacht' : '/night'}
+                      </span>
+                    </div>
+                  ))}
+                  {rooms.length > 4 && (
+                    <p className="text-xs text-slate-500">
+                      +{rooms.length - 4} {isNl ? 'meer' : 'more'}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">{isNl ? 'Geen kamers beschikbaar' : 'No rooms available'}</p>
+              )}
+            </div>
+
+            {/* Col 4: DirectBnB + share */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-extrabold text-white tracking-tight">
+                  Direct<span className="text-brand">BnB</span>
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {isNl
+                  ? 'Direct reserveren bij de eigenaar — zonder commissie of tussenpersoon.'
+                  : 'Book directly with the owner — no commission, no middleman.'}
+              </p>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                {shareCopied
+                  ? <><CheckCircle className="w-4 h-4 text-green-400" /><span className="text-green-400">{isNl ? 'Link gekopieerd!' : 'Link copied!'}</span></>
+                  : <><Copy className="w-4 h-4" />{isNl ? 'Deel deze pagina' : 'Share this page'}</>
+                }
+              </button>
+              <a
+                href="https://directbnb.nl"
+                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors mt-2"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                directbnb.nl
+              </a>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-slate-600">
+              © {new Date().getFullYear()} {property.name} · {isNl ? 'Alle rechten voorbehouden' : 'All rights reserved'}
+            </p>
+            <p className="text-xs text-slate-600">
+              {isNl ? 'Aangedreven door' : 'Powered by'}{' '}
+              <a href="https://directbnb.nl" className="text-brand hover:text-brand-light transition-colors font-medium">
+                DirectBnB
+              </a>
+              {' '}— {isNl ? '0% commissie' : '0% commission'}
+            </p>
+          </div>
+        </div>
+      </footer>
 
       {/* ── Mobile: sticky bottom bar ── */}
       <StickyBookBar
