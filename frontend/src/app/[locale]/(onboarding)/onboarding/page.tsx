@@ -2,27 +2,31 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
-import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
-import { Check, ChevronLeft, Copy, ExternalLink } from 'lucide-react';
+import { Check, ChevronLeft, Copy, ExternalLink, Plus, Minus } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface RoomDraft {
+  name: string;
+  maxGuests: string;
+  descriptionNl: string;
+  pricePerNight: string;
+  id?: string;
+}
+
 interface OnboardingState {
   completed: boolean;
-  step: number;      // 1–7
+  step: number; // 0 = welcome, 1–8 = steps
   propertyId: string | null;
   propertySlug: string | null;
+  rooms: RoomDraft[];
   data: {
     bnbName: string;
     location: string;
     description: string;
-    pricePerNight: string;
-    maxGuests: string;
-    numRooms: string;
-    blockedDates: string[];
+    numRooms: number;
     iban: string;
     ibanHolder: string;
   };
@@ -30,17 +34,15 @@ interface OnboardingState {
 
 const DEFAULT_STATE: OnboardingState = {
   completed: false,
-  step: 1,
+  step: 0,
   propertyId: null,
   propertySlug: null,
+  rooms: [],
   data: {
     bnbName: '',
     location: '',
     description: '',
-    pricePerNight: '',
-    maxGuests: '2',
-    numRooms: '1',
-    blockedDates: [],
+    numRooms: 1,
     iban: '',
     ibanHolder: '',
   },
@@ -48,6 +50,10 @@ const DEFAULT_STATE: OnboardingState = {
 
 function storageKey(userId: string) {
   return `onboarding_${userId}`;
+}
+
+function makeEmptyRoom(): RoomDraft {
+  return { name: '', maxGuests: '2', descriptionNl: '', pricePerNight: '' };
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -92,6 +98,7 @@ export default function OnboardingPage() {
   const [state, setState] = useState<OnboardingState>(DEFAULT_STATE);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState('');
+  const [isPending, setIsPending] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Load saved state from localStorage
@@ -101,7 +108,6 @@ export default function OnboardingPage() {
       const saved = localStorage.getItem(storageKey(user.id));
       if (saved) {
         const parsed: OnboardingState = JSON.parse(saved);
-        // If already completed, redirect to dashboard
         if (parsed.completed) {
           router.replace(`/${locale}/dashboard`);
           return;
@@ -113,7 +119,6 @@ export default function OnboardingPage() {
     }
   }, [user?.id, locale, router]);
 
-  // Persist state to localStorage whenever it changes
   const save = useCallback(
     (next: OnboardingState) => {
       setState(next);
@@ -128,92 +133,155 @@ export default function OnboardingPage() {
   const updateData = (patch: Partial<OnboardingState['data']>) =>
     save({ ...state, data: { ...state.data, ...patch } });
 
-  // ── Mutations ──
+  // ── Sync rooms array when numRooms changes ──
+  const setNumRooms = (n: number) => {
+    const current = state.rooms;
+    let rooms: RoomDraft[];
+    if (n > current.length) {
+      rooms = [...current, ...Array(n - current.length).fill(null).map(makeEmptyRoom)];
+    } else {
+      rooms = current.slice(0, n);
+    }
+    save({ ...state, data: { ...state.data, numRooms: n }, rooms });
+  };
 
-  const createProperty = useMutation({
-    mutationFn: () =>
-      api.post('/properties', {
-        name: state.data.bnbName.trim(),
-        addressCity: state.data.location.trim(),
-        ...(state.data.description.trim() && { descriptionNl: state.data.description.trim() }),
-      }),
-    onSuccess: (res) => {
-      const prop = res.data.data;
-      const next = { ...state, step: 3, propertyId: prop.id, propertySlug: prop.slug };
-      save(next);
-      setApiError('');
-    },
-    onError: (err: any) => {
-      const msg = err.response?.data?.message;
-      setApiError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Er is een fout opgetreden');
-    },
-  });
-
-  const createRoom = useMutation({
-    mutationFn: () =>
-      api.post(`/properties/${state.propertyId}/rooms`, {
-        name: state.data.bnbName.trim()
-          ? `Kamer ${state.data.bnbName}`
-          : 'Standaard Kamer',
-        pricePerNight: parseFloat(state.data.pricePerNight) || 100,
-        maxGuests: parseInt(state.data.maxGuests) || 2,
-        minStay: 1,
-      }),
-    onSuccess: () => {
-      save({ ...state, step: 4 });
-      setApiError('');
-    },
-    onError: (err: any) => {
-      const msg = err.response?.data?.message;
-      setApiError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Er is een fout opgetreden');
-    },
-  });
+  const updateRoom = (index: number, patch: Partial<RoomDraft>) => {
+    const rooms = state.rooms.map((r, i) => (i === index ? { ...r, ...patch } : r));
+    save({ ...state, rooms });
+  };
 
   // ── Validation ──
 
   const validate = (step: number): boolean => {
     const errs: Record<string, string> = {};
-    if (step === 2) {
+
+    if (step === 1) {
       if (!state.data.bnbName.trim()) errs.bnbName = 'Naam is verplicht';
       if (!state.data.location.trim()) errs.location = 'Locatie is verplicht';
     }
+
     if (step === 3) {
-      if (!state.data.pricePerNight || parseFloat(state.data.pricePerNight) <= 0)
-        errs.pricePerNight = 'Voer een geldige prijs in';
+      state.rooms.forEach((r, i) => {
+        if (!r.name.trim()) errs[`room_${i}_name`] = 'Naam is verplicht';
+      });
     }
-    if (step === 5) {
+
+    if (step === 4) {
+      state.rooms.forEach((r, i) => {
+        if (!r.pricePerNight || parseFloat(r.pricePerNight) <= 0)
+          errs[`room_${i}_price`] = 'Voer een geldige prijs in';
+      });
+    }
+
+    if (step === 6) {
       if (!state.data.iban.trim()) errs.iban = 'IBAN is verplicht';
       if (!state.data.ibanHolder.trim()) errs.ibanHolder = 'Naam rekeninghouder is verplicht';
     }
+
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  // ── API calls ──
+
+  const createProperty = async () => {
+    const res = await api.post('/properties', {
+      name: state.data.bnbName.trim(),
+      addressCity: state.data.location.trim(),
+      ...(state.data.description.trim() && { descriptionNl: state.data.description.trim() }),
+    });
+    return res.data.data;
+  };
+
+  const createRooms = async (propertyId: string) => {
+    const results = await Promise.all(
+      state.rooms.map((r) =>
+        api.post('/rooms', {
+          propertyId,
+          name: r.name.trim(),
+          pricePerNight: parseFloat(r.pricePerNight),
+          maxGuests: parseInt(r.maxGuests) || 2,
+          minStay: 1,
+          ...(r.descriptionNl.trim() && { descriptionNl: r.descriptionNl.trim() }),
+        })
+      )
+    );
+    return results.map((r) => r.data.data);
+  };
+
   // ── Next handler ──
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setApiError('');
     if (!validate(state.step)) return;
 
+    if (state.step === 0) {
+      setStep(1);
+      return;
+    }
+
+    if (state.step === 1) {
+      // Create property
+      setIsPending(true);
+      try {
+        const prop = await createProperty();
+        // Initialize rooms array to numRooms empty drafts
+        const rooms = Array(state.data.numRooms).fill(null).map(makeEmptyRoom);
+        save({ ...state, step: 2, propertyId: prop.id, propertySlug: prop.slug, rooms });
+      } catch (err: any) {
+        const msg = err.response?.data?.message;
+        setApiError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Er is een fout opgetreden');
+      } finally {
+        setIsPending(false);
+      }
+      return;
+    }
+
     if (state.step === 2) {
-      createProperty.mutate();
+      // Ensure rooms array is synced to current numRooms before moving on
+      const n = state.data.numRooms;
+      const current = state.rooms;
+      let rooms: RoomDraft[];
+      if (n > current.length) {
+        rooms = [...current, ...Array(n - current.length).fill(null).map(makeEmptyRoom)];
+      } else {
+        rooms = current.slice(0, n);
+      }
+      save({ ...state, step: 3, rooms });
       return;
     }
-    if (state.step === 3) {
-      createRoom.mutate();
+
+    if (state.step === 4) {
+      // Create all rooms via API
+      if (!state.propertyId) {
+        setApiError('Property ID ontbreekt. Ga terug naar stap 1.');
+        return;
+      }
+      setIsPending(true);
+      try {
+        const created = await createRooms(state.propertyId);
+        const rooms = state.rooms.map((r, i) => ({ ...r, id: created[i]?.id }));
+        save({ ...state, step: 5, rooms });
+      } catch (err: any) {
+        const msg = err.response?.data?.message;
+        setApiError(Array.isArray(msg) ? msg.join(', ') : msg ?? 'Er is een fout opgetreden');
+      } finally {
+        setIsPending(false);
+      }
       return;
     }
-    if (state.step === 7) {
-      const completed = { ...state, completed: true };
-      save(completed);
+
+    if (state.step === 8) {
+      save({ ...state, completed: true });
       router.push(`/${locale}/dashboard`);
       return;
     }
+
     setStep(state.step + 1);
   };
 
   const handlePrev = () => {
-    if (state.step > 1) setStep(state.step - 1);
+    if (state.step > 0) setStep(state.step - 1);
   };
 
   const copyLink = () => {
@@ -223,15 +291,13 @@ export default function OnboardingPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // ── Styles ──
-
   const inp = 'w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-slate-800 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/20 transition-all placeholder:text-slate-400';
-  const isPending = createProperty.isPending || createRoom.isPending;
 
   // ── Render ──
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+
       {/* Top bar */}
       <div className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -244,7 +310,7 @@ export default function OnboardingPage() {
             Direct<span className="text-brand">BnB</span>
           </span>
         </div>
-        {state.step > 1 && state.step < 7 && (
+        {state.step > 0 && state.step < 8 && (
           <span className="text-xs font-semibold text-slate-400">Setup wizard</span>
         )}
         {user && (
@@ -268,13 +334,13 @@ export default function OnboardingPage() {
       <div className="flex-1 flex items-start justify-center px-4 py-10">
         <div className="w-full max-w-lg space-y-6">
 
-          {/* Progress (shown on steps 2–6) */}
-          {state.step >= 2 && state.step <= 6 && (
-            <ProgressBar step={state.step} total={7} />
+          {/* Progress bar (steps 1–7) */}
+          {state.step >= 1 && state.step <= 7 && (
+            <ProgressBar step={state.step} total={8} />
           )}
 
-          {/* ── Step 1: Welcome ── */}
-          {state.step === 1 && (
+          {/* ── Step 0: Welcome ── */}
+          {state.step === 0 && (
             <div className="space-y-6">
               <div className="text-center pt-4">
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
@@ -304,19 +370,17 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 2: B&B info ── */}
-          {state.step === 2 && (
+          {/* ── Step 1: B&B Name ── */}
+          {state.step === 1 && (
             <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 mb-1">Vertel ons over je B&amp;B</h2>
-                <p className="text-sm text-slate-400">
-                  We hebben wat basisinformatie nodig om je pagina te maken
-                </p>
+                <p className="text-sm text-slate-400">We hebben je basisinformatie nodig</p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Naam van je B&amp;B
+                  Naam van je B&amp;B <span className="text-brand">*</span>
                 </label>
                 <input
                   value={state.data.bnbName}
@@ -333,7 +397,9 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Locatie</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Locatie <span className="text-brand">*</span>
+                </label>
                 <input
                   value={state.data.location}
                   onChange={(e) => updateData({ location: e.target.value })}
@@ -343,9 +409,7 @@ export default function OnboardingPage() {
                 {fieldErrors.location && (
                   <p className="text-red-500 text-xs mt-1">{fieldErrors.location}</p>
                 )}
-                <p className="text-xs text-slate-400 mt-1.5">
-                  Stad of regio waar je B&amp;B zich bevindt
-                </p>
+                <p className="text-xs text-slate-400 mt-1.5">Stad of regio waar je B&amp;B zich bevindt</p>
               </div>
 
               <div>
@@ -369,83 +433,197 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 3: Prices ── */}
-          {state.step === 3 && (
-            <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
+          {/* ── Step 2: Number of rooms ── */}
+          {state.step === 2 && (
+            <div className="bg-white rounded-3xl p-6 space-y-6 border border-slate-100">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 mb-1">Prijzen en capaciteit</h2>
-                <p className="text-sm text-slate-400">Stel je basisprijzen en capaciteit in</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Prijs per nacht
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-semibold pointer-events-none">
-                    €
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={state.data.pricePerNight}
-                    onChange={(e) => updateData({ pricePerNight: e.target.value })}
-                    placeholder="125"
-                    className={`${inp} pl-8`}
-                  />
-                </div>
-                {fieldErrors.pricePerNight && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.pricePerNight}</p>
-                )}
-                <p className="text-xs text-slate-400 mt-1.5">
-                  Dit is je standaard prijs. Je kunt later seizoensprijzen instellen
+                <h2 className="text-xl font-bold text-slate-900 mb-1">Hoeveel kamers heb je?</h2>
+                <p className="text-sm text-slate-400">
+                  We maken voor elke kamer een apart profiel aan
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Aantal gasten per kamer
-                </label>
-                <select
-                  value={state.data.maxGuests}
-                  onChange={(e) => updateData({ maxGuests: e.target.value })}
-                  className={inp}
-                >
-                  {[1, 2, 3, 4, 5, 6].map((n) => (
-                    <option key={n} value={n}>
-                      {n} {n === 1 ? 'gast' : 'gasten'}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-slate-400 mt-1.5">Gemiddeld aantal gasten per kamer</p>
-              </div>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="flex items-center gap-6">
+                  <button
+                    type="button"
+                    onClick={() => setNumRooms(Math.max(1, state.data.numRooms - 1))}
+                    disabled={state.data.numRooms <= 1}
+                    className="w-12 h-12 rounded-full bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                  >
+                    <Minus className="w-5 h-5 text-slate-600" />
+                  </button>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Aantal kamers
-                </label>
-                <select
-                  value={state.data.numRooms}
-                  onChange={(e) => updateData({ numRooms: e.target.value })}
-                  className={inp}
-                >
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n} {n === 1 ? 'kamer' : 'kamers'}
-                    </option>
+                  <div className="text-center">
+                    <span className="text-5xl font-extrabold text-slate-900">
+                      {state.data.numRooms}
+                    </span>
+                    <p className="text-sm text-slate-400 mt-1">
+                      {state.data.numRooms === 1 ? 'kamer' : 'kamers'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setNumRooms(Math.min(10, state.data.numRooms + 1))}
+                    disabled={state.data.numRooms >= 10}
+                    className="w-12 h-12 rounded-full bg-brand hover:bg-brand-600 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-colors shadow-lg shadow-brand/20"
+                  >
+                    <Plus className="w-5 h-5 text-white" />
+                  </button>
+                </div>
+
+                {/* Quick select */}
+                <div className="flex gap-2 flex-wrap justify-center">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setNumRooms(n)}
+                      className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
+                        state.data.numRooms === n
+                          ? 'bg-brand text-white shadow-lg shadow-brand/20'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {n}
+                    </button>
                   ))}
-                  <option value="6">6+</option>
-                </select>
-                <p className="text-xs text-slate-400 mt-1.5">Hoeveel kamers verhuur je?</p>
+                </div>
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-4 flex items-start gap-3 border border-slate-100">
                 <span className="text-lg">💡</span>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  <strong className="text-slate-700">Handig om te weten:</strong> Je kunt dit later
-                  altijd aanpassen. Je kunt ook verschillende prijzen per kamer instellen in het
-                  dashboard.
+                  <strong className="text-slate-700">Je kunt kamers later toevoegen.</strong>{' '}
+                  Begin met het aantal kamers dat je nu wilt verhuren. Extra kamers toevoegen kan
+                  altijd via het dashboard.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 3: Create rooms ── */}
+          {state.step === 3 && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-3xl p-6 border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-900 mb-1">Geef je kamers een naam</h2>
+                <p className="text-sm text-slate-400">
+                  Voeg details toe voor elk van je {state.data.numRooms}{' '}
+                  {state.data.numRooms === 1 ? 'kamer' : 'kamers'}
+                </p>
+              </div>
+
+              {state.rooms.map((room, i) => (
+                <div key={i} className="bg-white rounded-3xl p-6 space-y-4 border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-brand-light rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-brand">{i + 1}</span>
+                    </div>
+                    <h3 className="font-bold text-slate-900">Kamer {i + 1}</h3>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Naam <span className="text-brand">*</span>
+                    </label>
+                    <input
+                      value={room.name}
+                      onChange={(e) => updateRoom(i, { name: e.target.value })}
+                      placeholder={`Bijvoorbeeld: Kamer ${i + 1} of De Roze Suite`}
+                      className={inp}
+                    />
+                    {fieldErrors[`room_${i}_name`] && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors[`room_${i}_name`]}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Maximaal aantal gasten
+                    </label>
+                    <select
+                      value={room.maxGuests}
+                      onChange={(e) => updateRoom(i, { maxGuests: e.target.value })}
+                      className={inp}
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((n) => (
+                        <option key={n} value={n}>
+                          {n} {n === 1 ? 'gast' : 'gasten'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Beschrijving
+                    </label>
+                    <textarea
+                      value={room.descriptionNl}
+                      onChange={(e) => updateRoom(i, { descriptionNl: e.target.value })}
+                      placeholder="Beschrijf de kamer voor je gasten (optioneel)"
+                      rows={2}
+                      className={`${inp} resize-none`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── Step 4: Price per room ── */}
+          {state.step === 4 && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-3xl p-6 border border-slate-100">
+                <h2 className="text-xl font-bold text-slate-900 mb-1">Prijs per kamer</h2>
+                <p className="text-sm text-slate-400">
+                  Stel de prijs per nacht in voor elke kamer
+                </p>
+              </div>
+
+              {state.rooms.map((room, i) => (
+                <div key={i} className="bg-white rounded-3xl p-6 border border-slate-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 bg-brand-light rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-brand">{i + 1}</span>
+                    </div>
+                    <h3 className="font-bold text-slate-900">{room.name || `Kamer ${i + 1}`}</h3>
+                    <span className="text-xs text-slate-400 ml-auto">
+                      max. {room.maxGuests} {room.maxGuests === '1' ? 'gast' : 'gasten'}
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Prijs per nacht <span className="text-brand">*</span>
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-semibold pointer-events-none">
+                        €
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={room.pricePerNight}
+                        onChange={(e) => updateRoom(i, { pricePerNight: e.target.value })}
+                        placeholder="125"
+                        className={`${inp} pl-8`}
+                      />
+                    </div>
+                    {fieldErrors[`room_${i}_price`] && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors[`room_${i}_price`]}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              <div className="bg-slate-50 rounded-2xl p-4 flex items-start gap-3 border border-slate-100">
+                <span className="text-lg">💡</span>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  <strong className="text-slate-700">Handige tip:</strong> Je kunt later
+                  seizoensprijzen instellen en de prijs per kamer aanpassen in het dashboard.
                 </p>
               </div>
 
@@ -457,14 +635,12 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 4: Availability ── */}
-          {state.step === 4 && (
+          {/* ── Step 5: Availability ── */}
+          {state.step === 5 && (
             <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 mb-1">Beschikbaarheid</h2>
-                <p className="text-sm text-slate-400">
-                  Geef aan wanneer je kamers beschikbaar zijn
-                </p>
+                <p className="text-sm text-slate-400">Geef aan wanneer je kamers beschikbaar zijn</p>
               </div>
 
               <div className="bg-emerald-50 border border-emerald-100 rounded-2xl px-5 py-4 flex items-start gap-3">
@@ -483,9 +659,7 @@ export default function OnboardingPage() {
               </div>
 
               <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 text-center">
-                <p className="text-sm text-slate-500 mb-1 font-semibold">
-                  📅 Beschikbaarheidskalender
-                </p>
+                <p className="text-sm text-slate-500 mb-1 font-semibold">📅 Beschikbaarheidskalender</p>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Na het instellen kun je in het dashboard je agenda beheren, specifieke datums
                   blokkeren en je seizoensrooster instellen.
@@ -504,8 +678,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 5: Payments ── */}
-          {state.step === 5 && (
+          {/* ── Step 6: Payments ── */}
+          {state.step === 6 && (
             <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 mb-1">Betalingen instellen</h2>
@@ -527,7 +701,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  IBAN nummer
+                  IBAN nummer <span className="text-brand">*</span>
                 </label>
                 <input
                   value={state.data.iban}
@@ -545,7 +719,7 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Naam rekeninghouder
+                  Naam rekeninghouder <span className="text-brand">*</span>
                 </label>
                 <input
                   value={state.data.ibanHolder}
@@ -556,12 +730,9 @@ export default function OnboardingPage() {
                 {fieldErrors.ibanHolder && (
                   <p className="text-red-500 text-xs mt-1">{fieldErrors.ibanHolder}</p>
                 )}
-                <p className="text-xs text-slate-400 mt-1.5">
-                  Naam zoals vermeld op je bankrekening
-                </p>
+                <p className="text-xs text-slate-400 mt-1.5">Naam zoals vermeld op je bankrekening</p>
               </div>
 
-              {/* Payment info */}
               <div className="border border-slate-100 rounded-2xl p-4 space-y-2.5">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
                   Hoe werken betalingen?
@@ -587,8 +758,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 6: Automatic emails ── */}
-          {state.step === 6 && (
+          {/* ── Step 7: Emails ── */}
+          {state.step === 7 && (
             <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
               <div>
                 <h2 className="text-xl font-bold text-slate-900 mb-1">Automatische emails</h2>
@@ -669,8 +840,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Step 7: Complete ── */}
-          {state.step === 7 && (
+          {/* ── Step 8: Complete ── */}
+          {state.step === 8 && (
             <div className="space-y-6 text-center">
               <div className="pt-4">
                 <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -682,6 +853,25 @@ export default function OnboardingPage() {
                 <p className="text-slate-500 text-lg">
                   Gefeliciteerd! Je kunt nu directe boekingen ontvangen zonder commissies.
                 </p>
+              </div>
+
+              {/* Summary */}
+              <div className="bg-white rounded-3xl p-5 border border-slate-100 text-left">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                  Samenvatting
+                </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">B&amp;B naam</span>
+                    <span className="font-semibold text-slate-800">{state.data.bnbName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Kamers aangemaakt</span>
+                    <span className="font-semibold text-slate-800">
+                      {state.rooms.length} {state.rooms.length === 1 ? 'kamer' : 'kamers'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Booking link */}
@@ -733,7 +923,7 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-3 gap-3 text-left">
                 {[
                   { icon: '📱', title: 'Deel je link', desc: 'Zet de link op je website, social media en in je email signature' },
-                  { icon: '🎨', title: 'Personaliseer', desc: "Pas je pagina verder aan in het dashboard voor een perfecte uitstraling" },
+                  { icon: '🎨', title: 'Personaliseer', desc: 'Pas je pagina verder aan in het dashboard voor een perfecte uitstraling' },
                   { icon: '📊', title: 'Monitor', desc: 'Volg je boekingen en inkomsten realtime in je dashboard' },
                 ].map((tip) => (
                   <div key={tip.title} className="bg-white rounded-2xl p-4 border border-slate-100">
@@ -755,8 +945,8 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* ── Navigation buttons (steps 2–6) ── */}
-          {state.step >= 2 && state.step <= 6 && (
+          {/* ── Navigation buttons (steps 1–7) ── */}
+          {state.step >= 1 && state.step <= 7 && (
             <div className="flex gap-3">
               <button
                 onClick={handlePrev}
@@ -770,7 +960,11 @@ export default function OnboardingPage() {
                 disabled={isPending}
                 className="flex-1 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-3 rounded-2xl text-sm transition-colors"
               >
-                {isPending ? 'Bezig...' : 'Volgende stap'}
+                {isPending
+                  ? 'Bezig...'
+                  : state.step === 7
+                  ? 'Afronden'
+                  : 'Volgende stap'}
               </button>
             </div>
           )}
