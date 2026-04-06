@@ -96,13 +96,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               href={href}
               onClick={onClose}
               className={cn(
-                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150',
+                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150',
                 isActive
-                  ? 'bg-brand text-white'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50',
+                  ? 'bg-brand text-white font-semibold'
+                  : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-50',
               )}
             >
-              <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-600')} />
+              <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-500')} />
 
               <span className="flex-1">{label}</span>
 
@@ -132,10 +132,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   href={href}
                   onClick={onClose}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all',
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
                     isActive
-                      ? 'bg-brand text-white'
-                      : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50',
+                      ? 'bg-brand text-white font-semibold'
+                      : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-50',
                   )}
                 >
                   <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400')} />
@@ -157,10 +157,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               href={href}
               onClick={onClose}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
                 isActive
-                  ? 'bg-brand text-white'
-                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50',
+                  ? 'bg-brand text-white font-semibold'
+                  : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-50',
               )}
             >
               <Icon className={cn('w-5 h-5 flex-shrink-0', isActive ? 'text-white' : 'text-slate-400')} />
