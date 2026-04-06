@@ -87,7 +87,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       </div>
 
       {/* Main nav */}
-      <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, badge }: any) => {
           const isActive = pathname === href || (href !== `/${locale}/dashboard` && pathname.startsWith(href));
           return (
@@ -96,7 +96,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               href={href}
               onClick={onClose}
               className={cn(
-                'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150',
+                'group flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all duration-150',
                 isActive
                   ? 'bg-brand text-white font-semibold'
                   : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-50',
@@ -132,7 +132,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                   href={href}
                   onClick={onClose}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
+                    'flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all',
                     isActive
                       ? 'bg-brand text-white font-semibold'
                       : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-50',
@@ -157,7 +157,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
               href={href}
               onClick={onClose}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all',
+                'flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition-all',
                 isActive
                   ? 'bg-brand text-white font-semibold'
                   : 'text-slate-600 font-medium hover:text-slate-900 hover:bg-slate-50',
