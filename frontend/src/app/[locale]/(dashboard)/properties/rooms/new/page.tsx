@@ -75,7 +75,8 @@ export default function NewRoomPage() {
 
   const createRoom = useMutation({
     mutationFn: () =>
-      api.post(`/properties/${selectedPropertyId}/rooms`, {
+      api.post('/rooms', {
+        propertyId: selectedPropertyId,
         name: form.name.trim(),
         ...(form.descriptionNl.trim() && { descriptionNl: form.descriptionNl.trim() }),
         pricePerNight: parseFloat(form.pricePerNight),
