@@ -7,6 +7,19 @@ const nextConfig = {
   // Reduce response headers size
   poweredByHeader: false,
 
+  async headers() {
+    return [
+      {
+        // Allow the embed widget to be loaded in iframes on any external site
+        source: '/:locale/embed/:path*',
+        headers: [
+          { key: 'X-Frame-Options',        value: 'ALLOWALL' },
+          { key: 'Content-Security-Policy', value: "frame-ancestors *" },
+        ],
+      },
+    ];
+  },
+
   // Compress responses with gzip
   compress: true,
 

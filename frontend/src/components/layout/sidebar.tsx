@@ -20,6 +20,7 @@ import {
   Euro,
   Banknote,
   Flame,
+  Code2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,6 +54,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     { href: `/${locale}/guests`,           label: 'Gasten',          icon: Users },
     ...(!isAdmin ? [{ href: `/${locale}/email-templates`, label: 'Emails', icon: Mail }] : []),
     { href: `/${locale}/betalingen`,       label: 'Uitbetalingen',   icon: Banknote },
+    { href: `/${locale}/widget`,           label: 'Website Widget',  icon: Code2 },
   ];
 
   const bottomItems = [
