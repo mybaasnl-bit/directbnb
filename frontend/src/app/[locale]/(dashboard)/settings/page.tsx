@@ -5,11 +5,14 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, CreditCard, Sparkles } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, Sparkles, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 
 const TABS = [
   { key: 'bnb',      label: 'B&B Instellingen',    icon: Home },
@@ -77,14 +80,18 @@ function BnbTab() {
   const [city, setCity]             = useState(property?.addressCity ?? '');
   const [address, setAddress]       = useState(property?.addressLine1 ?? '');
   const [description, setDescription] = useState(property?.descriptionNl ?? '');
+  const { locale } = useParams<{ locale: string }>();
   const [checkIn, setCheckIn]           = useState(property?.checkInTime ?? '14:00');
   const [checkOut, setCheckOut]         = useState(property?.checkOutTime ?? '10:00');
-  const [iban, setIban]                 = useState('');
-  const [ibanHolder, setIbanHolder]     = useState('');
   const [showExtraServices, setShowExtraServices] = useState<boolean>(
     property?.showExtraServices !== false
   );
   const [saved, setSaved]               = useState(false);
+
+  const { data: paymentAccount } = useQuery<{ status: string; payoutsEnabled: boolean } | null>({
+    queryKey: ['payout-account-status'],
+    queryFn: () => api.get('/payouts/account-status').then((r) => r.data.data).catch(() => null),
+  });
 
   const update = useMutation({
     mutationFn: (data: any) => api.patch(`/properties/${property?.id}`, data),
@@ -202,43 +209,38 @@ function BnbTab() {
         </p>
       </SectionCard>
 
-      {/* Betalingen opt-in */}
-      <SectionCard icon={CreditCard} title="Betalingen instellen" subtitle="Ontvang betalingen direct op je rekening">
-        <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-start gap-3 mb-4">
-          <span className="text-amber-500 text-lg">💡</span>
-          <p className="text-sm text-amber-700">
-            Stel je bankgegevens in om directe betalingen van gasten te ontvangen. Je kunt dit ook later invullen.
-          </p>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <FieldLabel>IBAN nummer</FieldLabel>
-            <input
-              value={iban}
-              onChange={e => setIban(e.target.value)}
-              placeholder="NL00 ABCD 0123 4567 89"
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
-            />
-          </div>
-          <div>
-            <FieldLabel>Naam rekeninghouder</FieldLabel>
-            <input
-              value={ibanHolder}
-              onChange={e => setIbanHolder(e.target.value)}
-              placeholder="Naam op je bankrekening"
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
-            />
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={() => update.mutate({ iban, ibanHolder })}
-              disabled={!iban.trim() || !ibanHolder.trim() || update.isPending}
-              className="bg-brand hover:bg-brand-600 disabled:opacity-40 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+      {/* Betalingen */}
+      <SectionCard icon={Banknote} title="Betalingen" subtitle="Ontvang betalingen direct op je bankrekening">
+        {paymentAccount?.payoutsEnabled ? (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Betalingen actief ✅</p>
+                <p className="text-xs text-slate-400 mt-0.5">Je ontvangt betalingen automatisch na check-in</p>
+              </div>
+            </div>
+            <Link
+              href={`/${locale}/betalingen`}
+              className="text-sm font-bold text-brand hover:underline"
             >
-              Betalingen activeren
-            </button>
+              Beheren →
+            </Link>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">
+              Koppel je bankrekening om betalingen van gasten te ontvangen — direct na elke check-in.
+            </p>
+            <Link
+              href={`/${locale}/betalingen`}
+              className="inline-flex items-center gap-2 bg-brand hover:bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" />
+              Koppel mijn bankrekening
+            </Link>
+          </div>
+        )}
       </SectionCard>
 
       {saved && (
