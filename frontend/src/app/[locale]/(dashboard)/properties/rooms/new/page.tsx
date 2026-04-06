@@ -82,7 +82,6 @@ export default function NewRoomPage() {
         pricePerNight: parseFloat(form.pricePerNight),
         maxGuests: parseInt(form.maxGuests),
         minStay: 1,
-        ...(form.amenities.length > 0 && { amenities: form.amenities }),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['properties'] });
