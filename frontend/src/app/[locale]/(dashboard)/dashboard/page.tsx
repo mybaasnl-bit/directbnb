@@ -424,30 +424,26 @@ export default function DashboardPage() {
         <StatCard
           label="Totale Boekingen"
           value={stats?.totalBookings ?? 0}
-          sublabel="Deze maand"
+          sublabel="Ooit"
           icon={FileText}
-          trend={{ value: '+12%', positive: true }}
         />
         <StatCard
-          label="Bezettingsgraad"
-          value={`${occupancyPct}%`}
-          sublabel="Komende 30 dagen"
+          label="Bevestigd"
+          value={stats?.confirmedBookings ?? 0}
+          sublabel="Actieve boekingen"
           icon={Users}
-          trend={{ value: '+5%', positive: true }}
         />
         <StatCard
-          label="Totale Inkomsten"
+          label="Omzet deze maand"
           value={`€${(stats?.revenueThisMonth ?? 0).toLocaleString('nl-NL', { minimumFractionDigits: 0 })}`}
-          sublabel="Deze maand"
+          sublabel="Bevestigde boekingen"
           icon={TrendingUp}
-          trend={{ value: '+18%', positive: true }}
         />
         <StatCard
           label="Gasten Score"
-          value="4.8"
+          value={stats?.avgRating != null ? stats.avgRating.toFixed(1) : '—'}
           sublabel="Gemiddelde beoordeling"
           icon={Star}
-          trend={{ value: '+0.2', positive: true }}
         />
       </div>
 

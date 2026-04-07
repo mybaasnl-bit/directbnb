@@ -49,7 +49,7 @@ export function useAuth() {
     } finally {
       clearAuth();
       queryClient.removeQueries({ queryKey: ['me'] });
-      router.push(`/${locale}/login`);
+      router.push(`/${locale}`);
     }
   };
 

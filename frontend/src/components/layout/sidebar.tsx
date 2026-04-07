@@ -91,7 +91,13 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       {/* Main nav */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon, badge }: any) => {
-          const isActive = pathname === href || (href !== `/${locale}/dashboard` && pathname.startsWith(href));
+          const localePrefix = `/${locale}`;
+          const hrefWithoutLocale = href.replace(localePrefix, '');
+          const pathnameWithoutLocale = pathname.replace(localePrefix, '');
+          const isActive =
+            pathnameWithoutLocale === hrefWithoutLocale ||
+            (hrefWithoutLocale !== '/dashboard' && pathnameWithoutLocale.startsWith(hrefWithoutLocale + '/')) ||
+            (hrefWithoutLocale !== '/dashboard' && pathnameWithoutLocale === hrefWithoutLocale);
           return (
             <Link
               key={href}
@@ -152,7 +158,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       {/* Bottom */}
       <div className="px-3 pb-6 pt-3 space-y-1 border-t border-slate-100">
         {bottomItems.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/');
+          const isActive = pathname === href || pathname.startsWith(href + '/') || pathname.replace(`/${locale}`, '') === href.replace(`/${locale}`, '');
           return (
             <Link
               key={href}

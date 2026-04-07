@@ -139,9 +139,6 @@ export default function EmailTemplatesPage() {
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
         </div>
         <input placeholder="Zoek emails..." className="flex-1 text-sm text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30" />
-        <button className="ml-auto bg-brand hover:bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors shrink-0">
-          + Nieuwe Email
-        </button>
       </div>
 
       {/* Email template cards */}
