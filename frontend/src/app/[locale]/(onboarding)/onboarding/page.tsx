@@ -271,6 +271,23 @@ export default function OnboardingPage() {
       return;
     }
 
+    if (state.step === 7) {
+      // Publish the property so the public link works
+      setIsPending(true);
+      try {
+        if (state.propertyId) {
+          await api.patch(`/properties/${state.propertyId}`, { isPublished: true });
+        }
+        setStep(8);
+      } catch {
+        // Non-fatal — still proceed to step 8 even if publish fails
+        setStep(8);
+      } finally {
+        setIsPending(false);
+      }
+      return;
+    }
+
     if (state.step === 8) {
       save({ ...state, completed: true });
       router.push(`/${locale}/dashboard`);

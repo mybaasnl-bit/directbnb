@@ -38,7 +38,10 @@ export class PropertiesService {
       where: { ownerId },
       include: {
         photos: { orderBy: { sortOrder: 'asc' } },
-        _count: { select: { rooms: true } },
+        rooms: {
+          orderBy: { createdAt: 'asc' },
+          include: { photos: { orderBy: { sortOrder: 'asc' } } },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

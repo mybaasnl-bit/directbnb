@@ -183,19 +183,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
           ) : (
             <div className="p-4">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Instellingen</p>
-              <p className="text-xs text-slate-400 mb-4">Klik op een blok om het te bewerken.</p>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  Onderwerp e-mail
-                </label>
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => onSubjectChange(e.target.value)}
-                  placeholder="Onderwerp van de e-mail"
-                  className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
-                />
-              </div>
+              <p className="text-xs text-slate-400">Klik op een blok om het te bewerken.</p>
             </div>
           )}
         </div>

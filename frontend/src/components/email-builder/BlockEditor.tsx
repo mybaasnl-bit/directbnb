@@ -18,19 +18,6 @@ export function BlockEditor({ block, onChange, subject, onSubjectChange, variabl
 
   return (
     <div className="space-y-5 p-4">
-      {/* Subject — always visible at top */}
-      <Section label="Onderwerp e-mail">
-        <input
-          type="text"
-          value={subject}
-          onChange={(e) => onSubjectChange(e.target.value)}
-          placeholder="Onderwerp van de e-mail"
-          className="w-full text-sm px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand bg-white"
-        />
-      </Section>
-
-      <div className="border-t border-slate-200" />
-
       {/* Block-specific controls */}
       {block.type === 'header' && (
         <>
