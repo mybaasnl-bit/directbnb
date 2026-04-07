@@ -75,13 +75,21 @@ function Header() {
           </Link>
         </nav>
 
-        {/* CTA */}
-        <Link
-          href={`/${locale}/register`}
-          className="text-sm bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm"
-        >
-          Start gratis beta
-        </Link>
+        {/* CTAs */}
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/${locale}/login`}
+            className="text-sm text-slate-600 hover:text-slate-900 font-semibold px-4 py-2 rounded-xl transition-colors border border-slate-200 hover:border-slate-300"
+          >
+            Inloggen
+          </Link>
+          <Link
+            href={`/${locale}/register`}
+            className="text-sm bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2 rounded-xl transition-colors shadow-sm"
+          >
+            Start gratis beta
+          </Link>
+        </div>
       </div>
     </header>
   );

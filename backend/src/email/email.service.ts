@@ -231,7 +231,7 @@ export class EmailService {
     // Owner email — use host's custom template if available
     try {
       const { subject, html } = await this.templates.resolve('booking_request_owner', lang, vars, owner.id);
-      await this.sendAndLog({ to: owner.email, subject, html, templateName: 'booking_request_owner', language: lang });
+      await this.sendAndLog({ to: owner.email, subject, html, templateName: 'booking_request_owner', language: lang, hostId: owner.id });
     } catch {
       this.logger.warn('booking_request_owner template not found, skipping owner email');
     }
@@ -239,7 +239,7 @@ export class EmailService {
     // Guest email
     try {
       const { subject, html } = await this.templates.resolve('booking_request_guest', lang, vars, owner.id);
-      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_request_guest', language: lang });
+      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_request_guest', language: lang, hostId: owner.id });
     } catch {
       this.logger.warn('booking_request_guest template not found, skipping guest email');
     }
@@ -264,7 +264,7 @@ export class EmailService {
 
     try {
       const { subject, html } = await this.templates.resolve('booking_confirmed', lang, vars, owner.id);
-      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_confirmed', language: lang });
+      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_confirmed', language: lang, hostId: owner.id });
     } catch {
       this.logger.warn('booking_confirmed template not found, skipping');
     }
@@ -444,7 +444,7 @@ export class EmailService {
     // Guest cancellation email
     try {
       const { subject, html } = await this.templates.resolve('booking_cancelled_guest', lang, vars, owner.id);
-      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_cancelled_guest', language: lang });
+      await this.sendAndLog({ to: booking.guest.email, subject, html, templateName: 'booking_cancelled_guest', language: lang, hostId: owner.id });
     } catch {
       this.logger.warn('booking_cancelled_guest template not found, skipping guest email');
     }
@@ -452,7 +452,7 @@ export class EmailService {
     // Owner notification email
     try {
       const { subject, html } = await this.templates.resolve('booking_cancelled_owner', lang, vars, owner.id);
-      await this.sendAndLog({ to: owner.email, subject, html, templateName: 'booking_cancelled_owner', language: lang });
+      await this.sendAndLog({ to: owner.email, subject, html, templateName: 'booking_cancelled_owner', language: lang, hostId: owner.id });
     } catch {
       this.logger.warn('booking_cancelled_owner template not found, skipping owner email');
     }
@@ -469,12 +469,13 @@ export class EmailService {
     html: string;
     templateName: string;
     language: string;
+    hostId?: string;
   }): Promise<void> {
-    const { to, subject, html, templateName, language } = opts;
+    const { to, subject, html, templateName, language, hostId } = opts;
 
     if (!this.apiKeySet) {
       this.logger.warn(`[DEV] Skipped email to ${to} — no RESEND_API_KEY`);
-      await this.logEmail({ to, templateName, language, status: 'FAILED', error: 'RESEND_API_KEY not configured' });
+      await this.logEmail({ to, templateName, language, status: 'FAILED', error: 'RESEND_API_KEY not configured', hostId });
       return;
     }
 
@@ -491,10 +492,10 @@ export class EmailService {
       }
 
       this.logger.log(`✉  Sent '${templateName}' to ${to} [${data?.id}]`);
-      await this.logEmail({ to, templateName, language, status: 'SENT', providerMessageId: data?.id });
+      await this.logEmail({ to, templateName, language, status: 'SENT', providerMessageId: data?.id, hostId });
     } catch (err: any) {
       this.logger.error(`✗  Failed to send '${templateName}' to ${to}: ${err.message}`);
-      await this.logEmail({ to, templateName, language, status: 'FAILED', error: err.message });
+      await this.logEmail({ to, templateName, language, status: 'FAILED', error: err.message, hostId });
     }
   }
 
@@ -522,6 +523,7 @@ export class EmailService {
     status: 'SENT' | 'FAILED';
     providerMessageId?: string;
     error?: string;
+    hostId?: string;
   }) {
     try {
       await this.prisma.emailLog.create({
@@ -532,6 +534,7 @@ export class EmailService {
           status: opts.status,
           providerMessageId: opts.providerMessageId ?? null,
           errorMessage: opts.error ?? null,
+          hostId: opts.hostId ?? null,
         },
       });
     } catch (err) {

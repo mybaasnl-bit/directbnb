@@ -48,6 +48,16 @@ export class BookingsController {
     return this.bookingsService.findOne(id, ownerId);
   }
 
+  @Post('manual')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Owner manually creates a confirmed booking' })
+  createManual(
+    @CurrentUser('id') ownerId: string,
+    @Body() dto: CreateBookingDto,
+  ) {
+    return this.bookingsService.createManual(ownerId, dto);
+  }
+
   @Patch(':id/status')
   @ApiOperation({ summary: 'Confirm, reject or cancel a booking' })
   updateStatus(

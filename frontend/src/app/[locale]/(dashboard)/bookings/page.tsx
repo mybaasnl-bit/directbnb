@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { BookingStatusBadge } from '@/components/bookings/booking-status-badge';
@@ -9,7 +9,8 @@ import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import {
   Check, X, Link2, Loader2, CheckCircle2, CalendarDays,
-  BedDouble, Users, Clock, Filter, FileText, TrendingUp,
+  BedDouble, Users, Clock, Filter, FileText, TrendingUp, Plus,
+  AlertCircle,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
@@ -38,11 +39,234 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: string |
   );
 }
 
+// ── Manual booking modal ──────────────────────────────────────────────────────
+
+interface Room { id: string; name: string; pricePerNight: number; property: { name: string } }
+
+function ManualBookingModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { data: properties = [] } = useQuery<any[]>({
+    queryKey: ['properties-with-rooms'],
+    queryFn: () => api.get('/properties').then(r => r.data.data ?? []),
+  });
+
+  const allRooms: Room[] = (properties as any[]).flatMap(p =>
+    (p.rooms ?? []).map((r: any) => ({ ...r, property: { name: p.name } }))
+  );
+
+  const today = new Date().toISOString().split('T')[0];
+
+  const [roomId,     setRoomId]     = useState('');
+  const [checkIn,    setCheckIn]    = useState('');
+  const [checkOut,   setCheckOut]   = useState('');
+  const [numGuests,  setNumGuests]  = useState(1);
+  const [firstName,  setFirstName]  = useState('');
+  const [lastName,   setLastName]   = useState('');
+  const [email,      setEmail]      = useState('');
+  const [phone,      setPhone]      = useState('');
+  const [message,    setMessage]    = useState('');
+  const [error,      setError]      = useState('');
+
+  const selectedRoom = allRooms.find(r => r.id === roomId);
+  const nights = checkIn && checkOut
+    ? Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86_400_000))
+    : 0;
+  const totalPrice = selectedRoom ? nights * Number(selectedRoom.pricePerNight) : 0;
+
+  const create = useMutation({
+    mutationFn: () => api.post('/bookings/manual', {
+      roomId, checkIn, checkOut,
+      numGuests: Number(numGuests),
+      guestFirstName: firstName.trim(),
+      guestLastName:  lastName.trim(),
+      guestEmail:     email.trim(),
+      guestPhone:     phone.trim() || undefined,
+      guestMessage:   message.trim() || undefined,
+    }),
+    onSuccess: () => { onCreated(); onClose(); },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message;
+      setError(Array.isArray(msg) ? msg.join(', ') : (msg ?? 'Er is iets misgegaan.'));
+    },
+  });
+
+  const canSubmit = roomId && checkIn && checkOut && nights > 0 && firstName && lastName && email && !create.isPending;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Boeking handmatig toevoegen</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Voeg een directe boeking toe die meteen bevestigd wordt.</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+
+          {/* Room */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
+              Kamer *
+            </label>
+            {allRooms.length === 0 ? (
+              <p className="text-sm text-slate-400">Geen kamers beschikbaar. Voeg eerst een accommodatie toe.</p>
+            ) : (
+              <select
+                value={roomId}
+                onChange={e => setRoomId(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
+              >
+                <option value="">Selecteer een kamer…</option>
+                {allRooms.map(r => (
+                  <option key={r.id} value={r.id}>
+                    {r.property.name} — {r.name} (€{Number(r.pricePerNight).toFixed(0)}/nacht)
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Check-in *</label>
+              <input
+                type="date"
+                value={checkIn}
+                min={today}
+                onChange={e => { setCheckIn(e.target.value); if (checkOut && e.target.value >= checkOut) setCheckOut(''); }}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Check-out *</label>
+              <input
+                type="date"
+                value={checkOut}
+                min={checkIn || today}
+                disabled={!checkIn}
+                onChange={e => setCheckOut(e.target.value)}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand disabled:opacity-40"
+              />
+            </div>
+          </div>
+
+          {/* Guests count */}
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Aantal gasten *</label>
+            <select
+              value={numGuests}
+              onChange={e => setNumGuests(Number(e.target.value))}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand bg-white"
+            >
+              {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} {n === 1 ? 'gast' : 'gasten'}</option>)}
+            </select>
+          </div>
+
+          <div className="border-t border-slate-100 pt-4">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Gastgegevens</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Voornaam *</label>
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="Jan"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Achternaam *</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  placeholder="de Vries"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+                />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs text-slate-500 mb-1">E-mailadres *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="jan@voorbeeld.nl"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              />
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs text-slate-500 mb-1">Telefoonnummer <span className="text-slate-400">(optioneel)</span></label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="+31 6 12345678"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand"
+              />
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs text-slate-500 mb-1">Notitie <span className="text-slate-400">(optioneel)</span></label>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value)}
+                rows={2}
+                placeholder="Bijzonderheden of wensen van de gast…"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Price summary */}
+          {nights > 0 && selectedRoom && (
+            <div className="bg-slate-50 rounded-xl px-4 py-3 flex items-center justify-between border border-slate-100">
+              <span className="text-sm text-slate-500">
+                €{Number(selectedRoom.pricePerNight).toFixed(0)} × {nights} nacht{nights !== 1 ? 'en' : ''}
+              </span>
+              <span className="font-bold text-slate-900">€{totalPrice.toFixed(0)}</span>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3 text-sm text-red-700">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+              {error}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 pb-6 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+            Annuleren
+          </button>
+          <button
+            onClick={() => { setError(''); create.mutate(); }}
+            disabled={!canSubmit}
+            className="flex-1 flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl text-sm font-bold transition-colors"
+          >
+            {create.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {create.isPending ? 'Opslaan…' : 'Boeking aanmaken'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function BookingsPage() {
   const locale = useLocale();
   const dateLocale = locale === 'nl' ? nl : enUS;
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sentLinks, setSentLinks] = useState<Set<string>>(new Set());
+  const [showModal, setShowModal] = useState(false);
   const qc = useQueryClient();
 
   const { data: bookings = [], isLoading } = useQuery({
@@ -71,6 +295,12 @@ export default function BookingsPage() {
     },
   });
 
+  const handleCreated = () => {
+    qc.invalidateQueries({ queryKey: ['bookings'] });
+    qc.invalidateQueries({ queryKey: ['dashboard'] });
+    qc.invalidateQueries({ queryKey: ['pending-bookings'] });
+  };
+
   const allBookings = bookings as any[];
   const totalCount = allBookings.length;
   const confirmedCount = allBookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PAID' || b.status === 'COMPLETED').length;
@@ -78,11 +308,17 @@ export default function BookingsPage() {
   const cancelledCount = allBookings.filter(b => b.status === 'CANCELLED').length;
 
   const fmt = (d: string) => format(new Date(d), 'd MMM yyyy', { locale: dateLocale });
-  const nights = (ci: string, co: string) =>
-    Math.round((new Date(co).getTime() - new Date(ci).getTime()) / 86_400_000);
 
   return (
     <div className="space-y-6 max-w-6xl">
+
+      {/* Modal */}
+      {showModal && (
+        <ManualBookingModal
+          onClose={() => setShowModal(false)}
+          onCreated={handleCreated}
+        />
+      )}
 
       {/* Title */}
       <div>
@@ -117,8 +353,12 @@ export default function BookingsPage() {
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
         </div>
         <div className="flex-1" />
-        <button className="bg-brand hover:bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors">
-          + Nieuwe Boeking
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Nieuwe Boeking
         </button>
       </div>
 
@@ -136,6 +376,13 @@ export default function BookingsPage() {
           <p className="text-sm text-slate-400 mt-1">
             {filter === 'all' ? 'U heeft nog geen boekingen ontvangen.' : 'Geen boekingen met dit filter.'}
           </p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="mt-5 inline-flex items-center gap-2 bg-brand hover:bg-brand-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Boeking handmatig toevoegen
+          </button>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -151,7 +398,7 @@ export default function BookingsPage() {
             <div>Acties</div>
           </div>
 
-          {/* Pending bookings - actionable rows first */}
+          {/* Pending bookings — actionable rows first */}
           {filter === 'all' && allBookings.filter(b => b.status === 'PENDING').map((booking: any) => (
             <div key={booking.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-4 border-b border-slate-50 hover:bg-brand-light/10 transition-colors items-center bg-amber-50/30">
               <div className="flex items-center gap-2.5 min-w-0">

@@ -14,16 +14,19 @@ export class DashboardService {
       totalProperties,
       totalRooms,
       totalGuests,
+      totalBookings,
       pendingBookings,
       confirmedBookings,
       upcomingBookings,
       revenueThisMonth,
+      avgRating,
     ] = await Promise.all([
       this.prisma.property.count({ where: { ownerId } }),
       this.prisma.room.count({
         where: { property: { ownerId }, isActive: true },
       }),
       this.prisma.guest.count({ where: { ownerId } }),
+      this.prisma.booking.count({ where: { ownerId } }),
       this.prisma.booking.count({ where: { ownerId, status: 'PENDING' } }),
       this.prisma.booking.count({ where: { ownerId, status: 'CONFIRMED' } }),
       this.prisma.booking.findMany({
@@ -42,10 +45,14 @@ export class DashboardService {
       this.prisma.booking.aggregate({
         where: {
           ownerId,
-          status: 'CONFIRMED',
+          status: { in: ['CONFIRMED', 'PAID', 'COMPLETED'] },
           checkIn: { gte: startOfMonth, lte: endOfMonth },
         },
         _sum: { totalPrice: true },
+      }),
+      this.prisma.review.aggregate({
+        where: { property: { ownerId } },
+        _avg: { rating: true },
       }),
     ]);
 
@@ -65,9 +72,11 @@ export class DashboardService {
         totalProperties,
         totalRooms,
         totalGuests,
+        totalBookings,
         pendingBookings,
         confirmedBookings,
         revenueThisMonth: Number(revenueThisMonth._sum.totalPrice ?? 0),
+        avgRating: avgRating._avg.rating ? Number(avgRating._avg.rating.toFixed(1)) : null,
       },
       upcomingBookings,
       recentBookings,

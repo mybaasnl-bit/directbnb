@@ -79,6 +79,54 @@ export class BookingsService {
     return booking;
   }
 
+  // ─── Owner: manually create a confirmed booking ──────────────────────────────
+
+  async createManual(ownerId: string, dto: CreateBookingDto) {
+    const room = await this.prisma.room.findUnique({
+      where: { id: dto.roomId },
+      include: { property: { include: { owner: true } } },
+    });
+
+    if (!room || room.property.ownerId !== ownerId) {
+      throw new NotFoundException('Room not found or does not belong to you');
+    }
+
+    const checkIn = new Date(dto.checkIn);
+    const checkOut = new Date(dto.checkOut);
+
+    if (checkIn >= checkOut) {
+      throw new BadRequestException('Check-out must be after check-in');
+    }
+
+    await this.assertRoomAvailable(dto.roomId, checkIn, checkOut);
+
+    const guest = await this.upsertGuest(ownerId, dto);
+
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    const totalPrice = Number(room.pricePerNight) * nights;
+
+    const booking = await this.prisma.booking.create({
+      data: {
+        roomId: dto.roomId,
+        guestId: guest.id,
+        ownerId,
+        checkIn,
+        checkOut,
+        numGuests: dto.numGuests,
+        totalPrice,
+        guestMessage: dto.guestMessage,
+        status: 'CONFIRMED',
+        source: 'manual',
+      },
+      include: {
+        room: { include: { property: true } },
+        guest: true,
+      },
+    });
+
+    return booking;
+  }
+
   // ─── Owner: get all bookings ─────────────────────────────────────────────────
 
   async findAllByOwner(ownerId: string, status?: BookingStatus, search?: string) {

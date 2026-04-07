@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -237,6 +238,8 @@ export default function BetalingenPage() {
     queryFn: () => api.get('/payouts').then((r) => r.data.data),
   });
 
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
+
   const { mutate: startOnboarding, isPending: onboardingPending } = useMutation({
     mutationFn: () =>
       api.post('/payouts/onboarding', {
@@ -244,7 +247,15 @@ export default function BetalingenPage() {
         refreshUrl: `${window.location.origin}/${locale}/betalingen?onboarding=refresh`,
       }).then((r) => r.data.data),
     onSuccess: (data: { url: string }) => {
+      setOnboardingError(null);
       window.location.href = data.url;
+    },
+    onError: (err: any) => {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Er is iets misgegaan. Probeer het opnieuw of neem contact op met support.';
+      setOnboardingError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     },
   });
 
@@ -303,6 +314,23 @@ export default function BetalingenPage() {
           >
             {onboardingPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             Opnieuw koppelen
+          </button>
+        </div>
+      )}
+
+      {/* Onboarding error */}
+      {onboardingError && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-100 rounded-2xl px-5 py-4">
+          <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-red-800">Koppelen mislukt</p>
+            <p className="text-sm text-red-700 mt-0.5">{onboardingError}</p>
+          </div>
+          <button
+            onClick={() => setOnboardingError(null)}
+            className="text-red-400 hover:text-red-600 flex-shrink-0"
+          >
+            <XCircle className="w-4 h-4" />
           </button>
         </div>
       )}
