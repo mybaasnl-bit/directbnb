@@ -74,6 +74,153 @@ function StepBadge({ n }: { n: number }) {
   );
 }
 
+interface PlatformInstructionsProps {
+  steps: { title: string; body: React.ReactNode }[];
+}
+
+function PlatformInstructions({ steps }: PlatformInstructionsProps) {
+  return (
+    <div className="space-y-4 pt-1">
+      {steps.map((s, i) => (
+        <div key={i} className="flex gap-4">
+          <StepBadge n={i + 1} />
+          <div>
+            <p className="text-sm font-semibold text-slate-800">{s.title}</p>
+            <div className="text-sm text-slate-500 mt-0.5">{s.body}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const PLATFORMS = [
+  {
+    id: 'squarespace',
+    label: 'Squarespace',
+    emoji: '🟫',
+    steps: [
+      {
+        title: 'Kopieer de widget-code',
+        body: <>Klik op de oranje knop <strong>"Kopieer code"</strong> hierboven.</>,
+      },
+      {
+        title: 'Open de pagina-editor',
+        body: <>Ga in Squarespace naar <strong>Pagina's</strong> en open de pagina waar je de widget wilt plaatsen. Klik op <strong>Bewerken</strong>.</>,
+      },
+      {
+        title: 'Voeg een Code-blok toe',
+        body: <>Klik op het <strong>+</strong>-icoontje op de plek waar je de widget wilt. Zoek naar <strong>"Code"</strong> en selecteer dat blok.</>,
+      },
+      {
+        title: 'Plak de code',
+        body: <>Plak de gekopieerde iframe-code in het tekstveld van het Code-blok en zet de modus op <strong>HTML</strong>.</>,
+      },
+      {
+        title: 'Sla op en publiceer',
+        body: <>Klik op <strong>"Opslaan"</strong> en vervolgens op <strong>"Publiceren"</strong>. De widget verschijnt direct op je pagina.</>,
+      },
+    ],
+  },
+  {
+    id: 'wix',
+    label: 'Wix',
+    emoji: '⬜',
+    steps: [
+      {
+        title: 'Kopieer de widget-code',
+        body: <>Klik op de oranje knop <strong>"Kopieer code"</strong> hierboven.</>,
+      },
+      {
+        title: 'Open de Wix Editor',
+        body: <>Ga naar je Wix-dashboard en open de pagina-editor via <strong>"Site bewerken"</strong>.</>,
+      },
+      {
+        title: 'Voeg een HTML-element toe',
+        body: <>Klik op het <strong>+</strong>-icoontje (Toevoegen) → <strong>Embed</strong> → <strong>HTML Embed</strong>. Sleep het element naar de gewenste positie.</>,
+      },
+      {
+        title: 'Plak de code',
+        body: <>Klik op het HTML-element → <strong>"Code invoeren"</strong>. Plak de iframe-code in het venster en klik op <strong>"Bijwerken"</strong>.</>,
+      },
+      {
+        title: 'Sla op en publiceer',
+        body: <>Klik rechtsboven op <strong>"Opslaan"</strong> en daarna op <strong>"Publiceren"</strong>.</>,
+      },
+    ],
+  },
+  {
+    id: 'webflow',
+    label: 'Webflow',
+    emoji: '🔷',
+    steps: [
+      {
+        title: 'Kopieer de widget-code',
+        body: <>Klik op de oranje knop <strong>"Kopieer code"</strong> hierboven.</>,
+      },
+      {
+        title: 'Open de Webflow Designer',
+        body: <>Open je project in de Webflow Designer en navigeer naar de pagina waar je de widget wilt plaatsen.</>,
+      },
+      {
+        title: 'Voeg een HTML Embed-component toe',
+        body: <>Zoek in het <strong>Add Elements</strong>-paneel (links, <kbd>A</kbd>) naar <strong>"HTML Embed"</strong> en sleep het naar de gewenste sectie.</>,
+      },
+      {
+        title: 'Plak de code',
+        body: <>Dubbelklik op het Embed-element. Plak de iframe-code in het veld en klik op <strong>"Save &amp; Close"</strong>.</>,
+      },
+      {
+        title: 'Publiceer de site',
+        body: <>Klik rechtsboven op <strong>"Publish"</strong> en selecteer je domein om de wijzigingen live te zetten.</>,
+      },
+    ],
+  },
+] as const;
+
+function OtherPlatformsAccordion() {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Code2 className="w-5 h-5 text-slate-500" />
+        </div>
+        <div>
+          <h2 className="font-bold text-slate-900">Andere website-builders</h2>
+          <p className="text-xs text-slate-400 mt-0.5">Klik op je platform voor stap-voor-stap instructies.</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {PLATFORMS.map(({ id, label, emoji, steps }) => {
+          const isOpen = openId === id;
+          return (
+            <div key={id} className="border border-slate-100 rounded-2xl overflow-hidden">
+              <button
+                onClick={() => setOpenId(isOpen ? null : id)}
+                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-colors"
+              >
+                <span className="flex items-center gap-2.5 text-sm font-semibold text-slate-800">
+                  <span className="text-base">{emoji}</span>
+                  {label}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isOpen && (
+                <div className="px-5 pb-5 border-t border-slate-50">
+                  <PlatformInstructions steps={steps as any} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function WidgetPage() {
   const { locale } = useParams<{ locale: string }>();
 
@@ -378,13 +525,10 @@ export default function WidgetPage() {
           </div>
         </div>
 
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-sm text-amber-800">
-          <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-500" />
-          <span>
-            <strong>Gebruik je een ander CMS</strong> zoals Squarespace, Wix of Webflow? Zoek dan naar een <em>"Embed"</em> of <em>"HTML"</em>-blok in jouw editor — de code werkt overal.
-          </span>
-        </div>
       </div>
+
+      {/* Other platform instructions */}
+      <OtherPlatformsAccordion />
 
     </div>
   );

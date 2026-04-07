@@ -10,6 +10,8 @@ import {
   ParseIntPipe,
   DefaultValuePipe,
   Req,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -31,14 +33,24 @@ export class PayoutsController {
   @Post('onboarding')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create Stripe Connect onboarding link for the current host' })
-  createOnboardingLink(
+  async createOnboardingLink(
     @CurrentUser('id') ownerId: string,
     @Body() body: { returnUrl?: string; refreshUrl?: string },
   ) {
     const frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:3000');
     const returnUrl = body.returnUrl ?? `${frontendUrl}/nl/betalingen?onboarding=success`;
     const refreshUrl = body.refreshUrl ?? `${frontendUrl}/nl/betalingen?onboarding=refresh`;
-    return this.payoutsService.createOnboardingLink(ownerId, returnUrl, refreshUrl);
+    try {
+      return await this.payoutsService.createOnboardingLink(ownerId, returnUrl, refreshUrl);
+    } catch (err: any) {
+      // Re-throw NestJS HTTP exceptions as-is
+      if (err?.status) throw err;
+      // Stripe errors (StripeError have a .type property)
+      if (err?.type?.startsWith('Stripe')) {
+        throw new BadRequestException(err.message ?? 'Stripe koppeling mislukt. Probeer het opnieuw.');
+      }
+      throw new InternalServerErrorException(err?.message ?? 'Koppeling mislukt. Probeer het opnieuw.');
+    }
   }
 
   @Get('account-status')

@@ -42,9 +42,10 @@ export default function HostEmailTemplateEditorPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // All 4 fields stored — NL is edited by builder, EN is kept from API
+  // All fields stored — NL is edited by builder, EN is kept from API
   const [subjectNl, setSubjectNl] = useState('');
   const [subjectEn, setSubjectEn] = useState('');
+  const [previewTextNl, setPreviewTextNl] = useState('');
   const [htmlNl, setHtmlNl] = useState('');
   const [htmlEn, setHtmlEn] = useState('');
   const [isCustomized, setIsCustomized] = useState(false);
@@ -73,6 +74,7 @@ export default function HostEmailTemplateEditorPage() {
         const tpl: ResolvedTemplate = data?.data ?? data;
         setSubjectNl(tpl.subjectNl ?? '');
         setSubjectEn(tpl.subjectEn ?? '');
+        setPreviewTextNl((tpl as any).previewTextNl ?? '');
         setHtmlNl(tpl.htmlNl ?? '');
         setHtmlEn(tpl.htmlEn ?? '');
         setIsCustomized(tpl.isCustomized ?? false);
@@ -98,7 +100,7 @@ export default function HostEmailTemplateEditorPage() {
   // Sync latest ref
   useEffect(() => {
     latestRef.current = { subjectNl, subjectEn, htmlNl, htmlEn };
-  }, [subjectNl, subjectEn, htmlNl, htmlEn]);
+  }, [subjectNl, subjectEn, previewTextNl, htmlNl, htmlEn]);
 
   // Cleanup on unmount
   useEffect(() => () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); }, []);
@@ -119,6 +121,7 @@ export default function HostEmailTemplateEditorPage() {
       await api.put(`/email-templates/host/mine/${templateName}`, {
         subjectNl: data.subjectNl,
         subjectEn: data.subjectEn || data.subjectNl, // fallback NL→EN
+        previewTextNl: previewTextNl || undefined,
         htmlNl: data.htmlNl,
         htmlEn: data.htmlEn || data.htmlNl,           // fallback NL→EN
       });
@@ -258,7 +261,7 @@ export default function HostEmailTemplateEditorPage() {
       </div>
 
       {/* Subject row — above the builder */}
-      <div className="flex items-center gap-3 px-1 pb-3 shrink-0">
+      <div className="flex items-center gap-3 px-1 pb-2 shrink-0">
         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap w-24 shrink-0">
           Onderwerp
         </label>
@@ -267,6 +270,20 @@ export default function HostEmailTemplateEditorPage() {
           value={subjectNl}
           onChange={(e) => markDirty(() => setSubjectNl(e.target.value))}
           placeholder="Bijv. Je boeking is bevestigd 🎉"
+          className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
+        />
+      </div>
+
+      {/* Preview text row */}
+      <div className="flex items-center gap-3 px-1 pb-3 shrink-0">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide whitespace-nowrap w-24 shrink-0">
+          Voorvertoning
+        </label>
+        <input
+          type="text"
+          value={previewTextNl}
+          onChange={(e) => markDirty(() => setPreviewTextNl(e.target.value))}
+          placeholder="Korte tekst zichtbaar in inbox-overzicht…"
           className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-colors"
         />
       </div>

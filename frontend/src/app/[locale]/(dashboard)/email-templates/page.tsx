@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Mail, BookOpen, CheckCircle, XCircle, Send, FileText, Clock, TrendingUp, Pencil, RotateCcw } from 'lucide-react';
+import { Mail, BookOpen, CheckCircle, XCircle, Send, FileText, Clock, TrendingUp, Pencil, RotateCcw, Eye, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -57,6 +57,7 @@ export default function EmailTemplatesPage() {
   const [resetting, setResetting] = useState<string | null>(null);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [emailStats, setEmailStats] = useState<{ SENT?: number; FAILED?: number; total?: number } | null>(null);
+  const [previewLog, setPreviewLog] = useState<any | null>(null);
 
   useEffect(() => {
     api.get('/email-templates/host/mine').then(({ data }) => {
@@ -93,6 +94,78 @@ export default function EmailTemplatesPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+
+      {/* Email preview modal */}
+      {previewLog && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setPreviewLog(null); }}
+        >
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto">
+            <div className="px-6 pt-6 pb-4 border-b border-slate-100 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {previewLog.templateName ?? previewLog.subject ?? 'Email'}
+                </h2>
+                {previewLog.recipientEmail && (
+                  <p className="text-sm text-slate-400 mt-0.5">Aan: {previewLog.recipientEmail}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setPreviewLog(null)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400 mb-0.5">Status</p>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    previewLog.status === 'SENT' ? 'bg-emerald-100 text-emerald-700' :
+                    previewLog.status === 'SCHEDULED' ? 'bg-blue-100 text-blue-700' :
+                    'bg-slate-100 text-slate-500'
+                  }`}>
+                    {previewLog.status === 'SENT' ? 'Verzonden' : previewLog.status === 'SCHEDULED' ? 'Gepland' : previewLog.status}
+                  </span>
+                </div>
+                <div className="bg-slate-50 rounded-xl p-3">
+                  <p className="text-xs text-slate-400 mb-0.5">Verstuurd op</p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {previewLog.sentAt ? format(new Date(previewLog.sentAt), 'd MMM yyyy, HH:mm', { locale: nl }) : '—'}
+                  </p>
+                </div>
+              </div>
+              {previewLog.subject && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Onderwerp</p>
+                  <p className="text-sm font-semibold text-slate-800">{previewLog.subject}</p>
+                </div>
+              )}
+              {previewLog.previewText && (
+                <div>
+                  <p className="text-xs text-slate-400 mb-1">Voorvertoning</p>
+                  <p className="text-sm text-slate-600">{previewLog.previewText}</p>
+                </div>
+              )}
+              {previewLog.htmlContent ? (
+                <div>
+                  <p className="text-xs text-slate-400 mb-2">Inhoud</p>
+                  <div
+                    className="border border-slate-100 rounded-xl overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: previewLog.htmlContent }}
+                  />
+                </div>
+              ) : (
+                <div className="bg-slate-50 rounded-xl p-4 text-center text-sm text-slate-400">
+                  Geen HTML-inhoud beschikbaar voor deze log.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Title */}
       <div>
@@ -152,24 +225,32 @@ export default function EmailTemplatesPage() {
               </div>
               <h3 className="font-bold text-slate-900 mb-1">{label}</h3>
               <p className="text-sm text-slate-400 mb-4">{description}</p>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => router.push(`/${locale}/email-templates/${name}`)}
+                    className="text-sm font-bold text-brand hover:underline flex items-center gap-1"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Sjabloon bewerken →
+                  </button>
+                  {isCustomized && (
+                    <button
+                      onClick={() => handleReset(name)}
+                      disabled={resetting === name}
+                      className="p-1.5 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
+                      title="Reset naar standaard"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 <button
                   onClick={() => router.push(`/${locale}/email-templates/${name}`)}
-                  className="text-sm font-bold text-brand hover:underline flex items-center gap-1"
+                  className="w-full flex items-center justify-center gap-1.5 bg-brand/5 hover:bg-brand/10 text-brand text-sm font-semibold px-3 py-2 rounded-xl border border-brand/20 transition-colors"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Sjabloon bewerken →
+                  Selecteer sjabloon
                 </button>
-                {isCustomized && (
-                  <button
-                    onClick={() => handleReset(name)}
-                    disabled={resetting === name}
-                    className="p-1.5 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
-                    title="Reset naar standaard"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             </div>
           );
@@ -224,11 +305,18 @@ export default function EmailTemplatesPage() {
                     <p className="text-xs text-slate-400 mt-0.5 truncate">{log.previewText}</p>
                   )}
                 </div>
-                <div className="shrink-0 text-right">
+                <div className="shrink-0 flex flex-col items-end gap-1">
                   <p className="text-xs text-slate-400">
                     {log.sentAt ? format(new Date(log.sentAt), 'd MMM yyyy, HH:mm', { locale: nl }) : '—'}
                   </p>
-                  <button className="mt-1 text-xs font-bold text-brand hover:underline">Bekijken</button>
+                  <button
+                    onClick={() => setPreviewLog(log)}
+                    className="flex items-center gap-1 text-xs font-bold text-brand hover:underline"
+                    title="E-mail bekijken"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Bekijken
+                  </button>
                 </div>
               </div>
             ))}

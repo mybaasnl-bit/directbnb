@@ -12,7 +12,7 @@ import {
   Wifi, Car, Coffee, Wind, Thermometer, UtensilsCrossed,
   WashingMachine, Tv, Waves, Flower2, Sun, Bike,
   ArrowUpDown, Flame, Monitor, Lock, Droplets, Zap,
-  Baby, ShieldCheck, Pencil, X,
+  Baby, ShieldCheck, Pencil, X, Sparkles,
 } from 'lucide-react';
 
 // Predefined amenity list
@@ -57,6 +57,7 @@ interface Property {
   amenities: string[];
   checkInTime?: string; checkOutTime?: string; cancellationPolicy?: string;
   smokingAllowed: boolean; petsAllowed: boolean; childrenAllowed: boolean;
+  showExtraServices?: boolean;
   photos: Photo[]; rooms: Room[];
 }
 
@@ -133,6 +134,11 @@ export default function PropertyDetailPage() {
     setAmenitiesSaved(true);
     setTimeout(() => setAmenitiesSaved(false), 2000);
   };
+
+  // ── Extra services toggle ──
+  const [showExtraServices, setShowExtraServices] = useState<boolean | null>(null);
+  const extraServicesValue = showExtraServices !== null ? showExtraServices : (property?.showExtraServices !== false);
+  const [extraServicesSaved, setExtraServicesSaved] = useState(false);
 
   // ── Policies form state ──
   const [policiesSaved, setPoliciesSaved] = useState(false);
@@ -696,6 +702,59 @@ export default function PropertyDetailPage() {
           ))}
         </div>
       </form>
+
+      {/* ── Extra Experiences ── */}
+      <div className="bg-white rounded-3xl p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-brand" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-slate-900">Extra Ervaringen</h2>
+              <p className="text-xs text-slate-400">Toon of verberg de ervaringsmodule op je boekingspagina</p>
+            </div>
+          </div>
+          {extraServicesSaved && (
+            <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
+              <Check className="w-3.5 h-3.5" /> Opgeslagen
+            </span>
+          )}
+        </div>
+        <div className="flex items-center justify-between py-2">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Ontdek extra ervaringen</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Laat gasten extra activiteiten ontdekken op je boekingspagina
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !extraServicesValue;
+              setShowExtraServices(next);
+              updateProperty.mutate({ showExtraServices: next } as any, {
+                onSuccess: () => {
+                  setExtraServicesSaved(true);
+                  setTimeout(() => setExtraServicesSaved(false), 2000);
+                },
+              });
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+              extraServicesValue ? 'bg-brand' : 'bg-slate-200'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                extraServicesValue ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-xs text-slate-400">
+          {extraServicesValue ? '✅ Zichtbaar voor gasten' : '🚫 Verborgen voor gasten'}
+        </p>
+      </div>
 
       {/* ── Photos ── */}
       <div className="bg-white rounded-3xl p-6 space-y-4">

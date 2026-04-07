@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, Sparkles, ArrowRight } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -83,9 +83,6 @@ function BnbTab() {
   const { locale } = useParams<{ locale: string }>();
   const [checkIn, setCheckIn]           = useState(property?.checkInTime ?? '14:00');
   const [checkOut, setCheckOut]         = useState(property?.checkOutTime ?? '10:00');
-  const [showExtraServices, setShowExtraServices] = useState<boolean>(
-    property?.showExtraServices !== false
-  );
   const [saved, setSaved]               = useState(false);
 
   const { data: paymentAccount } = useQuery<{ status: string; payoutsEnabled: boolean } | null>({
@@ -175,38 +172,6 @@ function BnbTab() {
 
       <SectionCard icon={Coffee} title="Services & Voorzieningen" subtitle="Wat bied je aan je gasten?">
         <p className="text-sm text-slate-400">Beheer voorzieningen via de Kamers pagina bij het bewerken van een accommodatie.</p>
-      </SectionCard>
-
-      {/* Extra Services toggle */}
-      <SectionCard icon={Sparkles} title="Extra Ervaringen" subtitle="Toon of verberg de ervaringsmodule op je boekingspagina">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-slate-800">Ontdek extra ervaringen</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Laat gasten extra activiteiten ontdekken op je boekingspagina
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              const next = !showExtraServices;
-              setShowExtraServices(next);
-              update.mutate({ showExtraServices: next });
-            }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-              showExtraServices ? 'bg-brand' : 'bg-slate-200'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                showExtraServices ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
-        <p className="text-xs text-slate-400">
-          {showExtraServices ? '✅ Zichtbaar voor gasten' : '🚫 Verborgen voor gasten'}
-        </p>
       </SectionCard>
 
       {/* Betalingen */}
