@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { ChatBubble } from '@/components/layout/chat-bubble';
+import { ImpersonationBanner } from '@/components/admin/impersonation-banner';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -15,9 +15,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const isAdminRoute = pathname.includes('/admin');
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.push(`/${locale}/login`);
+      return;
+    }
+
+    // Block non-admins from /admin/* routes
+    if (!isLoading && user && isAdminRoute && user.role !== 'ADMIN') {
+      router.push(`/${locale}/dashboard`);
       return;
     }
 
@@ -37,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         // ignore corrupt localStorage
       }
     }
-  }, [user, isLoading, router, locale, pathname]);
+  }, [user, isLoading, router, locale, pathname, isAdminRoute]);
 
   if (isLoading) {
     return (
@@ -55,17 +63,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-page flex relative">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 flex flex-col min-w-0">
-        <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
-          {children}
-        </main>
-      </div>
+    <>
+      {/* Impersonation banner — fixed at very top, only shown when active */}
+      <ImpersonationBanner />
 
-      {/* Chat bubble — altijd zichtbaar rechtsonder */}
-      <ChatBubble />
-    </div>
+      <div className="min-h-screen bg-page flex relative">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <DashboardHeader onMenuClick={() => setSidebarOpen(true)} />
+          <main className="flex-1 p-4 md:p-8 overflow-auto">
+            {children}
+          </main>
+        </div>
+
+        {/* Chat bubble — altijd zichtbaar rechtsonder */}
+        <ChatBubble />
+      </div>
+    </>
   );
 }

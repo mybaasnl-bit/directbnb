@@ -21,6 +21,8 @@ import {
   Banknote,
   Flame,
   Code2,
+  MessageSquare,
+  ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -62,6 +64,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   ];
 
   const adminItems = [
+    { href: `/${locale}/admin/dashboard`,       label: 'Overview',          icon: LayoutDashboard },
+    { href: `/${locale}/admin/users`,           label: 'Gebruikers',        icon: ShieldAlert },
+    { href: `/${locale}/admin/feedback`,        label: 'Feedback',          icon: MessageSquare },
     { href: `/${locale}/admin/payments`,        label: t('payments'),       icon: Euro },
     { href: `/${locale}/admin/email-templates`, label: t('emailTemplates'), icon: Mail },
     { href: `/${locale}/admin/beta-signups`,    label: t('betaSignups'),    icon: ClipboardList },
