@@ -1,3 +1,9 @@
+// Polyfill Web Crypto API for Node.js < 19 (required by @nestjs/schedule)
+if (typeof (globalThis as any).crypto === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  (globalThis as any).crypto = require('crypto').webcrypto;
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
