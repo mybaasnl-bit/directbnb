@@ -37,8 +37,14 @@ export class PayoutsService {
    */
   async createOnboardingLink(ownerId: string, returnUrl: string, refreshUrl: string) {
     if (!this.stripe || !this.enabled) {
-      throw new BadRequestException('Stripe is not configured on this server.');
+      const msg = 'STRIPE_SECRET_KEY is not set — Stripe Connect is disabled on this server.';
+      this.logger.error(msg);
+      throw new BadRequestException(msg);
     }
+
+    this.logger.log(`[Onboarding] Starting for owner ${ownerId}`);
+    this.logger.log(`[Onboarding] return_url=${returnUrl}`);
+    this.logger.log(`[Onboarding] refresh_url=${refreshUrl}`);
 
     // Find or create the HostPaymentAccount record
     let account = await this.prisma.hostPaymentAccount.findUnique({
@@ -52,17 +58,32 @@ export class PayoutsService {
       const owner = await this.prisma.user.findUnique({ where: { id: ownerId } });
       if (!owner) throw new NotFoundException('User not found');
 
-      const stripeAccount = await this.stripe.accounts.create({
-        type: 'express',
-        country: 'NL',
-        email: owner.email,
-        capabilities: {
-          transfers: { requested: true },
-        },
-        metadata: { ownerId },
-      });
+      this.logger.log(`[Onboarding] Creating new Stripe Express account for ${owner.email}`);
+
+      let stripeAccount: Stripe.Account;
+      try {
+        stripeAccount = await this.stripe.accounts.create({
+          type: 'express',
+          country: 'NL',
+          email: owner.email,
+          capabilities: {
+            transfers: { requested: true },
+          },
+          metadata: { ownerId },
+        });
+      } catch (err: any) {
+        this.logger.error(`[Onboarding] stripe.accounts.create failed`);
+        this.logger.error(`  type:    ${err?.type}`);
+        this.logger.error(`  code:    ${err?.code}`);
+        this.logger.error(`  message: ${err?.message}`);
+        this.logger.error(`  raw:     ${JSON.stringify(err?.raw ?? {})}`);
+        throw new BadRequestException(
+          `Stripe account aanmaken mislukt: ${err?.message ?? 'Onbekende fout'}`,
+        );
+      }
 
       stripeAccountId = stripeAccount.id;
+      this.logger.log(`[Onboarding] Created Stripe Express account ${stripeAccountId}`);
 
       account = await this.prisma.hostPaymentAccount.upsert({
         where: { ownerId },
@@ -76,20 +97,45 @@ export class PayoutsService {
           status: 'ONBOARDING',
         },
       });
-
-      this.logger.log(`Created Stripe Express account ${stripeAccountId} for owner ${ownerId}`);
     } else {
       stripeAccountId = account.providerAccountId;
+      this.logger.log(`[Onboarding] Re-using existing Stripe account ${stripeAccountId}`);
     }
 
     // Create the account link
-    const link = await this.stripe.accountLinks.create({
-      account: stripeAccountId,
-      refresh_url: refreshUrl,
-      return_url: returnUrl,
-      type: 'account_onboarding',
-    });
+    let link: Stripe.AccountLink;
+    try {
+      link = await this.stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: refreshUrl,
+        return_url: returnUrl,
+        type: 'account_onboarding',
+      });
+    } catch (err: any) {
+      this.logger.error(`[Onboarding] stripe.accountLinks.create failed for account ${stripeAccountId}`);
+      this.logger.error(`  type:    ${err?.type}`);
+      this.logger.error(`  code:    ${err?.code}`);
+      this.logger.error(`  message: ${err?.message}`);
+      this.logger.error(`  raw:     ${JSON.stringify(err?.raw ?? {})}`);
 
+      // If the stored account no longer exists in Stripe, clear it and let the
+      // caller retry — they'll get a fresh account on the next attempt.
+      if (err?.code === 'account_invalid' || err?.statusCode === 404) {
+        await this.prisma.hostPaymentAccount.update({
+          where: { ownerId },
+          data: { providerAccountId: null as any, status: 'PENDING' },
+        });
+        throw new BadRequestException(
+          `Het gekoppelde Stripe-account bestaat niet meer. Probeer opnieuw — er wordt een nieuw account aangemaakt. (${err?.message})`,
+        );
+      }
+
+      throw new BadRequestException(
+        `Stripe onboarding link aanmaken mislukt: ${err?.message ?? 'Onbekende fout'}`,
+      );
+    }
+
+    this.logger.log(`[Onboarding] Account link created, expires ${new Date(link.expires_at * 1000).toISOString()}`);
     return { url: link.url, expiresAt: new Date(link.expires_at * 1000) };
   }
 

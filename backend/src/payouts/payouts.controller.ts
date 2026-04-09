@@ -43,13 +43,19 @@ export class PayoutsController {
     try {
       return await this.payoutsService.createOnboardingLink(ownerId, returnUrl, refreshUrl);
     } catch (err: any) {
-      // Re-throw NestJS HTTP exceptions as-is
+      // Re-throw NestJS HTTP exceptions (BadRequestException etc.) as-is —
+      // the service already logged details and composed a user-facing message.
       if (err?.status) throw err;
-      // Stripe errors (StripeError have a .type property)
-      if (err?.type?.startsWith('Stripe')) {
-        throw new BadRequestException(err.message ?? 'Stripe koppeling mislukt. Probeer het opnieuw.');
+      // Raw Stripe SDK errors that escaped the service (type is lowercase snake_case
+      // like 'invalid_request_error', 'api_error', etc.)
+      if (err?.raw || err?.type) {
+        throw new BadRequestException(
+          `Stripe fout (${err?.type ?? 'unknown'}): ${err?.message ?? 'Koppeling mislukt.'}`,
+        );
       }
-      throw new InternalServerErrorException(err?.message ?? 'Koppeling mislukt. Probeer het opnieuw.');
+      throw new InternalServerErrorException(
+        err?.message ?? 'Koppeling mislukt. Probeer het opnieuw.',
+      );
     }
   }
 
