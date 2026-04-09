@@ -185,6 +185,8 @@ model Room {
   sqm           Int?
   minStay       Int      @default(1)
   isActive      Boolean  @default(true)
+  amenities     String[] @default([])
+  houseRules    String?  @db.Text
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

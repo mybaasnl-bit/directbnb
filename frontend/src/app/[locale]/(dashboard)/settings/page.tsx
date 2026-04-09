@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -76,14 +76,25 @@ function BnbTab() {
   });
   const property = (properties as any[])[0];
 
-  const [name, setName]             = useState(property?.name ?? '');
-  const [city, setCity]             = useState(property?.addressCity ?? '');
-  const [address, setAddress]       = useState(property?.addressLine1 ?? '');
-  const [description, setDescription] = useState(property?.descriptionNl ?? '');
+  const [name, setName]             = useState('');
+  const [city, setCity]             = useState('');
+  const [address, setAddress]       = useState('');
+  const [description, setDescription] = useState('');
   const { locale } = useParams<{ locale: string }>();
-  const [checkIn, setCheckIn]           = useState(property?.checkInTime ?? '14:00');
-  const [checkOut, setCheckOut]         = useState(property?.checkOutTime ?? '10:00');
+  const [checkIn, setCheckIn]           = useState('14:00');
+  const [checkOut, setCheckOut]         = useState('10:00');
   const [saved, setSaved]               = useState(false);
+
+  useEffect(() => {
+    if (property) {
+      setName(property.name ?? '');
+      setCity(property.addressCity ?? '');
+      setAddress(property.addressLine1 ?? '');
+      setDescription(property.descriptionNl ?? '');
+      setCheckIn(property.checkInTime ?? '14:00');
+      setCheckOut(property.checkOutTime ?? '10:00');
+    }
+  }, [property?.id]);
 
   const { data: paymentAccount } = useQuery<{ status: string; payoutsEnabled: boolean } | null>({
     queryKey: ['payout-account-status'],

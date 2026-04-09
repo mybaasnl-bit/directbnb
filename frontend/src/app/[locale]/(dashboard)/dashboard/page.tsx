@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay, addMonths, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { useState } from 'react';
+import { BetaBanner } from '@/components/feedback/beta-banner';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -523,6 +524,9 @@ export default function DashboardPage() {
         <PopulaireKamers properties={properties} />
         <SnelleActies locale={locale} />
       </div>
+
+      {/* ── Beta feedback banner ── */}
+      <BetaBanner />
 
     </div>
   );

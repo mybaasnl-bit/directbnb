@@ -19,6 +19,12 @@ export class RoomsService {
         pricePerNight: dto.pricePerNight,
         maxGuests: dto.maxGuests ?? 2,
         isActive: dto.isActive ?? true,
+        beds: dto.beds,
+        bathrooms: dto.bathrooms,
+        sqm: dto.sqm,
+        minStay: dto.minStay ?? 1,
+        amenities: dto.amenities ?? [],
+        houseRules: dto.houseRules,
       },
       include: { photos: true },
     });

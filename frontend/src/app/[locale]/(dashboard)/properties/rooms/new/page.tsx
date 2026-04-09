@@ -44,7 +44,9 @@ export default function NewRoomPage() {
     bedType: '',
     bedCount: '1',
     amenities: [] as string[],
+    houseRules: '',
   });
+  const [customAmenity, setCustomAmenity] = useState('');
   const [apiError, setApiError] = useState('');
 
   // ── Data ──
@@ -82,6 +84,8 @@ export default function NewRoomPage() {
         pricePerNight: parseFloat(form.pricePerNight),
         maxGuests: parseInt(form.maxGuests),
         minStay: 1,
+        amenities: form.amenities,
+        ...(form.houseRules.trim() && { houseRules: form.houseRules.trim() }),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['properties'] });
@@ -356,7 +360,68 @@ export default function NewRoomPage() {
                   </button>
                 );
               })}
+              {form.amenities.filter(a => !AMENITIES.find(x => x.key === a)).map((custom) => (
+                <button
+                  key={custom}
+                  type="button"
+                  onClick={() => toggleAmenity(custom)}
+                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-brand bg-brand-light/30 text-brand text-sm font-semibold transition-all text-left"
+                >
+                  <span className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 bg-brand">
+                    <Check className="w-2.5 h-2.5 text-white" />
+                  </span>
+                  {custom}
+                </button>
+              ))}
             </div>
+
+            <div className="flex gap-2">
+              <input
+                value={customAmenity}
+                onChange={(e) => setCustomAmenity(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const val = customAmenity.trim();
+                    if (val && !form.amenities.includes(val)) {
+                      setForm((f) => ({ ...f, amenities: [...f.amenities, val] }));
+                    }
+                    setCustomAmenity('');
+                  }
+                }}
+                placeholder="Voeg eigen voorziening toe..."
+                className={`${inp} flex-1`}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const val = customAmenity.trim();
+                  if (val && !form.amenities.includes(val)) {
+                    setForm((f) => ({ ...f, amenities: [...f.amenities, val] }));
+                  }
+                  setCustomAmenity('');
+                }}
+                disabled={!customAmenity.trim()}
+                className="px-4 py-3 bg-brand hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-colors flex-shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Huisregels */}
+          <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
+            <div>
+              <h2 className="font-bold text-slate-900 text-lg mb-1">Huisregels</h2>
+              <p className="text-sm text-slate-400">Stel verwachtingen voor gasten in</p>
+            </div>
+            <textarea
+              value={form.houseRules}
+              onChange={(e) => setForm((f) => ({ ...f, houseRules: e.target.value }))}
+              placeholder="Bijv. Geen roken, geen huisdieren, check-out voor 11:00..."
+              rows={4}
+              className={`${inp} resize-none`}
+            />
           </div>
 
           {/* Foto's info */}

@@ -750,6 +750,13 @@ export default function OnboardingPage() {
                 <p className="text-xs text-slate-400 mt-1.5">Naam zoals vermeld op je bankrekening</p>
               </div>
 
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3.5">
+                <span className="text-lg flex-shrink-0">⚠️</span>
+                <p className="text-sm text-amber-800 font-medium">
+                  Controleer je ingevulde IBAN-gegevens zorgvuldig. Onjuiste gegevens kunnen leiden tot vertraging of mislukking van uitbetalingen.
+                </p>
+              </div>
+
               <div className="border border-slate-100 rounded-2xl p-4 space-y-2.5">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
                   Hoe werken betalingen?
@@ -990,7 +997,15 @@ export default function OnboardingPage() {
               {(state.step === 6 || state.step === 7) && (
                 <button
                   type="button"
-                  onClick={() => { setFieldErrors({}); setStep(state.step + 1); }}
+                  onClick={async () => {
+                    setFieldErrors({});
+                    if (state.step === 7 && state.propertyId) {
+                      try {
+                        await api.patch(`/properties/${state.propertyId}`, { isPublished: true });
+                      } catch {}
+                    }
+                    setStep(state.step + 1);
+                  }}
                   className="w-full py-2.5 text-sm text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   Overslaan — ik doe dit later

@@ -4,9 +4,11 @@ import {
   MaxLength,
   IsNumber,
   IsBoolean,
+  IsArray,
   Min,
   IsUUID,
 } from 'class-validator';
+
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 
@@ -76,4 +78,15 @@ export class CreateRoomDto {
   @IsNumber()
   @Min(1)
   minStay?: number;
+
+  @ApiPropertyOptional({ example: ['wifi', 'tv'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  amenities?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  houseRules?: string;
 }
