@@ -3,6 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
 
+/** Default platform commission percentage when host has no custom rate set */
+const DEFAULT_PLATFORM_FEE_PERCENT = 5;
+
 @Injectable()
 export class StripeService {
   private readonly stripe: Stripe | null = null;
@@ -25,10 +28,14 @@ export class StripeService {
   }
 
   /**
-   * Create a Stripe PaymentIntent for a booking deposit.
-   * depositPercent defaults to 30% of the total price.
+   * Create a Stripe PaymentIntent charged to the Platform account.
+   * No `destination` or `transfer_data` — this is the "Separate Charges and Transfers" model.
+   * Fee and payout amounts are calculated and saved to the Booking immediately.
+   *
+   * @param bookingId  The booking to charge.
+   * @param depositPercent  Percentage of totalPrice to charge now (100 = full amount).
    */
-  async createDepositIntent(bookingId: string, depositPercent = 30): Promise<{
+  async createDepositIntent(bookingId: string, depositPercent = 100): Promise<{
     clientSecret: string;
     depositAmount: number;
     currency: string;
@@ -39,47 +46,74 @@ export class StripeService {
 
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { room: { include: { property: true } }, guest: true },
+      include: {
+        room: { include: { property: true } },
+        guest: true,
+        owner: { include: { paymentAccount: true } },
+      },
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
-    if (booking.depositPaid) throw new BadRequestException('Deposit already paid for this booking');
+    if (booking.depositPaid) throw new BadRequestException('Payment already captured for this booking');
 
-    // Calculate deposit amount in cents
-    const totalCents = Math.round(Number(booking.totalPrice) * 100);
-    const depositCents = Math.round(totalCents * (depositPercent / 100));
+    // ── Fee calculation ────────────────────────────────────────────────────────
+    const totalEuros = Number(booking.totalPrice);
+    const chargeCents = Math.round(totalEuros * (depositPercent / 100) * 100);
 
+    const feePercent =
+      Number(booking.owner.paymentAccount?.platformFeePercent ?? 0) ||
+      this.config.get<number>('PLATFORM_FEE_PERCENT', DEFAULT_PLATFORM_FEE_PERCENT);
+
+    // Fee is calculated on the *total booking value*, not just the charge amount,
+    // so it's consistent regardless of whether a deposit or full payment is taken.
+    const platformFeeEuros = parseFloat((totalEuros * feePercent / 100).toFixed(2));
+    const payoutEuros      = parseFloat((totalEuros - platformFeeEuros).toFixed(2));
+
+    // ── Create PaymentIntent on Platform account (no destination) ─────────────
     const intent = await this.stripe.paymentIntents.create({
-      amount: depositCents,
+      amount: chargeCents,
       currency: 'eur',
+      // NOTE: No `transfer_data` or `on_behalf_of` here.
+      // Funds land on the platform account; transfers are executed separately by the payout job.
       metadata: {
         bookingId,
         propertyName: booking.room.property.name,
         guestEmail: booking.guest.email,
       },
-      description: `DirectBnB — ${booking.room.property.name} deposit (booking ${bookingId.slice(0, 8)})`,
+      description: `DirectBnB — ${booking.room.property.name} (booking ${bookingId.slice(0, 8)})`,
     });
 
-    // Save the intent ID to the booking
+    // ── Persist to DB ──────────────────────────────────────────────────────────
     await this.prisma.booking.update({
       where: { id: bookingId },
       data: {
         stripePaymentIntentId: intent.id,
-        depositAmount: depositCents / 100,
+        depositAmount: chargeCents / 100,
+        platformFeeAmount: platformFeeEuros,
+        payoutAmount: payoutEuros,
+        paymentProvider: 'STRIPE',
+        paymentType: depositPercent < 100 ? 'DEPOSIT' : 'FULL',
       },
     });
 
-    this.logger.log(`Created PaymentIntent ${intent.id} for booking ${bookingId} — €${(depositCents / 100).toFixed(2)}`);
+    this.logger.log(
+      `PaymentIntent ${intent.id} created for booking ${bookingId} — ` +
+      `charge €${(chargeCents / 100).toFixed(2)}, ` +
+      `platform fee €${platformFeeEuros.toFixed(2)} (${feePercent}%), ` +
+      `host payout €${payoutEuros.toFixed(2)}`,
+    );
 
     return {
       clientSecret: intent.client_secret!,
-      depositAmount: depositCents / 100,
+      depositAmount: chargeCents / 100,
       currency: 'eur',
     };
   }
 
   /**
-   * Stripe webhook handler — marks deposit as paid when payment succeeds.
+   * Stripe webhook handler.
+   * On payment_intent.succeeded: marks deposit as paid and captures the Charge ID
+   * needed later as `source_transaction` in the transfer.
    */
   async handleWebhook(payload: Buffer, signature: string): Promise<void> {
     const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET');
@@ -97,14 +131,28 @@ export class StripeService {
     if (event.type === 'payment_intent.succeeded') {
       const intent = event.data.object as Stripe.PaymentIntent;
       const bookingId = intent.metadata?.bookingId;
+      if (!bookingId) return;
 
-      if (bookingId) {
-        await this.prisma.booking.update({
-          where: { id: bookingId },
-          data: { depositPaid: true },
-        });
-        this.logger.log(`Deposit paid for booking ${bookingId} via PaymentIntent ${intent.id}`);
-      }
+      // Retrieve the Charge ID — required as source_transaction for transfers.
+      // latest_charge is the string ID of the charge.
+      const chargeId = typeof intent.latest_charge === 'string'
+        ? intent.latest_charge
+        : (intent.latest_charge as Stripe.Charge | null)?.id ?? null;
+
+      await this.prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          depositPaid: true,
+          paymentStatus: 'PAID',
+          paidAt: new Date(),
+          ...(chargeId ? { stripeChargeId: chargeId } : {}),
+        },
+      });
+
+      this.logger.log(
+        `Payment succeeded for booking ${bookingId} — ` +
+        `PI: ${intent.id}, charge: ${chargeId ?? 'not yet expanded'}`,
+      );
     }
   }
 

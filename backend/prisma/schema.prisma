@@ -80,6 +80,13 @@ enum PayoutStatus {
   CANCELLED
 }
 
+enum BookingPayoutStatus {
+  PENDING
+  TRANSFERRED
+  FAILED
+  NOT_APPLICABLE
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -238,6 +245,8 @@ model Booking {
   ownerNotes            String?       @db.Text
   source                String        @default("direct")
   stripePaymentIntentId String?
+  stripeChargeId        String?       // Stripe Charge ID (from PI.latest_charge) — used as source_transaction in transfers
+  stripeTransferId      String?       // Stripe Transfer ID once payout is executed
   molliePaymentId       String?
   paymentProvider       PaymentProvider?
   depositPaid           Boolean       @default(false)
@@ -245,6 +254,9 @@ model Booking {
   paymentStatus         PaymentStatus?
   paymentType           PaymentType?
   paidAt                DateTime?
+  platformFeeAmount     Decimal?      @db.Decimal(10, 2)  // Commission kept by platform
+  payoutAmount          Decimal?      @db.Decimal(10, 2)  // Amount to transfer to host
+  payoutStatus          BookingPayoutStatus @default(PENDING)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 

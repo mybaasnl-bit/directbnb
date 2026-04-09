@@ -22,7 +22,7 @@ export class PayoutsService {
     this.enabled = !!key;
 
     if (key) {
-      this.stripe = new Stripe(key, { apiVersion: '2025-06-30.basil' });
+      this.stripe = new Stripe(key, { apiVersion: '2026-02-25.clover' });
       this.logger.log('Stripe Connect initialized for payouts');
     } else {
       this.logger.warn('STRIPE_SECRET_KEY not set — Stripe Connect disabled');
