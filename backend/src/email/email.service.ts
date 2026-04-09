@@ -500,6 +500,13 @@ export class EmailService {
   }
 
   /**
+   * Public low-level send — use for internal/admin emails that don't need template logging.
+   */
+  async sendRaw({ to, subject, html }: SendOptions) {
+    return this.send({ to, subject, html });
+  }
+
+  /**
    * Low-level send without template logging (for booking emails that use inline HTML).
    */
   private async send({ to, subject, html }: SendOptions) {

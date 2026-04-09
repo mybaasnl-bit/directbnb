@@ -19,16 +19,17 @@ const PALETTE_ITEMS: { type: BlockType; icon: string; desc: string }[] = [
 
 interface Props {
   onLoadTemplate: (blocks: Block[]) => void;
+  onAdd?: (type: BlockType) => void;
 }
 
-export function BlockPalette({ onLoadTemplate }: Props) {
+export function BlockPalette({ onLoadTemplate, onAdd }: Props) {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="p-4 border-b border-slate-200">
         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Blokken</p>
         <div className="grid grid-cols-2 gap-2">
           {PALETTE_ITEMS.map((item) => (
-            <PaletteItem key={item.type} type={item.type} icon={item.icon} desc={item.desc} />
+            <PaletteItem key={item.type} type={item.type} icon={item.icon} desc={item.desc} onAdd={onAdd} />
           ))}
         </div>
       </div>
@@ -56,7 +57,7 @@ export function BlockPalette({ onLoadTemplate }: Props) {
   );
 }
 
-function PaletteItem({ type, icon, desc }: { type: BlockType; icon: string; desc: string }) {
+function PaletteItem({ type, icon, desc, onAdd }: { type: BlockType; icon: string; desc: string; onAdd?: (type: BlockType) => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `palette::${type}`,
     data: { isPalette: true, blockType: type },
@@ -67,6 +68,7 @@ function PaletteItem({ type, icon, desc }: { type: BlockType; icon: string; desc
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      onClick={() => onAdd?.(type)}
       className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing select-none transition-all ${
         isDragging
           ? 'opacity-40 border-brand/20 bg-brand-light'
