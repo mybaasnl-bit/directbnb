@@ -116,91 +116,107 @@ function RevenueChart({ payouts }: { payouts: Payout[] }) {
   );
 }
 
+// ─── Stripe logo SVG ──────────────────────────────────────────────────────────
+
+function StripeLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 60 25" className={className} aria-label="Stripe" fill="currentColor">
+      <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.07zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.9z"/>
+    </svg>
+  );
+}
+
 // ─── Not-connected hero ────────────────────────────────────────────────────────
 
 function ConnectHero({ onConnect, isPending }: { onConnect: () => void; isPending: boolean }) {
   return (
-    <div className="space-y-6 max-w-2xl mx-auto py-4">
+    <div className="space-y-5 max-w-2xl mx-auto py-4">
 
-      {/* Hero card */}
-      <div className="bg-white rounded-3xl border border-slate-100 p-8 text-center space-y-5">
-        <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center mx-auto">
-          <Banknote className="w-8 h-8 text-brand" />
-        </div>
+      {/* Main setup card */}
+      <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden">
 
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
-            Ontvang betalingen op je bankrekening
-          </h2>
-          <p className="text-slate-500 text-base leading-relaxed max-w-md mx-auto">
-            Koppel je bankrekening en ontvang betalingen van gasten automatisch na elke check-in —
-            geen commissies, geen wachttijden.
+        {/* Header stripe */}
+        <div className="bg-gradient-to-r from-brand to-brand-600 px-8 py-6 text-white">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            <h2 className="text-xl font-extrabold leading-tight">
+              Veilig en automatisch uitbetaald krijgen
+            </h2>
+          </div>
+          <p className="text-white/80 text-sm leading-relaxed">
+            Om jouw verdiensten 100% veilig op je rekening te storten, werken wij samen met Stripe,
+            een van de grootste betalingsverwerkers ter wereld. Omdat we met geld werken, zijn we
+            wettelijk verplicht om je identiteit en bankgegevens eenmalig te verifiëren. Je wordt
+            nu even doorgestuurd naar de beveiligde omgeving van Stripe. Dit duurt ongeveer 3 minuten.
           </p>
         </div>
 
-        {/* Primary CTA */}
-        <button
-          onClick={onConnect}
-          disabled={isPending}
-          className="inline-flex items-center justify-center gap-3 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl text-base transition-colors shadow-lg shadow-brand/20 w-full sm:w-auto"
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Doorsturen naar verificatie…
-            </>
-          ) : (
-            <>
-              <ArrowRight className="w-5 h-5" />
-              Koppel mijn bankrekening
-            </>
-          )}
-        </button>
+        <div className="px-8 py-7 space-y-6">
 
-        {/* Trust signals */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Lock className="w-3.5 h-3.5" />
-            Bankgegevens worden veilig verwerkt
+          {/* What to expect checklist */}
+          <div className="space-y-3">
+            {[
+              { icon: Lock,        text: 'Je gegevens worden versleuteld verstuurd — DirectBnB ziet je bankgegevens nooit' },
+              { icon: ShieldCheck, text: 'Eenmalige verificatie — daarna volledig automatisch uitbetaald' },
+              { icon: Zap,         text: 'Geld op je rekening binnen 2 werkdagen na check-in' },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-start gap-3">
+                <div className="w-6 h-6 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Icon className="w-3.5 h-3.5 text-emerald-600" />
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed">{text}</p>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Geen commissie op uitbetalingen
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Zap className="w-3.5 h-3.5" />
-            Geld binnen 2 werkdagen op rekening
-          </div>
-        </div>
 
-        {/* Powered by Stripe */}
-        <div className="flex items-center justify-center gap-2 pt-1">
-          <span className="text-xs text-slate-300">Beveiligd door</span>
-          <svg viewBox="0 0 60 25" className="h-5 text-slate-400 fill-current" aria-label="Stripe">
-            <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a8.33 8.33 0 0 1-4.56 1.1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.04 1.26-.06 1.48zm-5.92-5.62c-1.03 0-2.17.73-2.17 2.58h4.25c0-1.85-1.07-2.58-2.08-2.58zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-4.7L32.37 0v3.36l-4.13.88V.88zm-4.32 9.35v9.79H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.43-3.32.07zm-8.55 4.72c0 2.43 2.6 1.68 3.12 1.46v3.36c-.55.3-1.54.54-2.89.54a4.15 4.15 0 0 1-4.27-4.24l.01-13.17 4.02-.86v3.54h3.14V9.1h-3.13v5.85zm-4.91.7c0 2.97-2.31 4.66-5.73 4.66a11.2 11.2 0 0 1-4.46-.93v-3.93c1.38.75 3.1 1.31 4.46 1.31.92 0 1.53-.24 1.53-1C6.26 13.77 0 14.51 0 9.95 0 7.04 2.28 5.3 5.62 5.3c1.36 0 2.72.2 4.09.75v3.88a9.23 9.23 0 0 0-4.1-1.06c-.86 0-1.44.25-1.44.9 0 1.85 6.29.97 6.29 5.9z"/>
-          </svg>
+          {/* CTA */}
+          <button
+            onClick={onConnect}
+            disabled={isPending}
+            className="w-full flex items-center justify-center gap-3 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold px-8 py-4 rounded-2xl text-base transition-colors shadow-lg shadow-brand/20"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Doorsturen naar Stripe…
+              </>
+            ) : (
+              <>
+                <ArrowRight className="w-5 h-5" />
+                Koppel bankrekening via Stripe
+              </>
+            )}
+          </button>
+
+          {/* Powered by Stripe */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-xs text-slate-400">Beveiligd door</span>
+            <StripeLogo className="h-5 text-slate-400" />
+          </div>
         </div>
       </div>
 
       {/* How it works */}
       <div className="bg-white rounded-3xl border border-slate-100 p-6">
-        <h3 className="font-bold text-slate-900 mb-5">Hoe werkt het?</h3>
+        <h3 className="font-bold text-slate-900 mb-5">Hoe werkt het na het koppelen?</h3>
         <div className="space-y-4">
           {[
             {
               step: '1',
-              title: 'Koppel je bankrekening',
-              desc: 'Klik op de knop en vul je bankgegevens in via een beveiligde omgeving. Duurt ongeveer 5 minuten.',
+              title: 'Bankrekening eenmalig koppelen',
+              desc: 'Vul je gegevens in via Stripe. Duurt ±3 minuten. Je doet dit maar één keer.',
             },
             {
               step: '2',
-              title: 'Gasten betalen bij het boeken',
-              desc: 'Zodra een gast boekt, wordt de betaling veilig verwerkt en voor je vastgehouden.',
+              title: 'Gasten betalen veilig bij het boeken',
+              desc: 'Zodra een gast boekt, wordt de betaling vastgehouden totdat de gast incheckt.',
             },
             {
               step: '3',
-              title: 'Geld op je rekening na check-in',
-              desc: 'Na elke check-in wordt het bedrag automatisch op jouw bankrekening gestort — binnen 2 werkdagen.',
+              title: 'Automatische uitbetaling na check-in',
+              desc: 'Elke nacht verwerken we uitbetalingen. Je geld staat binnen 2 werkdagen op je rekening.',
             },
           ].map((s) => (
             <div key={s.step} className="flex items-start gap-4">
