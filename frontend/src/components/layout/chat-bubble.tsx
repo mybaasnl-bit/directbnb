@@ -44,7 +44,7 @@ export function ChatBubble() {
     },
   });
 
-  const handleOpen  = () => { window.location.href = 'mailto:jesse@directbnb.nl'; };
+  const handleOpen  = () => { setStep('open'); };
   const handleClose = () => { setStep('idle'); setMessage(''); submit.reset(); };
   const handleSent  = () => { setStep('idle'); setMessage(''); submit.reset(); };
 

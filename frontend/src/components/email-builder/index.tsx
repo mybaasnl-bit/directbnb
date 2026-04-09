@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
-import { GripVertical, Trash2, Plus } from 'lucide-react';
+import { GripVertical, Trash2, Plus, LayoutGrid, Settings2, X } from 'lucide-react';
 
 import type { Block, BlockType } from './types';
 import { BLOCK_LABELS } from './types';
@@ -44,6 +44,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<'palette' | 'editor' | null>(null);
 
   // Re-parse blocks when value prop changes (language switch)
   const prevValueRef = useRef(value);
@@ -130,6 +131,11 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     ? (activeId.replace('palette::', '') as BlockType)
     : null;
 
+  const handleMobileAdd = useCallback((type: BlockType) => {
+    addBlock(type);
+    setMobilePanel(null);
+  }, [addBlock]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -138,26 +144,29 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-        {/* ── Left sidebar ── */}
-        <div className="w-64 shrink-0 bg-white border-r border-slate-200 overflow-y-auto">
+        {/* ── Left sidebar (desktop only) ── */}
+        <div className="hidden md:block w-64 shrink-0 bg-white border-r border-slate-200 overflow-y-auto">
           <BlockPalette onLoadTemplate={(tpl) => { setBlocks(tpl); setSelectedId(null); }} />
         </div>
 
         {/* ── Canvas ── */}
-        <div className="flex-1 overflow-y-auto bg-slate-100 p-6" onClick={() => setSelectedId(null)}>
+        <div
+          className="flex-1 overflow-y-auto bg-slate-100 p-4 md:p-6 pb-20 md:pb-6"
+          onClick={() => setSelectedId(null)}
+        >
           <div className="mx-auto" style={{ maxWidth: 600 }}>
             <Canvas
               blocks={blocks}
               selectedId={selectedId}
-              onSelect={setSelectedId}
+              onSelect={(id) => { setSelectedId(id); setMobilePanel('editor'); }}
               onDelete={deleteBlock}
               onAdd={addBlock}
             />
           </div>
         </div>
 
-        {/* ── Right panel ── */}
-        <div className="w-72 shrink-0 bg-white border-l border-slate-200 overflow-y-auto">
+        {/* ── Right panel (desktop only) ── */}
+        <div className="hidden md:block w-72 shrink-0 bg-white border-l border-slate-200 overflow-y-auto">
           {selectedBlock ? (
             <>
               <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
@@ -188,6 +197,93 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
           )}
         </div>
       </div>
+
+      {/* ── Mobile bottom toolbar ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 flex">
+        <button
+          type="button"
+          onClick={() => setMobilePanel(mobilePanel === 'palette' ? null : 'palette')}
+          className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-semibold transition-colors ${
+            mobilePanel === 'palette' ? 'text-brand' : 'text-slate-500'
+          }`}
+        >
+          <LayoutGrid className="w-5 h-5" />
+          Blokken
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePanel(mobilePanel === 'editor' ? null : 'editor')}
+          className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-semibold transition-colors ${
+            mobilePanel === 'editor' ? 'text-brand' : 'text-slate-500'
+          }`}
+        >
+          <Settings2 className="w-5 h-5" />
+          Bewerken
+        </button>
+      </div>
+
+      {/* ── Mobile bottom sheet ── */}
+      {mobilePanel !== null && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setMobilePanel(null)}
+          />
+          {/* Drawer */}
+          <div className="relative bg-white rounded-t-2xl shadow-2xl max-h-[75vh] flex flex-col">
+            {/* Handle bar */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-slate-100">
+              <span className="text-sm font-bold text-slate-700">
+                {mobilePanel === 'palette' ? 'Blokken toevoegen' : 'Blok bewerken'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobilePanel(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {mobilePanel === 'palette' ? (
+                <BlockPalette
+                  onLoadTemplate={(tpl) => { setBlocks(tpl); setSelectedId(null); setMobilePanel(null); }}
+                  onAdd={handleMobileAdd}
+                />
+              ) : (
+                selectedBlock ? (
+                  <>
+                    <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-700">
+                        {BLOCK_LABELS[selectedBlock.type]}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { deleteBlock(selectedBlock.id); setMobilePanel(null); }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <BlockEditor
+                      block={selectedBlock}
+                      onChange={updateBlock}
+                      subject={subject}
+                      onSubjectChange={onSubjectChange}
+                      variables={variables}
+                    />
+                  </>
+                ) : (
+                  <div className="p-6 text-center">
+                    <p className="text-sm text-slate-500">Tik op een blok in het canvas om het te bewerken.</p>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Drag overlay */}
       <DragOverlay dropAnimation={null}>
