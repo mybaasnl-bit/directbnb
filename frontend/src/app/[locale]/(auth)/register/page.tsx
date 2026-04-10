@@ -256,7 +256,7 @@ function RegisterForm() {
               />
               <span className="text-sm text-slate-600">
                 Ik ga akkoord met de{' '}
-                <a href="/terms" target="_blank" className="text-brand hover:underline font-medium">algemene voorwaarden</a>
+                <a href={`/${locale}/algemene-voorwaarden`} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline font-medium">algemene voorwaarden</a>
               </span>
             </label>
             {errors.termsAccepted && (
@@ -271,7 +271,7 @@ function RegisterForm() {
               />
               <span className="text-sm text-slate-600">
                 Ik ga akkoord met het{' '}
-                <a href="/privacy" target="_blank" className="text-brand hover:underline font-medium">privacybeleid</a>
+                <a href={`/${locale}/privacybeleid`} target="_blank" rel="noopener noreferrer" className="text-brand hover:underline font-medium">privacybeleid</a>
               </span>
             </label>
             {errors.privacyAccepted && (
