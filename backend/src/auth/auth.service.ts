@@ -321,6 +321,27 @@ export class AuthService {
     return { user: safeUser, ...tokens };
   }
 
+  // ─── Admin helpers ──────────────────────────────────────────────────────────
+
+  /**
+   * Generate tokens on behalf of another user — used exclusively by the
+   * admin impersonation flow. Never call this from a public endpoint.
+   */
+  async createImpersonationTokens(targetUserId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, email: true, role: true, isActive: true, firstName: true, lastName: true },
+    });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Target user not found or inactive');
+    }
+    const tokens = await this.generateTokens(user.id, user.email, user.role);
+    return {
+      ...tokens,
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
+    };
+  }
+
   // ─── Private helpers ────────────────────────────────────────────────────────
 
   private async generateTokens(userId: string, email: string, role: string) {

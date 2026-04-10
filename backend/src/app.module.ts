@@ -21,6 +21,7 @@ import { StripeModule } from './stripe/stripe.module';
 import { MollieModule } from './mollie/mollie.module';
 import { UploadModule } from './upload/upload.module';
 import { PayoutsModule } from './payouts/payouts.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { PayoutsModule } from './payouts/payouts.module';
     UploadModule,
     DashboardModule,
     PayoutsModule,
+    AdminModule,
   ],
   providers: [
     {
