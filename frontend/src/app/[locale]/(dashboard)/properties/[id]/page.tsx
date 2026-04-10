@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { PhotoUpload } from '@/components/ui/photo-upload';
+import { IcalRoomCard } from '@/components/ical/ical-room-card';
 import {
   ArrowLeft, Globe, Save, Plus, Trash2, BedDouble,
   ExternalLink, Loader2, Check, Users, Euro,
@@ -13,6 +14,7 @@ import {
   WashingMachine, Tv, Waves, Flower2, Sun, Bike,
   ArrowUpDown, Flame, Monitor, Lock, Droplets, Zap,
   Baby, ShieldCheck, Pencil, X, Sparkles,
+  CalendarDays, Copy, RefreshCw, Link2,
 } from 'lucide-react';
 
 // Predefined amenity list
@@ -607,6 +609,26 @@ export default function PropertyDetailPage() {
           </div>
         )}
       </div>
+
+      {/* ── iCal synchronisatie ── */}
+      {property.rooms.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 space-y-4">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-8 h-8 bg-brand-light rounded-lg flex items-center justify-center flex-shrink-0">
+              <CalendarDays className="w-4 h-4 text-brand" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-slate-900">Kalender synchronisatie (iCal)</h2>
+              <p className="text-xs text-slate-400">Synchroniseer beschikbaarheid met Airbnb, Booking.com en Google Calendar</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {property.rooms.map(room => (
+              <IcalRoomCard key={room.id} roomId={room.id} roomName={room.name} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Amenities ── */}
       <div className="bg-white rounded-3xl p-6 space-y-4">

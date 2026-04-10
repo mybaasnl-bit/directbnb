@@ -67,6 +67,16 @@ export class BookingsController {
   ) {
     return this.bookingsService.updateStatus(id, ownerId, dto);
   }
+
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancel a booking (with Stripe refund if applicable)' })
+  cancel(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser('id') ownerId: string,
+  ) {
+    return this.bookingsService.cancelBooking(id, ownerId);
+  }
 }
 
 // ─── Public endpoint: guest submits booking request ───────────────────────────

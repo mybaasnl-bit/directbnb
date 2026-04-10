@@ -22,6 +22,7 @@ import { MollieModule } from './mollie/mollie.module';
 import { UploadModule } from './upload/upload.module';
 import { PayoutsModule } from './payouts/payouts.module';
 import { AdminModule } from './admin/admin.module';
+import { IcalModule } from './ical/ical.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { AdminModule } from './admin/admin.module';
     DashboardModule,
     PayoutsModule,
     AdminModule,
+    IcalModule,
   ],
   providers: [
     {

@@ -101,6 +101,8 @@ model User {
   isActive          Boolean  @default(true)
   isBetaUser        Boolean  @default(false)
   emailVerified     Boolean  @default(false)
+  termsAcceptedAt   DateTime?
+  privacyAcceptedAt DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -185,10 +187,12 @@ model Room {
   sqm           Int?
   minStay       Int      @default(1)
   isActive      Boolean  @default(true)
-  amenities     String[] @default([])
-  houseRules    String?  @db.Text
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  amenities       String[] @default([])
+  houseRules      String?  @db.Text
+  icalImportUrls  String[] @default([])
+  icalExportToken String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   property     Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   photos       RoomPhoto[]

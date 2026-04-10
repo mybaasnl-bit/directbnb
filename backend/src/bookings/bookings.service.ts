@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { StripeService } from '../stripe/stripe.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { BookingStatus } from '@prisma/client';
@@ -18,6 +19,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
+    private readonly stripeService: StripeService,
   ) {}
 
   // ─── Public: guest submits booking request ──────────────────────────────────
@@ -210,6 +212,61 @@ export class BookingsService {
     }
 
     return updated;
+  }
+
+  // ─── Owner: cancel a booking (with optional Stripe refund) ──────────────────
+
+  async cancelBooking(id: string, ownerId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: {
+        guest: true,
+        room: { include: { property: { include: { owner: true } } } },
+      },
+    });
+
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.ownerId !== ownerId) throw new ForbiddenException();
+
+    const cancellableStatuses: BookingStatus[] = ['PENDING', 'CONFIRMED', 'PAYMENT_PENDING', 'PAID'];
+    if (!cancellableStatuses.includes(booking.status)) {
+      throw new BadRequestException(`Cannot cancel a booking with status ${booking.status}`);
+    }
+
+    // Issue Stripe refund when the booking was paid via Stripe
+    let refunded = false;
+    if (
+      booking.stripePaymentIntentId &&
+      booking.paymentStatus === 'PAID' &&
+      this.stripeService.isEnabled()
+    ) {
+      try {
+        await this.stripeService.refundPayment(booking.stripePaymentIntentId);
+        refunded = true;
+      } catch (err: any) {
+        this.logger.error(`Stripe refund failed for booking ${id}: ${err.message}`, err.stack);
+        // Don't block cancellation if refund fails — admin can handle manually
+      }
+    }
+
+    const updated = await this.prisma.booking.update({
+      where: { id },
+      data: {
+        status: 'CANCELLED',
+        paymentStatus: refunded ? 'REFUNDED' : booking.paymentStatus ?? undefined,
+      },
+      include: {
+        guest: true,
+        room: { include: { property: { include: { owner: true } } } },
+      },
+    });
+
+    // Notify guest
+    await this.emailService
+      .sendBookingCancelled(updated, updated.room.property.owner)
+      .catch(err => this.logger.error('Cancel email failed (non-fatal)', err));
+
+    return { ...updated, refunded };
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────────

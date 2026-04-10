@@ -36,6 +36,8 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'Minimum 8 characters'),
   phone: z.string().optional(),
+  termsAccepted: z.literal(true, { errorMap: () => ({ message: 'Je moet akkoord gaan met de algemene voorwaarden' }) }),
+  privacyAccepted: z.literal(true, { errorMap: () => ({ message: 'Je moet akkoord gaan met het privacybeleid' }) }),
 });
 
 type RegisterForm = z.infer<typeof registerSchema>;
@@ -71,6 +73,8 @@ function RegisterForm() {
       firstName: defaultFirstName,
       lastName: defaultLastName,
       email: inviteEmail,
+      termsAccepted: undefined as any,
+      privacyAccepted: undefined as any,
     },
   });
 
@@ -241,6 +245,39 @@ function RegisterForm() {
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
+
+          {/* Legal checkboxes */}
+          <div className="space-y-3 pt-1">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('termsAccepted')}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-brand accent-brand flex-shrink-0"
+              />
+              <span className="text-sm text-slate-600">
+                Ik ga akkoord met de{' '}
+                <a href="/terms" target="_blank" className="text-brand hover:underline font-medium">algemene voorwaarden</a>
+              </span>
+            </label>
+            {errors.termsAccepted && (
+              <p className="text-red-500 text-xs -mt-1 ml-7">{errors.termsAccepted.message}</p>
+            )}
+
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                {...register('privacyAccepted')}
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-brand accent-brand flex-shrink-0"
+              />
+              <span className="text-sm text-slate-600">
+                Ik ga akkoord met het{' '}
+                <a href="/privacy" target="_blank" className="text-brand hover:underline font-medium">privacybeleid</a>
+              </span>
+            </label>
+            {errors.privacyAccepted && (
+              <p className="text-red-500 text-xs -mt-1 ml-7">{errors.privacyAccepted.message}</p>
+            )}
+          </div>
 
           {!isInvite && (
             <div className="bg-brand-light border border-brand-light rounded-lg px-4 py-3">
