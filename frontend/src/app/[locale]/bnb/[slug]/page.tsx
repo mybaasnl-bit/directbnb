@@ -6,6 +6,9 @@ import { PropertyPageClient } from './PropertyPageClient';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://directbnb.app';
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1';
 
+/** Fallback OG image shown when the property has no cover photo yet. */
+const DEFAULT_OG_IMAGE = `${APP_URL}/og-default.png`;
+
 // ─── Server-side data fetching ────────────────────────────────────────────────
 
 async function fetchProperty(slug: string): Promise<Property | null> {
@@ -35,27 +38,46 @@ export async function generateMetadata({
   const city = property.addressCity ?? '';
   const name = property.name;
 
-  const description =
+  const rawDescription =
     isNl
       ? property.descriptionNl || property.descriptionEn
       : property.descriptionEn || property.descriptionNl;
 
-  const title = isNl
-    ? `Bed & Breakfast in ${city} – ${name} | DirectBnB`
-    : `Bed and Breakfast in ${city} – ${name} | DirectBnB`;
+  // OG title — exact format requested: "[B&B Name] - Boek direct via DirectBnB"
+  const ogTitle = isNl
+    ? `${name} — Boek direct via DirectBnB`
+    : `${name} — Book directly via DirectBnB`;
 
-  const metaDescription =
-    isNl
-      ? `Verblijf bij ${name} in ${city}. Boek direct bij de eigenaar — zonder commissie via DirectBnB. ${description ? description.slice(0, 80) + '…' : ''}`
-      : `Stay at ${name} in ${city}. Book directly with the owner — no commission fees on DirectBnB. ${description ? description.slice(0, 80) + '…' : ''}`;
+  // <title> tag — keeps location context for SEO
+  const pageTitle = isNl
+    ? `${name} — Bed & Breakfast in ${city} | DirectBnB`
+    : `${name} — Bed and Breakfast in ${city} | DirectBnB`;
+
+  // Short snippet used for og:description and meta description
+  const descriptionSnippet = rawDescription
+    ? rawDescription.replace(/\s+/g, ' ').trim().slice(0, 155)
+    : null;
+
+  const ogDescription = isNl
+    ? `${descriptionSnippet ? descriptionSnippet + ' — ' : ''}Boek direct bij de eigenaar via DirectBnB.`
+    : `${descriptionSnippet ? descriptionSnippet + ' — ' : ''}Book directly with the owner via DirectBnB.`;
+
+  const metaDescription = isNl
+    ? `Verblijf bij ${name} in ${city}. Boek direct bij de eigenaar — geen commissiekosten. ${descriptionSnippet ? descriptionSnippet.slice(0, 80) + '…' : ''}`
+    : `Stay at ${name} in ${city}. Book directly with the owner — no commission fees. ${descriptionSnippet ? descriptionSnippet.slice(0, 80) + '…' : ''}`;
 
   const coverPhoto =
     property.photos?.find((p) => p.isCover) ?? property.photos?.[0];
 
+  // Use cover photo when available, fall back to the platform default OG image.
+  const ogImage = coverPhoto
+    ? { url: coverPhoto.url, alt: `${name} — DirectBnB`, width: 1200, height: 630 }
+    : { url: DEFAULT_OG_IMAGE, alt: 'DirectBnB', width: 1200, height: 630 };
+
   const canonicalUrl = `${APP_URL}/${params.locale}/bnb/${params.slug}`;
 
   return {
-    title,
+    title: pageTitle,
     description: metaDescription.trim(),
     alternates: {
       canonical: canonicalUrl,
@@ -66,15 +88,19 @@ export async function generateMetadata({
       },
     },
     openGraph: {
-      title,
-      description: metaDescription.trim(),
+      title: ogTitle,
+      description: ogDescription.trim(),
       url: canonicalUrl,
       siteName: 'DirectBnB',
-      images: coverPhoto
-        ? [{ url: coverPhoto.url, alt: name, width: 1200, height: 630 }]
-        : [],
+      images: [ogImage],
       locale: isNl ? 'nl_NL' : 'en_GB',
       type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: ogTitle,
+      description: ogDescription.trim(),
+      images: [ogImage.url],
     },
     robots: {
       index: true,

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsIn } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsIn, IsBoolean, Equals } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -34,4 +34,14 @@ export class RegisterDto {
   @IsOptional()
   @IsIn(['nl', 'en'])
   preferredLanguage?: string;
+
+  @ApiProperty({ example: true, description: 'User must accept terms of service' })
+  @IsBoolean()
+  @Equals(true, { message: 'You must accept the terms of service' })
+  termsAccepted: boolean;
+
+  @ApiProperty({ example: true, description: 'User must accept privacy policy' })
+  @IsBoolean()
+  @Equals(true, { message: 'You must accept the privacy policy' })
+  privacyAccepted: boolean;
 }

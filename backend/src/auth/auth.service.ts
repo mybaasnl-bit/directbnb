@@ -37,6 +37,7 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, this.BCRYPT_ROUNDS);
 
+    const now = new Date();
     const user = await this.prisma.user.create({
       data: {
         email: dto.email.toLowerCase().trim(),
@@ -46,6 +47,8 @@ export class AuthService {
         phone: dto.phone,
         preferredLanguage: dto.preferredLanguage ?? 'nl',
         isBetaUser: true,
+        termsAcceptedAt: dto.termsAccepted ? now : null,
+        privacyAcceptedAt: dto.privacyAccepted ? now : null,
       },
       select: {
         id: true,

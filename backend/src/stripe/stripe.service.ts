@@ -75,6 +75,10 @@ export class StripeService {
       currency: 'eur',
       // NOTE: No `transfer_data` or `on_behalf_of` here.
       // Funds land on the platform account; transfers are executed separately by the payout job.
+
+      // Stripe automatically emails a payment receipt to the guest.
+      receipt_email: booking.guest.email,
+
       metadata: {
         bookingId,
         propertyName: booking.room.property.name,
@@ -154,6 +158,25 @@ export class StripeService {
         `PI: ${intent.id}, charge: ${chargeId ?? 'not yet expanded'}`,
       );
     }
+  }
+
+  /**
+   * Refund a payment. Attempts a full refund via the PaymentIntent.
+   * Returns the refund object on success.
+   */
+  async refundPayment(paymentIntentId: string): Promise<Stripe.Refund> {
+    if (!this.stripe || !this.enabled) {
+      throw new BadRequestException('Stripe is not configured on this server.');
+    }
+
+    this.logger.log(`Issuing refund for PaymentIntent ${paymentIntentId}`);
+
+    const refund = await this.stripe.refunds.create({
+      payment_intent: paymentIntentId,
+    });
+
+    this.logger.log(`Refund ${refund.id} created — status: ${refund.status}`);
+    return refund;
   }
 
   isEnabled(): boolean {

@@ -10,7 +10,7 @@ import { nl, enUS } from 'date-fns/locale';
 import {
   Check, X, Link2, Loader2, CheckCircle2, CalendarDays,
   BedDouble, Users, Clock, Filter, FileText, TrendingUp, Plus,
-  AlertCircle,
+  AlertCircle, Ban,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
@@ -270,6 +270,7 @@ export default function BookingsPage() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sentLinks, setSentLinks] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState<any | null>(null);
   const qc = useQueryClient();
 
   const { data: bookings = [], isLoading } = useQuery({
@@ -283,6 +284,16 @@ export default function BookingsPage() {
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       api.patch(`/bookings/${id}/status`, { status }),
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['bookings'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['pending-bookings'] });
+    },
+  });
+
+  const cancelBooking = useMutation({
+    mutationFn: (id: string) => api.post(`/bookings/${id}/cancel`),
+    onSuccess: () => {
+      setConfirmCancel(null);
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['pending-bookings'] });
@@ -321,6 +332,45 @@ export default function BookingsPage() {
           onClose={() => setShowModal(false)}
           onCreated={handleCreated}
         />
+      )}
+
+      {/* Cancel confirm modal */}
+      {confirmCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Ban className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">Boeking annuleren?</p>
+                <p className="text-sm text-slate-500">
+                  {confirmCancel.guest?.firstName} {confirmCancel.guest?.lastName} · {fmt(confirmCancel.checkIn)}
+                </p>
+              </div>
+            </div>
+            {confirmCancel.paymentStatus === 'PAID' && (
+              <p className="text-sm text-slate-500 bg-amber-50 rounded-xl px-4 py-3 border border-amber-100">
+                Deze boeking is betaald. De betaling wordt automatisch teruggestort via Stripe.
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmCancel(null)}
+                className="flex-1 py-2.5 text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
+              >
+                Terug
+              </button>
+              <button
+                onClick={() => cancelBooking.mutate(confirmCancel.id)}
+                disabled={cancelBooking.isPending}
+                className="flex-1 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-50"
+              >
+                {cancelBooking.isPending ? 'Bezig…' : 'Annuleren'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Title */}
@@ -455,7 +505,7 @@ export default function BookingsPage() {
                 <div className="text-sm text-slate-600">{booking.numGuests}</div>
                 <div><BookingStatusBadge status={booking.status} /></div>
                 <div className="font-bold text-sm text-slate-900">€{Number(booking.totalPrice).toFixed(0)}</div>
-                <div>
+                <div className="flex items-center gap-1.5">
                   {booking.status === 'CONFIRMED' && (
                     linkSent ? (
                       <span className="text-xs font-semibold text-emerald-600">✓ Verstuurd</span>
@@ -469,8 +519,17 @@ export default function BookingsPage() {
                       </button>
                     )
                   )}
-                  {booking.status !== 'CONFIRMED' && (
-                    <span className="text-xs font-bold text-brand cursor-pointer hover:underline">Details</span>
+                  {['CONFIRMED', 'PAYMENT_PENDING', 'PAID'].includes(booking.status) && (
+                    <button
+                      onClick={() => setConfirmCancel(booking)}
+                      title="Annuleer boeking"
+                      className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition-colors"
+                    >
+                      <Ban className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!['CONFIRMED', 'PAYMENT_PENDING', 'PAID'].includes(booking.status) && (
+                    <span className="text-xs font-bold text-slate-400">{booking.status === 'CANCELLED' ? 'Geannuleerd' : booking.status === 'COMPLETED' ? 'Afgerond' : ''}</span>
                   )}
                 </div>
               </div>
