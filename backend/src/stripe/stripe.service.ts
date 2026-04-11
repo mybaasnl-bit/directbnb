@@ -75,6 +75,10 @@ export class StripeService {
       currency: 'eur',
       // NOTE: No `transfer_data` or `on_behalf_of` here.
       // Funds land on the platform account; transfers are executed separately by the payout job.
+
+      // Stripe automatically emails a payment receipt to the guest.
+      receipt_email: booking.guest.email,
+
       metadata: {
         bookingId,
         propertyName: booking.room.property.name,
