@@ -9,10 +9,11 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 import ical from 'ical-generator';
-import * as nodeIcal from 'node-ical';
-
-/** How far ahead (days) to include bookings in the export feed */
-const EXPORT_LOOKAHEAD_DAYS = 365;
+// ical.js ships its own types and is compatible with Node.js 18+
+// (node-ical 0.26+ requires Node.js 20 due to the regex /v flag)
+import ICAL from 'ical.js';
+import * as https from 'https';
+import * as http from 'http';
 
 /** Cron expression for the iCal sync job — every 6 hours */
 const ICAL_SYNC_CRON = '0 */6 * * *';
@@ -25,10 +26,6 @@ export class IcalService {
 
   // ─── Export: generate .ics for a room ─────────────────────────────────────
 
-  /**
-   * Generate and return a valid .ics calendar for all confirmed/paid bookings
-   * of a given room, identified by its export token.
-   */
   async exportByToken(token: string): Promise<string> {
     const room = await this.prisma.room.findFirst({
       where: { icalExportToken: token },
@@ -66,10 +63,6 @@ export class IcalService {
 
   // ─── Export token management ──────────────────────────────────────────────
 
-  /**
-   * Ensure a room has an export token. Creates one if not present.
-   * Returns the full export URL fragment (the token itself).
-   */
   async getOrCreateExportToken(roomId: string, ownerId: string): Promise<string> {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
@@ -92,9 +85,6 @@ export class IcalService {
 
   // ─── Import URL management ────────────────────────────────────────────────
 
-  /**
-   * Add an iCal import URL to a room. Validates it looks like an ics URL.
-   */
   async addImportUrl(roomId: string, ownerId: string, url: string): Promise<string[]> {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       throw new BadRequestException('Import URL must start with http:// or https://');
@@ -155,14 +145,8 @@ export class IcalService {
 
   // ─── Sync: import external iCal feeds ─────────────────────────────────────
 
-  /**
-   * Sync iCal feeds for a specific room. Blocks dates from external bookings.
-   */
   async syncRoom(roomId: string): Promise<{ blocked: number; errors: string[] }> {
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-    });
-
+    const room = await this.prisma.room.findUnique({ where: { id: roomId } });
     if (!room || room.icalImportUrls.length === 0) return { blocked: 0, errors: [] };
 
     let totalBlocked = 0;
@@ -170,19 +154,19 @@ export class IcalService {
 
     for (const url of room.icalImportUrls) {
       try {
-        const events = await nodeIcal.async.fromURL(url);
+        const icsText = await this.fetchUrl(url);
+        const jcalData = ICAL.parse(icsText);
+        const comp = new ICAL.Component(jcalData);
+        const vevents = comp.getAllSubcomponents('vevent');
         let count = 0;
 
-        for (const event of Object.values(events)) {
-          // node-ical returns CalendarComponent (union) — guard for VEvent type
-          if (!event || event.type !== 'VEVENT') continue;
-          const vEvent = event as nodeIcal.VEvent;
-          if (!vEvent.start || !vEvent.end) continue;
+        for (const vevent of vevents) {
+          const event = new ICAL.Event(vevent);
+          if (!event.startDate || !event.endDate) continue;
 
-          const start = new Date(vEvent.start as unknown as string);
-          const end = new Date(vEvent.end as unknown as string);
+          const start = event.startDate.toJSDate();
+          const end = event.endDate.toJSDate();
 
-          // Block every date in the range [start, end)
           const current = new Date(start);
           while (current < end) {
             const dateStr = current.toISOString().split('T')[0];
@@ -190,11 +174,7 @@ export class IcalService {
 
             await this.prisma.availability.upsert({
               where: { roomId_blockedDate: { roomId, blockedDate } },
-              create: {
-                roomId,
-                blockedDate,
-                reason: `ical:${url.substring(0, 80)}`,
-              },
+              create: { roomId, blockedDate, reason: `ical:${url.substring(0, 80)}` },
               update: {},
             });
 
@@ -215,9 +195,6 @@ export class IcalService {
     return { blocked: totalBlocked, errors };
   }
 
-  /**
-   * Cron job: sync all rooms that have iCal import URLs every 6 hours.
-   */
   @Cron(ICAL_SYNC_CRON)
   async syncAllRooms() {
     this.logger.log('Starting iCal sync for all rooms...');
@@ -227,15 +204,31 @@ export class IcalService {
       select: { id: true },
     });
 
-    let synced = 0;
     for (const room of rooms) {
       const result = await this.syncRoom(room.id);
       if (result.errors.length > 0) {
         this.logger.warn(`iCal sync errors for room ${room.id}: ${result.errors.join(', ')}`);
       }
-      synced++;
     }
 
-    this.logger.log(`iCal sync complete — ${synced} room(s) processed`);
+    this.logger.log(`iCal sync complete — ${rooms.length} room(s) processed`);
+  }
+
+  // ─── Private helpers ──────────────────────────────────────────────────────
+
+  private fetchUrl(url: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const client = url.startsWith('https://') ? https : http;
+      client.get(url, { headers: { 'User-Agent': 'DirectBnB-iCal-Sync/1.0' } }, (res) => {
+        if (res.statusCode && res.statusCode >= 400) {
+          reject(new Error(`HTTP ${res.statusCode} fetching ${url}`));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+        res.on('error', reject);
+      }).on('error', reject);
+    });
   }
 }
