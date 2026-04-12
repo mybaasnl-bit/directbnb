@@ -350,10 +350,10 @@ export class AuthService {
   private async generateTokens(userId: string, email: string, role: string) {
     const payload = { sub: userId, email, role };
 
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get('JWT_SECRET'),
-      expiresIn: this.config.get('JWT_EXPIRES_IN', '15m'),
-    });
+    // Use the module-level secret configured in JwtModule.registerAsync.
+    // Do NOT pass secret here — overriding with config.get() risks passing
+    // undefined when JWT_SECRET is not set, causing jsonwebtoken to throw.
+    const accessToken = this.jwtService.sign(payload);
 
     const rawRefreshToken = crypto.randomBytes(64).toString('hex');
     const tokenHash = this.hashToken(rawRefreshToken);
