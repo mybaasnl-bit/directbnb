@@ -70,9 +70,8 @@ function Header() {
           <a href="#voordelen" className="hover:text-slate-900 transition-colors">Voordelen</a>
           <a href="#hoe-werkt-het" className="hover:text-slate-900 transition-colors">Hoe werkt het</a>
           <a href="#besparing" className="hover:text-slate-900 transition-colors">Besparing</a>
-          <Link href={`/${locale}/bnb/demo`} className="hover:text-slate-900 transition-colors">
-            Voorbeeld B&amp;B
-          </Link>
+          <Link href={`/${locale}/over-ons`} className="hover:text-slate-900 transition-colors">Over ons</Link>
+          <Link href={`/${locale}/contact`} className="hover:text-slate-900 transition-colors">Contact</Link>
         </nav>
 
         {/* CTAs */}
@@ -100,7 +99,7 @@ function Header() {
 function Hero() {
   const { locale } = useParams<{ locale: string }>();
   return (
-    <section className="bg-slate-50 min-h-[90vh] flex items-center overflow-hidden">
+    <section className="bg-slate-50 min-h-[80vh] flex items-center overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
@@ -890,17 +889,16 @@ function Footer() {
             {
               title: 'Bedrijf',
               links: [
-                { label: 'Over ons', href: '#' },
-                { label: 'Contact', href: '#' },
+                { label: 'Over ons', href: `/${locale}/over-ons` },
+                { label: 'Contact', href: `/${locale}/contact` },
                 { label: 'Dashboard', href: `/${locale}/login` },
               ],
             },
             {
-              title: 'Support',
+              title: 'Juridisch',
               links: [
-                { label: 'Help center', href: '#' },
-                { label: 'Privacy', href: '#' },
-                { label: 'Voorwaarden', href: '#' },
+                { label: 'Privacybeleid', href: `/${locale}/privacybeleid` },
+                { label: 'Algemene voorwaarden', href: `/${locale}/algemene-voorwaarden` },
               ],
             },
           ].map((col) => (
@@ -909,9 +907,9 @@ function Footer() {
               <ul className="space-y-3">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="text-slate-400 hover:text-white text-sm transition-colors">
+                    <Link href={link.href} className="text-slate-400 hover:text-white text-sm transition-colors">
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

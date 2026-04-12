@@ -23,6 +23,7 @@ import { UploadModule } from './upload/upload.module';
 import { PayoutsModule } from './payouts/payouts.module';
 import { AdminModule } from './admin/admin.module';
 import { IcalModule } from './ical/ical.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { IcalModule } from './ical/ical.module';
     PayoutsModule,
     AdminModule,
     IcalModule,
+    ContactModule,
   ],
   providers: [
     {
