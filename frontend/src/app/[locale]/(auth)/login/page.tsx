@@ -95,6 +95,17 @@ export default function LoginPage() {
 
   return (
     <div className="w-full max-w-md">
+      <div className="mb-4">
+        <Link
+          href={`/${locale}`}
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Terug naar Home
+        </Link>
+      </div>
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900">{t('loginTitle')}</h1>
