@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Copy, RefreshCw, Plus, Trash2, Check, Loader2, ChevronDown } from 'lucide-react';
+import { Copy, RefreshCw, Plus, Trash2, Check, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface IcalRoomCardProps {
@@ -126,6 +126,29 @@ export function IcalRoomCard({ roomId, roomName }: IcalRoomCardProps) {
                 <p className="text-xs text-slate-400">
                   Plak deze URL in Airbnb, Booking.com of Google Calendar om beschikbaarheid te synchroniseren.
                 </p>
+
+                {/* Google & Apple Calendar sync buttons */}
+                {exportUrl && (
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Snel synchroniseren</p>
+                    <a
+                      href={`https://www.google.com/calendar/render?cid=${encodeURIComponent(exportUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:border-brand hover:text-brand transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Synchroniseer met Google Agenda
+                    </a>
+                    <a
+                      href={exportUrl.replace(/^https?:\/\//, 'webcal://')}
+                      className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:border-brand hover:text-brand transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Synchroniseer met Apple Agenda
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* ── Import ── */}

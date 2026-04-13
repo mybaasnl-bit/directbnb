@@ -80,7 +80,7 @@ export class PropertiesService {
 
   async findBySlug(slug: string) {
     const property = await this.prisma.property.findUnique({
-      where: { slug, isPublished: true },
+      where: { slug },
       include: {
         photos: { orderBy: { sortOrder: 'asc' } },
         rooms: {
@@ -93,6 +93,13 @@ export class PropertiesService {
           orderBy: { createdAt: 'desc' },
           take: 20,
         },
+        owner: {
+          select: {
+            paymentAccount: {
+              select: { chargesEnabled: true, status: true },
+            },
+          },
+        },
       },
     });
 
@@ -104,7 +111,13 @@ export class PropertiesService {
         ? Math.round((reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) * 10) / 10
         : null;
 
-    return { ...property, avgRating, reviewCount: reviews.length };
+    const { owner, ...rest } = property;
+    return {
+      ...rest,
+      avgRating,
+      reviewCount: reviews.length,
+      ownerPaymentEnabled: owner?.paymentAccount?.chargesEnabled === true,
+    };
   }
 
   async submitReview(propertyId: string, dto: CreateReviewDto) {

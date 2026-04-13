@@ -137,10 +137,29 @@ export default function PropertyDetailPage() {
     setTimeout(() => setAmenitiesSaved(false), 2000);
   };
 
-  // ── Extra services toggle ──
-  const [showExtraServices, setShowExtraServices] = useState<boolean | null>(null);
-  const extraServicesValue = showExtraServices !== null ? showExtraServices : (property?.showExtraServices !== false);
-  const [extraServicesSaved, setExtraServicesSaved] = useState(false);
+  // ── Extra Ervaringen CRUD ──
+  const { data: extras = [], refetch: refetchExtras } = useQuery<any[]>({
+    queryKey: ['extras', id],
+    queryFn: () => api.get(`/properties/${id}/extras`).then(r => r.data.data),
+    enabled: !!property,
+  });
+  const [showAddExtra, setShowAddExtra] = useState(false);
+  const [extraForm, setExtraForm] = useState({ name: '', description: '', price: '', pricePer: 'STAY' });
+  const [editingExtraId, setEditingExtraId] = useState<string | null>(null);
+  const [editExtraForm, setEditExtraForm] = useState({ name: '', description: '', price: '', pricePer: 'STAY' });
+
+  const createExtra = useMutation({
+    mutationFn: (data: any) => api.post(`/properties/${id}/extras`, data),
+    onSuccess: () => { refetchExtras(); setShowAddExtra(false); setExtraForm({ name: '', description: '', price: '', pricePer: 'STAY' }); },
+  });
+  const updateExtra = useMutation({
+    mutationFn: ({ extraId, data }: { extraId: string; data: any }) => api.patch(`/properties/${id}/extras/${extraId}`, data),
+    onSuccess: () => { refetchExtras(); setEditingExtraId(null); },
+  });
+  const deleteExtra = useMutation({
+    mutationFn: (extraId: string) => api.delete(`/properties/${id}/extras/${extraId}`),
+    onSuccess: () => refetchExtras(),
+  });
 
   // ── Policies form state ──
   const [policiesSaved, setPoliciesSaved] = useState(false);
@@ -725,7 +744,7 @@ export default function PropertyDetailPage() {
         </div>
       </form>
 
-      {/* ── Extra Experiences ── */}
+      {/* ── Extra Ervaringen / Upsells ── */}
       <div className="bg-white rounded-3xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -733,49 +752,160 @@ export default function PropertyDetailPage() {
               <Sparkles className="w-4 h-4 text-brand" />
             </div>
             <div>
-              <h2 className="font-semibold text-slate-900">Extra Ervaringen</h2>
-              <p className="text-xs text-slate-400">Toon of verberg de ervaringsmodule op je boekingspagina</p>
+              <h2 className="font-semibold text-slate-900">Extra Ervaringen & Services</h2>
+              <p className="text-xs text-slate-400">Bied gasten optionele extras aan op je boekingspagina</p>
             </div>
           </div>
-          {extraServicesSaved && (
-            <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
-              <Check className="w-3.5 h-3.5" /> Opgeslagen
-            </span>
-          )}
-        </div>
-        <div className="flex items-center justify-between py-2">
-          <div>
-            <p className="text-sm font-semibold text-slate-800">Ontdek extra ervaringen</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Laat gasten extra activiteiten ontdekken op je boekingspagina
-            </p>
-          </div>
           <button
-            type="button"
-            onClick={() => {
-              const next = !extraServicesValue;
-              setShowExtraServices(next);
-              updateProperty.mutate({ showExtraServices: next } as any, {
-                onSuccess: () => {
-                  setExtraServicesSaved(true);
-                  setTimeout(() => setExtraServicesSaved(false), 2000);
-                },
-              });
-            }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-              extraServicesValue ? 'bg-brand' : 'bg-slate-200'
-            }`}
+            onClick={() => setShowAddExtra(v => !v)}
+            className="flex items-center gap-1.5 bg-brand hover:bg-brand-600 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors"
           >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                extraServicesValue ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
+            <Plus className="w-3.5 h-3.5" /> Extra toevoegen
           </button>
         </div>
-        <p className="text-xs text-slate-400">
-          {extraServicesValue ? '✅ Zichtbaar voor gasten' : '🚫 Verborgen voor gasten'}
-        </p>
+
+        {/* Add form */}
+        {showAddExtra && (
+          <div className="border border-brand/20 rounded-2xl p-4 bg-brand-light/20 space-y-3">
+            <p className="text-sm font-bold text-slate-800">Nieuwe extra</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Naam *</label>
+                <input
+                  value={extraForm.name}
+                  onChange={e => setExtraForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Bijv. Ontbijt op bed"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Prijs (€) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={extraForm.price}
+                  onChange={e => setExtraForm(f => ({ ...f, price: e.target.value }))}
+                  placeholder="25.00"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Beschrijving</label>
+                <input
+                  value={extraForm.description}
+                  onChange={e => setExtraForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Korte omschrijving"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Per</label>
+                <select
+                  value={extraForm.pricePer}
+                  onChange={e => setExtraForm(f => ({ ...f, pricePer: e.target.value }))}
+                  className="w-full appearance-none border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                >
+                  <option value="STAY">Per verblijf</option>
+                  <option value="GUEST">Per gast</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => {
+                  if (!extraForm.name || !extraForm.price) return;
+                  createExtra.mutate({ name: extraForm.name, description: extraForm.description || undefined, price: parseFloat(extraForm.price), pricePer: extraForm.pricePer });
+                }}
+                disabled={createExtra.isPending || !extraForm.name || !extraForm.price}
+                className="bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+              >
+                {createExtra.isPending ? 'Opslaan…' : 'Extra opslaan'}
+              </button>
+              <button onClick={() => setShowAddExtra(false)} className="text-xs text-slate-500 hover:text-slate-800 px-3 py-2">Annuleren</button>
+            </div>
+          </div>
+        )}
+
+        {/* List */}
+        {(extras as any[]).length === 0 ? (
+          <p className="text-sm text-slate-400 py-2">Nog geen extras. Voeg er een toe om gasten optionele services aan te bieden.</p>
+        ) : (
+          <div className="space-y-2">
+            {(extras as any[]).map((extra: any) => (
+              <div key={extra.id} className="border border-slate-100 rounded-2xl p-3">
+                {editingExtraId === extra.id ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        value={editExtraForm.name}
+                        onChange={e => setEditExtraForm(f => ({ ...f, name: e.target.value }))}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editExtraForm.price}
+                        onChange={e => setEditExtraForm(f => ({ ...f, price: e.target.value }))}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        value={editExtraForm.description}
+                        onChange={e => setEditExtraForm(f => ({ ...f, description: e.target.value }))}
+                        placeholder="Beschrijving"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                      />
+                      <select
+                        value={editExtraForm.pricePer}
+                        onChange={e => setEditExtraForm(f => ({ ...f, pricePer: e.target.value }))}
+                        className="w-full appearance-none border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                      >
+                        <option value="STAY">Per verblijf</option>
+                        <option value="GUEST">Per gast</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateExtra.mutate({ extraId: extra.id, data: { name: editExtraForm.name, description: editExtraForm.description || undefined, price: parseFloat(editExtraForm.price), pricePer: editExtraForm.pricePer } })}
+                        disabled={updateExtra.isPending}
+                        className="bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                      >
+                        {updateExtra.isPending ? 'Opslaan…' : 'Opslaan'}
+                      </button>
+                      <button onClick={() => setEditingExtraId(null)} className="text-xs text-slate-500 hover:text-slate-800 px-3 py-2">Annuleren</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">{extra.name}</p>
+                      {extra.description && <p className="text-xs text-slate-400 truncate">{extra.description}</p>}
+                    </div>
+                    <span className="text-sm font-bold text-brand whitespace-nowrap">
+                      €{Number(extra.price).toFixed(2)} / {extra.pricePer === 'GUEST' ? 'gast' : 'verblijf'}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => { setEditingExtraId(extra.id); setEditExtraForm({ name: extra.name, description: extra.description ?? '', price: String(extra.price), pricePer: extra.pricePer ?? 'STAY' }); }}
+                        className="p-1.5 text-slate-400 hover:text-brand rounded-lg transition-colors"
+                      ><Pencil className="w-3.5 h-3.5" /></button>
+                      <button
+                        onClick={() => deleteExtra.mutate(extra.id)}
+                        disabled={deleteExtra.isPending}
+                        className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                      ><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Photos ── */}

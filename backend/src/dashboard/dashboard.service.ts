@@ -10,6 +10,9 @@ export class DashboardService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+    const endOfMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const daysInMonth = endOfMonthDate.getDate();
+
     const [
       totalProperties,
       totalRooms,
@@ -20,6 +23,7 @@ export class DashboardService {
       upcomingBookings,
       revenueThisMonth,
       avgRating,
+      bookedThisMonth,
     ] = await Promise.all([
       this.prisma.property.count({ where: { ownerId } }),
       this.prisma.room.count({
@@ -54,7 +58,29 @@ export class DashboardService {
         where: { property: { ownerId } },
         _avg: { rating: true },
       }),
+      // Bookings overlapping the current month for occupancy calculation
+      this.prisma.booking.findMany({
+        where: {
+          ownerId,
+          status: { in: ['CONFIRMED', 'PAID', 'COMPLETED'] },
+          checkIn: { lt: endOfMonthDate },
+          checkOut: { gt: startOfMonth },
+        },
+        select: { checkIn: true, checkOut: true },
+      }),
     ]);
+
+    // Occupancy rate: booked nights / (active rooms × days in month)
+    let bookedNights = 0;
+    for (const b of bookedThisMonth) {
+      const start = new Date(b.checkIn) < startOfMonth ? startOfMonth : new Date(b.checkIn);
+      const end = new Date(b.checkOut) > endOfMonthDate ? endOfMonthDate : new Date(b.checkOut);
+      bookedNights += Math.max(0, Math.round((end.getTime() - start.getTime()) / 86_400_000));
+    }
+    const totalAvailableNights = (totalRooms as number) * daysInMonth;
+    const occupancyRate = totalAvailableNights > 0
+      ? Math.round((bookedNights / totalAvailableNights) * 100)
+      : 0;
 
     // Recent bookings (all statuses)
     const recentBookings = await this.prisma.booking.findMany({
@@ -77,6 +103,7 @@ export class DashboardService {
         confirmedBookings,
         revenueThisMonth: Number(revenueThisMonth._sum.totalPrice ?? 0),
         avgRating: avgRating._avg.rating ? Number(avgRating._avg.rating.toFixed(1)) : null,
+        occupancyRate,
       },
       upcomingBookings,
       recentBookings,

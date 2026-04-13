@@ -24,6 +24,7 @@ import { PayoutsModule } from './payouts/payouts.module';
 import { AdminModule } from './admin/admin.module';
 import { IcalModule } from './ical/ical.module';
 import { ContactModule } from './contact/contact.module';
+import { PropertyExtrasModule } from './property-extras/property-extras.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { ContactModule } from './contact/contact.module';
     AdminModule,
     IcalModule,
     ContactModule,
+    PropertyExtrasModule,
   ],
   providers: [
     {
