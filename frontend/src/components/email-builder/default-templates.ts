@@ -65,8 +65,38 @@ export function bookingRequestTemplate(): Block[] {
   ];
 }
 
+export function checkInWelcomeTemplate(): Block[] {
+  return [
+    { id: uid(), type: 'header', props: { title: 'Welkom, {{guest_name}}! 🏡', subtitle: 'Wij kijken uit naar uw verblijf.', bgColor: '#10b981', textColor: '#ffffff' } },
+    { id: uid(), type: 'spacer', props: { height: 32 } },
+    { id: uid(), type: 'text', props: { content: 'Beste {{guest_name}},\n\nHartelijk welkom bij {{property_name}}! Uw check-in staat gepland op {{check_in}}. Hieronder vindt u alle praktische informatie voor uw verblijf.', align: 'left', fontSize: 16, color: '#374151', bold: false } },
+    { id: uid(), type: 'spacer', props: { height: 16 } },
+    { id: uid(), type: 'booking_details', props: { bgColor: '#ecfdf5', showProperty: true, showRoom: true, showCheckin: true, showCheckout: true, showGuests: true, showPrice: false } },
+    { id: uid(), type: 'spacer', props: { height: 16 } },
+    { id: uid(), type: 'text', props: { content: '🔑 Check-in instructies\n\nU kunt inchecken vanaf 15:00 uur. Bij aankomst treft u de sleutel op de afgesproken locatie. Heeft u vragen? Bereik ons via {{owner_email}}.', align: 'left', fontSize: 15, color: '#374151', bold: false } },
+    { id: uid(), type: 'spacer', props: { height: 32 } },
+    { id: uid(), type: 'footer', props: { text: '© {{property_name}} · DirectBnB\nDeze e-mail is automatisch verstuurd.', textColor: '#94a3b8', bgColor: '#f8fafc' } },
+  ];
+}
+
+export function thankYouReviewTemplate(): Block[] {
+  return [
+    { id: uid(), type: 'header', props: { title: 'Bedankt voor uw verblijf! ⭐', subtitle: 'Uw mening is waardevol voor ons.', bgColor: '#f59e0b', textColor: '#ffffff' } },
+    { id: uid(), type: 'spacer', props: { height: 32 } },
+    { id: uid(), type: 'text', props: { content: 'Beste {{guest_name}},\n\nHartelijk dank voor uw verblijf bij {{property_name}}! Wij hopen dat u een prettige tijd heeft gehad en dat alles naar wens was.\n\nZou u een moment willen nemen om uw ervaring te delen? Uw review helpt andere gasten en stelt ons in staat onze service te verbeteren.', align: 'left', fontSize: 16, color: '#374151', bold: false } },
+    { id: uid(), type: 'spacer', props: { height: 16 } },
+    { id: uid(), type: 'button', props: { label: '⭐ Schrijf een review', url: 'https://', bgColor: '#f59e0b', textColor: '#ffffff', align: 'center' } },
+    { id: uid(), type: 'spacer', props: { height: 16 } },
+    { id: uid(), type: 'text', props: { content: 'Wij hopen u snel weer te mogen verwelkomen bij {{property_name}}!', align: 'center', fontSize: 15, color: '#374151', bold: false } },
+    { id: uid(), type: 'spacer', props: { height: 32 } },
+    { id: uid(), type: 'footer', props: { text: '© {{property_name}} · DirectBnB\nDeze e-mail is automatisch verstuurd.', textColor: '#94a3b8', bgColor: '#f8fafc' } },
+  ];
+}
+
 export const STARTER_TEMPLATES = [
   { id: 'booking_confirmation', label: '✓ Boeking bevestigd', create: bookingConfirmationTemplate },
   { id: 'booking_cancellation', label: '✕ Boeking geannuleerd', create: bookingCancellationTemplate },
   { id: 'booking_request', label: '📬 Aanvraag ontvangen', create: bookingRequestTemplate },
+  { id: 'checkin_welcome', label: '🏡 Welkomstmail voor aankomst', create: checkInWelcomeTemplate },
+  { id: 'thank_you_review', label: '⭐ Bedankje & Review verzoek', create: thankYouReviewTemplate },
 ];
