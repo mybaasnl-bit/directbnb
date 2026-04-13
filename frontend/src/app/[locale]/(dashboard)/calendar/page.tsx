@@ -19,7 +19,7 @@ import {
 } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus, X, Lock } from 'lucide-react';
 
 export default function CalendarPage() {
   const t = useTranslations('calendar');
@@ -29,6 +29,10 @@ export default function CalendarPage() {
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [eventStartDate, setEventStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [eventEndDate, setEventEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [eventReason, setEventReason] = useState('');
 
   const year  = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
@@ -65,6 +69,24 @@ export default function CalendarPage() {
         data: { roomId: selectedRoomId, dates: [format(date, 'yyyy-MM-dd')] },
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['calendar'] }),
+  });
+
+  const blockRange = useMutation({
+    mutationFn: ({ start, end, reason }: { start: string; end: string; reason: string }) => {
+      const dates: string[] = [];
+      const cur = new Date(start);
+      const endD = new Date(end);
+      while (cur <= endD) {
+        dates.push(format(cur, 'yyyy-MM-dd'));
+        cur.setDate(cur.getDate() + 1);
+      }
+      return api.post('/availability/block', { roomId: selectedRoomId, dates, reason: reason || undefined });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar'] });
+      setShowEventModal(false);
+      setEventReason('');
+    },
   });
 
   const monthStart    = startOfMonth(currentDate);
@@ -282,13 +304,87 @@ export default function CalendarPage() {
           </div>
 
           <div className="p-4 border-t border-slate-50">
-            <button className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors">
+            <button
+              onClick={() => setShowEventModal(true)}
+              disabled={!selectedRoomId}
+              className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-40 text-white font-bold text-sm py-2.5 rounded-xl transition-colors"
+            >
               <Plus className="w-4 h-4" />
               Nieuwe Event
             </button>
           </div>
         </div>
       </div>
+
+      {/* ── Nieuw Event modal ── */}
+      {showEventModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowEventModal(false); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <Lock className="w-5 h-5 text-brand" />
+                <h2 className="text-lg font-bold text-slate-900">Datums blokkeren</h2>
+              </div>
+              <button onClick={() => setShowEventModal(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Van</label>
+                  <input
+                    type="date"
+                    value={eventStartDate}
+                    onChange={e => setEventStartDate(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5">Tot en met</label>
+                  <input
+                    type="date"
+                    value={eventEndDate}
+                    min={eventStartDate}
+                    onChange={e => setEventEndDate(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">Reden (optioneel)</label>
+                <input
+                  value={eventReason}
+                  onChange={e => setEventReason(e.target.value)}
+                  placeholder="Bijv. Onderhoud, privégebruik…"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand/20"
+                />
+              </div>
+              {blockRange.isError && (
+                <p className="text-red-500 text-xs">Blokkeren mislukt. Probeer opnieuw.</p>
+              )}
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowEventModal(false)}
+                className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={() => blockRange.mutate({ start: eventStartDate, end: eventEndDate, reason: eventReason })}
+                disabled={blockRange.isPending || !eventStartDate || !eventEndDate}
+                className="flex-1 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
+              >
+                {blockRange.isPending ? 'Blokkeren…' : 'Blokkeer datums'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

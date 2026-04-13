@@ -324,6 +324,27 @@ export class AuthService {
     return { user: safeUser, ...tokens };
   }
 
+  // ─── Change password (authenticated) ────────────────────────────────────────
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
+    if (!user.passwordHash) {
+      throw new BadRequestException('This account uses social login and has no password to change.');
+    }
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      throw new UnauthorizedException('Huidig wachtwoord is onjuist.');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, this.BCRYPT_ROUNDS);
+    await this.prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+
+    this.logger.log(`Password changed for user ${user.email}`);
+  }
+
   // ─── Admin helpers ──────────────────────────────────────────────────────────
 
   /**

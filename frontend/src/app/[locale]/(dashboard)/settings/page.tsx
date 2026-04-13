@@ -9,7 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, ArrowRight } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -311,6 +311,242 @@ function AccountTab() {
   );
 }
 
+// ── Meldingen tab ────────────────────────────────────────────────────────────
+function MeldingenTab() {
+  const [prefs, setPrefs] = useState<Record<string, boolean> | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  useQuery({
+    queryKey: ['notification-prefs'],
+    queryFn: () => api.get('/users/me/notification-preferences').then(r => {
+      setPrefs(r.data.data);
+      return r.data.data;
+    }),
+  });
+
+  const updatePrefs = useMutation({
+    mutationFn: (data: Record<string, boolean>) => api.patch('/users/me/notification-preferences', data),
+    onSuccess: (res) => {
+      setPrefs(res.data.data);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    },
+  });
+
+  const toggle = (key: string) => {
+    if (!prefs) return;
+    const next = { ...prefs, [key]: !prefs[key] };
+    setPrefs(next);
+    updatePrefs.mutate(next);
+  };
+
+  const ITEMS = [
+    { key: 'emailNewBooking',       label: 'Email bij nieuwe boeking',    desc: 'Ontvang een melding wanneer een gast een boeking aanvraagt.' },
+    { key: 'emailBookingCancelled', label: 'Email bij annulering',        desc: 'Ontvang een melding wanneer een boeking wordt geannuleerd.' },
+    { key: 'emailBookingReminder',  label: 'Email bij check-in herinnering', desc: 'Ontvang 24 uur voor check-in een herinnering.' },
+    { key: 'emailPaymentReceived',  label: 'Email bij betaling ontvangen', desc: 'Ontvang een bevestiging wanneer een betaling is verwerkt.' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <SectionCard icon={Bell} title="E-mailmeldingen" subtitle="Kies welke meldingen je per e-mail ontvangt">
+        {prefs === null ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />)}
+          </div>
+        ) : (
+          <div className="space-y-1 divide-y divide-slate-50">
+            {ITEMS.map(({ key, label, desc }) => (
+              <div key={key} className="flex items-center justify-between py-3 gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-800">{label}</p>
+                  <p className="text-xs text-slate-400">{desc}</p>
+                </div>
+                <button
+                  onClick={() => toggle(key)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
+                    prefs[key] ? 'bg-brand' : 'bg-slate-200'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    prefs[key] ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {saved && (
+          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <p className="text-emerald-700 text-sm font-semibold">Voorkeuren opgeslagen!</p>
+          </div>
+        )}
+      </SectionCard>
+    </div>
+  );
+}
+
+// ── Beveiliging & Betalingen tab ─────────────────────────────────────────────
+function BeveiligingTab() {
+  const { locale } = useParams<{ locale: string }>();
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+
+  const { data: paymentAccount } = useQuery<{ status: string; payoutsEnabled: boolean; chargesEnabled: boolean } | null>({
+    queryKey: ['payout-account-status'],
+    queryFn: () => api.get('/payouts/account-status').then(r => r.data.data).catch(() => null),
+  });
+
+  const changePassword = useMutation({
+    mutationFn: (data: { currentPassword: string; newPassword: string }) =>
+      api.post('/auth/change-password', data),
+    onSuccess: () => {
+      setPwSuccess(true);
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      setTimeout(() => setPwSuccess(false), 4000);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message;
+      setPwError(Array.isArray(msg) ? msg[0] : (msg ?? 'Wachtwoord wijzigen mislukt.'));
+    },
+  });
+
+  const handleChangePw = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError('');
+    if (newPw.length < 8) { setPwError('Nieuw wachtwoord moet minimaal 8 tekens bevatten.'); return; }
+    if (newPw !== confirmPw) { setPwError('Wachtwoorden komen niet overeen.'); return; }
+    changePassword.mutate({ currentPassword: currentPw, newPassword: newPw });
+  };
+
+  const statusColors: Record<string, string> = {
+    VERIFIED: 'bg-emerald-100 text-emerald-700',
+    ONBOARDING: 'bg-amber-100 text-amber-700',
+    PENDING: 'bg-slate-100 text-slate-500',
+    REJECTED: 'bg-red-100 text-red-700',
+    SUSPENDED: 'bg-red-100 text-red-700',
+  };
+  const statusLabels: Record<string, string> = {
+    VERIFIED: 'Geverifieerd', ONBOARDING: 'In behandeling',
+    PENDING: 'Nog niet ingesteld', REJECTED: 'Afgewezen', SUSPENDED: 'Opgeschort',
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Payments status */}
+      <SectionCard icon={Banknote} title="Betalingsstatus" subtitle="Stripe Connect account voor uitbetalingen">
+        {paymentAccount ? (
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusColors[paymentAccount.status] ?? 'bg-slate-100 text-slate-500'}`}>
+                  {statusLabels[paymentAccount.status] ?? paymentAccount.status}
+                </span>
+                {paymentAccount.chargesEnabled && (
+                  <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Betalingen actief
+                  </span>
+                )}
+              </div>
+              {paymentAccount.payoutsEnabled && (
+                <p className="text-xs text-slate-400">Uitbetalingen naar je bankrekening zijn ingeschakeld.</p>
+              )}
+            </div>
+            <Link href={`/${locale}/betalingen`} className="text-sm font-bold text-brand hover:underline">
+              Beheren →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-slate-500">Koppel je bankrekening via Stripe Connect om betalingen te ontvangen.</p>
+            <Link
+              href={`/${locale}/betalingen`}
+              className="inline-flex items-center gap-2 bg-brand hover:bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              <ArrowRight className="w-4 h-4" /> Betalingen instellen
+            </Link>
+          </div>
+        )}
+      </SectionCard>
+
+      {/* Change password */}
+      <form onSubmit={handleChangePw}>
+        <SectionCard icon={KeyRound} title="Wachtwoord wijzigen" subtitle="Gebruik een sterk en uniek wachtwoord">
+          <div className="space-y-3">
+            <div>
+              <FieldLabel>Huidig wachtwoord</FieldLabel>
+              <div className="relative">
+                <input
+                  type={showCurrent ? 'text' : 'password'}
+                  value={currentPw}
+                  onChange={e => setCurrentPw(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
+                />
+                <button type="button" onClick={() => setShowCurrent(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <FieldLabel>Nieuw wachtwoord (min. 8 tekens)</FieldLabel>
+              <div className="relative">
+                <input
+                  type={showNew ? 'text' : 'password'}
+                  value={newPw}
+                  onChange={e => setNewPw(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
+                />
+                <button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <FieldLabel>Bevestig nieuw wachtwoord</FieldLabel>
+              <input
+                type="password"
+                value={confirmPw}
+                onChange={e => setConfirmPw(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:ring-2 focus:ring-brand/30"
+              />
+            </div>
+            {pwError && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-red-700 text-sm">{pwError}</p>
+              </div>
+            )}
+            {pwSuccess && (
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <p className="text-emerald-700 text-sm font-semibold">Wachtwoord succesvol gewijzigd!</p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={changePassword.isPending || !currentPw || !newPw || !confirmPw}
+              className="bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+            >
+              {changePassword.isPending ? 'Opslaan…' : 'Wachtwoord wijzigen'}
+            </button>
+          </div>
+        </SectionCard>
+      </form>
+    </div>
+  );
+}
+
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('bnb');
@@ -345,18 +581,8 @@ export default function SettingsPage() {
       {/* Tab content */}
       {activeTab === 'bnb'      && <BnbTab />}
       {activeTab === 'account'  && <AccountTab />}
-      {activeTab === 'meldingen' && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-          <Bell className="w-8 h-8 text-slate-200 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">Meldingsinstellingen komen binnenkort beschikbaar.</p>
-        </div>
-      )}
-      {activeTab === 'beveiliging' && (
-        <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center">
-          <ShieldCheck className="w-8 h-8 text-slate-200 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">Beveiliging & betalingsinstellingen komen binnenkort beschikbaar.</p>
-        </div>
-      )}
+      {activeTab === 'meldingen' && <MeldingenTab />}
+      {activeTab === 'beveiliging' && <BeveiligingTab />}
     </div>
   );
 }

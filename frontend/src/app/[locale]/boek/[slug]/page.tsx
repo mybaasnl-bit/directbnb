@@ -33,6 +33,7 @@ interface Property {
   addressCountry: string;
   photos: PropertyPhoto[];
   rooms: Room[];
+  ownerPaymentEnabled: boolean;
 }
 
 type PaymentStep = 'form' | 'payment' | 'redirecting';
@@ -690,19 +691,34 @@ export default function BookingPage() {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={submitting || !selectedRoom || nights <= 0}
-                  className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" />{t.submitting}</>
-                  ) : mollieEnabled ? (
-                    <><CreditCard className="w-4 h-4" />{t.submit}</>
-                  ) : (
-                    t.submitNoPay
-                  )}
-                </button>
+                {property && !property.ownerPaymentEnabled ? (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                    <p className="text-amber-800 text-sm font-semibold">
+                      {lang === 'nl'
+                        ? 'Deze B&B kan momenteel geen online boekingen accepteren.'
+                        : 'This B&B cannot accept online bookings at the moment.'}
+                    </p>
+                    <p className="text-amber-600 text-xs mt-1">
+                      {lang === 'nl'
+                        ? 'De eigenaar heeft de betaalinstellingen nog niet geconfigureerd.'
+                        : 'The host has not yet configured payment settings.'}
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={submitting || !selectedRoom || nights <= 0}
+                    className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  >
+                    {submitting ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />{t.submitting}</>
+                    ) : mollieEnabled ? (
+                      <><CreditCard className="w-4 h-4" />{t.submit}</>
+                    ) : (
+                      t.submitNoPay
+                    )}
+                  </button>
+                )}
 
                 <p className="text-center text-xs text-slate-400">
                   {t.commission}

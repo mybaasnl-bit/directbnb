@@ -294,8 +294,13 @@ function PopulaireKamers({ properties }: { properties: any[] }) {
     .slice(0, 4)
     .map((r: any) => ({
       name: r.name,
-      pct: Math.min(95, 55 + ((r.name?.length ?? 3) * 7) % 40),
+      bookings: r.bookings?.length ?? 0,
     }));
+  const maxBookings = Math.max(1, ...rooms.map(r => r.bookings));
+  const roomsWithPct = rooms.map(r => ({
+    ...r,
+    pct: Math.round((r.bookings / maxBookings) * 100),
+  }));
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
@@ -304,11 +309,11 @@ function PopulaireKamers({ properties }: { properties: any[] }) {
         <p className="text-sm text-slate-400 py-4 text-center">Geen kamers gevonden</p>
       ) : (
         <div className="space-y-4">
-          {rooms.map((room, i) => (
+          {roomsWithPct.map((room, i) => (
             <div key={i}>
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-sm font-bold text-slate-900">{room.name}</p>
-                <p className="text-xs text-slate-400">{room.pct}% bezetting</p>
+                <p className="text-xs text-slate-400">{room.bookings} boeking{room.bookings !== 1 ? 'en' : ''}</p>
               </div>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
@@ -407,9 +412,7 @@ export default function DashboardPage() {
     return eachDayOfInterval({ start: checkIn, end: checkOut });
   });
 
-  const occupancyPct = stats?.totalBookings > 0
-    ? Math.round((stats.confirmedBookings / Math.max(stats.totalBookings, 1)) * 100)
-    : 0;
+  const occupancyPct: number = stats?.occupancyRate ?? 0;
 
   return (
     <div className="space-y-6 max-w-6xl">

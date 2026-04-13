@@ -225,32 +225,24 @@ export default function EmailTemplatesPage() {
               </div>
               <h3 className="font-bold text-slate-900 mb-1">{label}</h3>
               <p className="text-sm text-slate-400 mb-4">{description}</p>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => router.push(`/${locale}/email-templates/${name}`)}
-                    className="text-sm font-bold text-brand hover:underline flex items-center gap-1"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    Sjabloon bewerken →
-                  </button>
-                  {isCustomized && (
-                    <button
-                      onClick={() => handleReset(name)}
-                      disabled={resetting === name}
-                      className="p-1.5 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
-                      title="Reset naar standaard"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center justify-between pt-1">
                 <button
                   onClick={() => router.push(`/${locale}/email-templates/${name}`)}
-                  className="w-full flex items-center justify-center gap-1.5 bg-brand/5 hover:bg-brand/10 text-brand text-sm font-semibold px-3 py-2 rounded-xl border border-brand/20 transition-colors"
+                  className="text-sm font-bold text-brand hover:underline flex items-center gap-1"
                 >
-                  Selecteer sjabloon
+                  <Pencil className="w-3.5 h-3.5" />
+                  Sjabloon bewerken →
                 </button>
+                {isCustomized && (
+                  <button
+                    onClick={() => handleReset(name)}
+                    disabled={resetting === name}
+                    className="p-1.5 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
+                    title="Reset naar standaard"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           );

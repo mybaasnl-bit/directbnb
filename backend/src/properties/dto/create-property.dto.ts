@@ -88,4 +88,10 @@ export class CreatePropertyDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   childrenAllowed?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  showExtraServices?: boolean;
 }
