@@ -24,6 +24,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay
 import { nl } from 'date-fns/locale';
 import { useState } from 'react';
 import { BetaBanner } from '@/components/feedback/beta-banner';
+import { Tooltip } from '@/components/ui/tooltip';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -73,23 +74,28 @@ function Skeleton() {
 }
 
 // ── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ label, value, sublabel, icon: Icon, trend }: {
+function StatCard({ label, value, sublabel, icon: Icon, trend, tooltip }: {
   label: string;
   value: string | number;
   sublabel?: string;
   icon: React.ElementType;
   trend?: { value: string; positive: boolean };
+  tooltip?: string;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
       <div className="flex items-start justify-between mb-4">
         <p className="text-sm text-slate-500">{label}</p>
-        <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-white" />
-        </div>
+        <Tooltip content={tooltip ?? label} position="left">
+          <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0 cursor-default">
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
       </div>
       <div className="flex items-end gap-2">
-        <p className="text-3xl font-bold text-slate-900">{value}</p>
+        <Tooltip content={tooltip ?? label} position="bottom">
+          <p className="text-3xl font-bold text-slate-900 cursor-default">{value}</p>
+        </Tooltip>
         {trend && (
           <span className={`flex items-center gap-0.5 text-xs font-semibold mb-1 ${trend.positive ? 'text-emerald-600' : 'text-red-500'}`}>
             <TrendingUp className="w-3 h-3" />
@@ -430,24 +436,28 @@ export default function DashboardPage() {
           value={stats?.totalBookings ?? 0}
           sublabel="Ooit"
           icon={FileText}
+          tooltip="Alle boekingen ooit ontvangen — inclusief voltooid en geannuleerd."
         />
         <StatCard
           label="Bevestigd"
           value={stats?.confirmedBookings ?? 0}
           sublabel="Actieve boekingen"
           icon={Users}
+          tooltip="Boekingen met status 'Bevestigd' of 'Betaald' die nog actief zijn."
         />
         <StatCard
           label="Omzet deze maand"
           value={`€${(stats?.revenueThisMonth ?? 0).toLocaleString('nl-NL', { minimumFractionDigits: 0 })}`}
           sublabel="Bevestigde boekingen"
           icon={TrendingUp}
+          tooltip="Totale omzet uit bevestigde boekingen die deze kalendermaand inchecken."
         />
         <StatCard
           label="Gasten Score"
           value={stats?.avgRating != null ? stats.avgRating.toFixed(1) : '—'}
           sublabel="Gemiddelde beoordeling"
           icon={Star}
+          tooltip="Gemiddelde beoordeling (1–10) op basis van alle ontvangen gastreviews."
         />
       </div>
 

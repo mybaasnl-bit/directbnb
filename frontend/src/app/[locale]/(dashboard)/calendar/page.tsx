@@ -19,7 +19,7 @@ import {
 } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus, X, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus, X, Lock, Calendar, ExternalLink } from 'lucide-react';
 
 export default function CalendarPage() {
   const t = useTranslations('calendar');
@@ -30,6 +30,7 @@ export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [eventStartDate, setEventStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [eventEndDate, setEventEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [eventReason, setEventReason] = useState('');
@@ -45,6 +46,17 @@ export default function CalendarPage() {
   const allRooms = (properties as any[]).flatMap((p: any) =>
     (p.rooms ?? []).map((r: any) => ({ ...r, propertyName: p.name })),
   );
+
+  const { data: icalData } = useQuery<{ importUrls: string[]; exportToken: string | null }>({
+    queryKey: ['ical-room', selectedRoomId],
+    queryFn: () => api.get(`/ical/rooms/${selectedRoomId}`).then((r) => r.data),
+    enabled: !!selectedRoomId,
+  });
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  const exportUrl = icalData?.exportToken
+    ? `${API_URL.replace('/api/v1', '')}/api/v1/ical/export/${icalData.exportToken}`
+    : null;
 
   const { data: calendarData } = useQuery({
     queryKey: ['calendar', selectedRoomId, year, month],
@@ -143,8 +155,8 @@ export default function CalendarPage() {
         <p className="text-slate-400 mt-1">Beheer je beschikbaarheid en boekingen</p>
       </div>
 
-      {/* Kamer selector */}
-      <div className="bg-white rounded-2xl border border-slate-100 px-5 py-3.5 flex items-center gap-3">
+      {/* Kamer selector + sync buttons */}
+      <div className="bg-white rounded-2xl border border-slate-100 px-5 py-3.5 flex items-center gap-3 flex-wrap">
         <label className="text-sm font-semibold text-slate-600 shrink-0">Kamer:</label>
         <div className="relative flex-1 max-w-xs">
           <select
@@ -160,6 +172,38 @@ export default function CalendarPage() {
             ))}
           </select>
           <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
+        </div>
+
+        {/* Google & Apple Calendar sync */}
+        <div className="flex items-center gap-2 ml-auto">
+          {exportUrl ? (
+            <>
+              <a
+                href={`https://www.google.com/calendar/render?cid=${encodeURIComponent(exportUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-brand hover:text-brand text-slate-600 text-xs font-semibold rounded-xl transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                Google Agenda
+              </a>
+              <a
+                href={exportUrl.replace(/^https?:\/\//, 'webcal://')}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:border-brand hover:text-brand text-slate-600 text-xs font-semibold rounded-xl transition-colors"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Apple Agenda
+              </a>
+            </>
+          ) : selectedRoomId ? (
+            <button
+              onClick={() => setShowSyncModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-brand-light text-brand text-xs font-semibold rounded-xl hover:bg-brand hover:text-white transition-colors"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Agenda synchroniseren
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -315,6 +359,39 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Agenda Sync modal ── */}
+      {showSyncModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={e => { if (e.target === e.currentTarget) setShowSyncModal(false); }}
+        >
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-brand" />
+                <h2 className="text-lg font-bold text-slate-900">Agenda synchroniseren</h2>
+              </div>
+              <button onClick={() => setShowSyncModal(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              Om je agenda te synchroniseren met Google of Apple, moet je eerst een export-URL aanmaken voor deze kamer.
+              Ga naar <strong>Instellingen → iCal synchronisatie</strong> om een export-URL aan te maken. Daarna verschijnen de synchronisatieknoppen hier automatisch.
+            </p>
+            <div className="bg-brand-light rounded-xl p-4 text-sm text-brand font-medium">
+              💡 Via de iCal-instellingen kun je ook beschikbaarheid importeren van Airbnb en Booking.com.
+            </div>
+            <button
+              onClick={() => setShowSyncModal(false)}
+              className="mt-5 w-full border border-slate-200 rounded-xl py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              Sluiten
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Nieuw Event modal ── */}
       {showEventModal && (

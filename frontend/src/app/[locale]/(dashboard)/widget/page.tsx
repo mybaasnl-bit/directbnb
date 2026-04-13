@@ -96,6 +96,60 @@ function PlatformInstructions({ steps }: PlatformInstructionsProps) {
 
 const PLATFORMS = [
   {
+    id: 'wordpress',
+    label: 'WordPress',
+    emoji: '🔵',
+    steps: [
+      {
+        title: 'Kopieer de widget-code',
+        body: <>Klik op de oranje knop <strong>"Kopieer code"</strong> hierboven.</>,
+      },
+      {
+        title: 'Open de pagina in WordPress',
+        body: <>Ga naar je WordPress-dashboard → <strong>Pagina's</strong> (of <strong>Berichten</strong>) en open de pagina waar je de widget wilt plaatsen.</>,
+      },
+      {
+        title: 'Voeg een "Aangepaste HTML"-blok toe',
+        body: <>Klik in de editor op het <strong>+</strong>-icoontje. Zoek naar <strong>"Aangepaste HTML"</strong> (of <em>Custom HTML</em>) en selecteer dat blok.</>,
+      },
+      {
+        title: 'Plak de code in het HTML-blok',
+        body: <>Klik in het lege tekstveld van het HTML-blok en druk op <strong>Ctrl+V</strong> (Windows) of <strong>⌘+V</strong> (Mac) om de code te plakken.</>,
+      },
+      {
+        title: 'Sla op en publiceer',
+        body: <>Klik rechtsbovenin op <strong>"Bijwerken"</strong> of <strong>"Publiceren"</strong>. De widget verschijnt nu direct op je pagina.</>,
+      },
+    ],
+  },
+  {
+    id: 'elementor',
+    label: 'Elementor',
+    emoji: '🔴',
+    steps: [
+      {
+        title: 'Kopieer de widget-code',
+        body: <>Klik op de oranje knop <strong>"Kopieer code"</strong> hierboven.</>,
+      },
+      {
+        title: 'Open de Elementor-editor',
+        body: <>Ga in WordPress naar de pagina en klik op <strong>"Bewerken met Elementor"</strong>.</>,
+      },
+      {
+        title: 'Voeg een HTML-widget toe',
+        body: <>Zoek in het linkerpaneel naar <strong>"HTML"</strong> (onder de categorie "Algemeen") en sleep het element naar de gewenste sectie op de pagina.</>,
+      },
+      {
+        title: 'Plak de iframe-code',
+        body: <>Klik op het HTML-element. In het paneel links ziet u een tekstveld <strong>"HTML code"</strong>. Plak hier de gekopieerde iframe-code in.</>,
+      },
+      {
+        title: 'Bijwerken en publiceren',
+        body: <>Klik linksonder op de groene knop <strong>"Bijwerken"</strong>. De widget is nu live op je pagina.</>,
+      },
+    ],
+  },
+  {
     id: 'squarespace',
     label: 'Squarespace',
     emoji: '🟫',
@@ -461,73 +515,7 @@ export default function WidgetPage() {
         </div>
       </div>
 
-      {/* WordPress instructions */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
-            <Code2 className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="font-bold text-slate-900">Zo voeg je de widget toe aan je WordPress-website</h2>
-            <p className="text-xs text-slate-400 mt-0.5">Geen technische kennis nodig — volg de stappen hieronder.</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex gap-4">
-            <StepBadge n={1} />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Kopieer de widget-code</p>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Klik hierboven op de oranje knop <strong>"Kopieer code"</strong>. De volledige iframe-code staat nu op je klembord.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <StepBadge n={2} />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Open de pagina in WordPress</p>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Ga naar je WordPress-dashboard → <strong>Pagina's</strong> (of <strong>Berichten</strong>) en open de pagina waar je de widget wilt plaatsen.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <StepBadge n={3} />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Voeg een "Aangepaste HTML"-blok toe</p>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Klik in de editor op het <strong>+</strong>-icoontje om een nieuw blok toe te voegen. Zoek naar <strong>"Aangepaste HTML"</strong> (of <em>Custom HTML</em>) en selecteer dat blok.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <StepBadge n={4} />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Plak de code in het HTML-blok</p>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Klik in het lege tekstveld van het HTML-blok en druk op <strong>Ctrl+V</strong> (Windows) of <strong>⌘+V</strong> (Mac) om de code te plakken.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <StepBadge n={5} />
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Sla op en publiceer</p>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Klik rechtsbovenin op <strong>"Bijwerken"</strong> of <strong>"Publiceren"</strong>. De boekingswidget verschijnt nu direct op je pagina — helemaal up-to-date met jouw beschikbaarheid.
-              </p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Other platform instructions */}
+      {/* Platform instructions accordion — all builders including WordPress & Elementor */}
       <OtherPlatformsAccordion />
 
     </div>
