@@ -12,6 +12,7 @@ import {
   BedDouble, Users, Clock, Filter, FileText, TrendingUp, Plus,
   AlertCircle, Ban,
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 const STATUS_FILTERS = [
   { key: 'all',             label: 'Alle statussen' },
@@ -25,14 +26,23 @@ const STATUS_FILTERS = [
 
 type FilterKey = (typeof STATUS_FILTERS)[number]['key'];
 
+const BOOKING_STAT_TOOLTIPS: Record<string, string> = {
+  'Totale Boekingen': 'Alle ontvangen boekingen — inclusief voltooid en geannuleerd.',
+  'Bevestigd': 'Boekingen met status Bevestigd, Betaald of Voltooid.',
+  'In afwachting': 'Nieuwe boekingsverzoeken die nog op goedkeuring wachten.',
+  'Geannuleerd': 'Boekingen die zijn geannuleerd of afgewezen.',
+};
+
 function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ElementType }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
       <div className="flex items-start justify-between mb-4">
         <p className="text-sm text-slate-500">{label}</p>
-        <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-white" />
-        </div>
+        <Tooltip content={BOOKING_STAT_TOOLTIPS[label] ?? label} position="top">
+          <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0 cursor-default">
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+        </Tooltip>
       </div>
       <p className="text-3xl font-bold text-slate-900">{value}</p>
     </div>
@@ -467,22 +477,24 @@ export default function BookingsPage() {
               <div><BookingStatusBadge status={booking.status} /></div>
               <div className="font-bold text-sm text-slate-900">€{Number(booking.totalPrice).toFixed(0)}</div>
               <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => updateStatus.mutate({ id: booking.id, status: 'CONFIRMED' })}
-                  disabled={updateStatus.isPending}
-                  title="Accepteren"
-                  className="w-7 h-7 bg-brand hover:bg-brand-600 text-white rounded-lg flex items-center justify-center disabled:opacity-60 transition-colors"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => updateStatus.mutate({ id: booking.id, status: 'REJECTED' })}
-                  disabled={updateStatus.isPending}
-                  title="Weigeren"
-                  className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center disabled:opacity-60 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <Tooltip content="Accepteren" position="top">
+                  <button
+                    onClick={() => updateStatus.mutate({ id: booking.id, status: 'CONFIRMED' })}
+                    disabled={updateStatus.isPending}
+                    className="w-7 h-7 bg-brand hover:bg-brand-600 text-white rounded-lg flex items-center justify-center disabled:opacity-60 transition-colors"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
+                <Tooltip content="Weigeren" position="top">
+                  <button
+                    onClick={() => updateStatus.mutate({ id: booking.id, status: 'REJECTED' })}
+                    disabled={updateStatus.isPending}
+                    className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center disabled:opacity-60 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           ))}
@@ -510,23 +522,26 @@ export default function BookingsPage() {
                     linkSent ? (
                       <span className="text-xs font-semibold text-emerald-600">✓ Verstuurd</span>
                     ) : (
-                      <button
-                        onClick={() => sendPaymentLink.mutate({ id: booking.id, method: 'ideal' })}
-                        disabled={isSending}
-                        className="text-xs font-bold text-brand hover:underline disabled:opacity-60"
-                      >
-                        {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Betaallink'}
-                      </button>
+                      <Tooltip content="Stuur betaallink naar gast" position="top">
+                        <button
+                          onClick={() => sendPaymentLink.mutate({ id: booking.id, method: 'ideal' })}
+                          disabled={isSending}
+                          className="text-xs font-bold text-brand hover:underline disabled:opacity-60"
+                        >
+                          {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Betaallink'}
+                        </button>
+                      </Tooltip>
                     )
                   )}
                   {['CONFIRMED', 'PAYMENT_PENDING', 'PAID'].includes(booking.status) && (
-                    <button
-                      onClick={() => setConfirmCancel(booking)}
-                      title="Annuleer boeking"
-                      className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition-colors"
-                    >
-                      <Ban className="w-3.5 h-3.5" />
-                    </button>
+                    <Tooltip content="Annuleer boeking" position="top">
+                      <button
+                        onClick={() => setConfirmCancel(booking)}
+                        className="w-7 h-7 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg flex items-center justify-center transition-colors"
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
                   )}
                   {!['CONFIRMED', 'PAYMENT_PENDING', 'PAID'].includes(booking.status) && (
                     <span className="text-xs font-bold text-slate-400">{booking.status === 'CANCELLED' ? 'Geannuleerd' : booking.status === 'COMPLETED' ? 'Afgerond' : ''}</span>

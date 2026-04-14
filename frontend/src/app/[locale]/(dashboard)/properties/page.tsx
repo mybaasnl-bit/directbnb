@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Plus, Edit, ExternalLink, BedDouble, Users, Globe, Wrench, TrendingUp } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -129,16 +130,18 @@ export default function PropertiesPage() {
       {!isLoading && totalRooms > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Totale Kamers', value: totalRooms, icon: BedDouble, color: 'text-slate-700' },
-            { label: 'Beschikbaar',   value: beschikbaar, icon: TrendingUp, color: 'text-emerald-600' },
-            { label: 'Bezet',        value: bezet,        icon: Users,      color: 'text-red-500' },
-            { label: 'Gem. Prijs',   value: `€${avgPrice}`, icon: null,    color: 'text-brand' },
-          ].map(({ label, value, icon: Icon, color }) => (
+            { label: 'Totale Kamers', value: totalRooms, icon: BedDouble, color: 'text-slate-700', tooltip: 'Totaal aantal verhuurbare kamers in je accommodatie.' },
+            { label: 'Beschikbaar',   value: beschikbaar, icon: TrendingUp, color: 'text-emerald-600', tooltip: 'Kamers die momenteel beschikbaar zijn voor nieuwe boekingen.' },
+            { label: 'Bezet',        value: bezet,        icon: Users,      color: 'text-red-500',    tooltip: 'Kamers die momenteel bezet zijn of onderhoud ondergaan.' },
+            { label: 'Gem. Prijs',   value: `€${avgPrice}`, icon: null,    color: 'text-brand',      tooltip: 'Gemiddelde prijs per nacht over alle kamers.' },
+          ].map(({ label, value, icon: Icon, color, tooltip }) => (
             <div key={label} className="bg-white rounded-2xl px-5 py-4 border border-slate-100 flex items-center gap-3">
               {Icon && (
-                <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center">
-                  <Icon className={`w-5 h-5 ${color}`} />
-                </div>
+                <Tooltip content={tooltip} position="top">
+                  <div className="w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center cursor-default">
+                    <Icon className={`w-5 h-5 ${color}`} />
+                  </div>
+                </Tooltip>
               )}
               <div>
                 <p className={`text-xl font-extrabold ${color}`}>{value}</p>

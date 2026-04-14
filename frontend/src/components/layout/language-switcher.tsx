@@ -4,11 +4,11 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 
 const LOCALES = [
-  { code: 'nl', label: '🇳🇱 Nederlands' },
-  { code: 'en', label: '🇬🇧 Engels' },
-  { code: 'de', label: '🇩🇪 Duits' },
-  { code: 'fr', label: '🇫🇷 Frans' },
-  { code: 'es', label: '🇪🇸 Spaans' },
+  { code: 'nl', label: '🇳🇱 Nederlands', supported: true },
+  { code: 'en', label: '🇬🇧 Engels', supported: true },
+  { code: 'de', label: '🇩🇪 Duits (binnenkort)', supported: false },
+  { code: 'fr', label: '🇫🇷 Frans (binnenkort)', supported: false },
+  { code: 'es', label: '🇪🇸 Spaans (binnenkort)', supported: false },
 ];
 
 export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' | 'sidebar' }) {
@@ -34,7 +34,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
             className="w-full appearance-none bg-slate-50 border border-slate-100 text-slate-700 text-sm font-semibold rounded-xl pl-3 pr-8 py-2.5 cursor-pointer outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/30"
           >
             {LOCALES.map((l) => (
-              <option key={l.code} value={l.code}>
+              <option key={l.code} value={l.code} disabled={!l.supported}>
                 {l.label}
               </option>
             ))}
@@ -53,7 +53,7 @@ export function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' 
         className="appearance-none bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg pl-2.5 pr-7 py-1.5 cursor-pointer border-0 outline-none focus:ring-2 focus:ring-brand/30"
       >
         {LOCALES.map((l) => (
-          <option key={l.code} value={l.code}>
+          <option key={l.code} value={l.code} disabled={!l.supported}>
             {l.label}
           </option>
         ))}

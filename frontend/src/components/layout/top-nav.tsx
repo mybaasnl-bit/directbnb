@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import { LanguageSwitcher } from './language-switcher';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Bell, X, CalendarDays, Check, XCircle, ArrowRight, BedDouble } from 'lucide-react';
+import { Bell, X, CalendarDays, Check, XCircle, ArrowRight, BedDouble, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useParams } from 'next/navigation';
@@ -23,13 +23,15 @@ interface Booking {
 }
 
 export function TopNav() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { locale } = useParams<{ locale: string }>();
   const currentLocale = useLocale();
   const t = useTranslations('notifications');
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
   // Close on click outside
   useEffect(() => {
@@ -37,10 +39,13 @@ export function TopNav() {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
     };
-    if (open) document.addEventListener('mousedown', handler);
+    if (open || profileOpen) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  }, [open, profileOpen]);
 
   // Close on Escape
   useEffect(() => {
@@ -215,8 +220,42 @@ export function TopNav() {
 
         <LanguageSwitcher />
 
-        <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand font-semibold text-sm">
-          {user?.firstName?.[0]}{user?.lastName?.[0]}
+        {/* Avatar dropdown */}
+        <div className="relative" ref={profileRef}>
+          <button
+            onClick={() => setProfileOpen(v => !v)}
+            className="flex items-center gap-1.5 rounded-xl p-1 hover:bg-slate-100 transition-colors"
+            aria-label="Profielmenu"
+          >
+            <div className="w-8 h-8 rounded-full bg-brand-light flex items-center justify-center text-brand font-semibold text-sm">
+              {user?.firstName?.[0]}{user?.lastName?.[0]}
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {profileOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden py-1">
+              <div className="px-4 py-2.5 border-b border-slate-100">
+                <p className="text-sm font-semibold text-slate-900 truncate">{user?.firstName} {user?.lastName}</p>
+                <p className="text-xs text-slate-400 truncate">{(user as any)?.email}</p>
+              </div>
+              <Link
+                href={`/${locale}/settings`}
+                onClick={() => setProfileOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                <Settings className="w-4 h-4 text-slate-400" />
+                Instellingen
+              </Link>
+              <button
+                onClick={() => { logout(); setProfileOpen(false); }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                Uitloggen
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

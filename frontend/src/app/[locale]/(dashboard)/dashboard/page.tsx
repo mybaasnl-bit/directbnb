@@ -86,16 +86,14 @@ function StatCard({ label, value, sublabel, icon: Icon, trend, tooltip }: {
     <div className="bg-white rounded-2xl border border-slate-100 p-5">
       <div className="flex items-start justify-between mb-4">
         <p className="text-sm text-slate-500">{label}</p>
-        <Tooltip content={tooltip ?? label} position="left">
+        <Tooltip content={tooltip ?? label} position="top">
           <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center flex-shrink-0 cursor-default">
             <Icon className="w-5 h-5 text-white" />
           </div>
         </Tooltip>
       </div>
       <div className="flex items-end gap-2">
-        <Tooltip content={tooltip ?? label} position="bottom">
-          <p className="text-3xl font-bold text-slate-900 cursor-default">{value}</p>
-        </Tooltip>
+        <p className="text-3xl font-bold text-slate-900">{value}</p>
         {trend && (
           <span className={`flex items-center gap-0.5 text-xs font-semibold mb-1 ${trend.positive ? 'text-emerald-600' : 'text-red-500'}`}>
             <TrendingUp className="w-3 h-3" />
