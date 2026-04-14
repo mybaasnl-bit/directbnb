@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Mail, BookOpen, CheckCircle, XCircle, Send, FileText, Clock, TrendingUp, Pencil, RotateCcw, Eye, X } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -234,14 +235,15 @@ export default function EmailTemplatesPage() {
                   Sjabloon bewerken →
                 </button>
                 {isCustomized && (
-                  <button
-                    onClick={() => handleReset(name)}
-                    disabled={resetting === name}
-                    className="p-1.5 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
-                    title="Reset naar standaard"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip content="Reset naar standaard" position="top">
+                    <button
+                      onClick={() => handleReset(name)}
+                      disabled={resetting === name}
+                      className="p-1.5 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             </div>

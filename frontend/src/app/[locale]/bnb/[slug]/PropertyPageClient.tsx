@@ -975,7 +975,7 @@ function BookingSheet({
                 <div className="space-y-3">
                   {rooms.map(room => {
                     const desc = isNl ? room.descriptionNl || room.descriptionEn : room.descriptionEn || room.descriptionNl;
-                    const photo = room.photos?.[0];
+                    const photo = room.photos?.[0] ?? property.photos?.[0];
                     const isSelected = selectedRoom?.id === room.id;
                     const nightsCount = nightsBetween(checkIn, checkOut);
 
@@ -1288,6 +1288,9 @@ export function PropertyPageClient({ property }: Props) {
   const rooms = property.rooms ?? [];
   const reviews = property.reviews ?? [];
 
+  // Cover photo used as fallback when a room has no photos of its own
+  const propertyFallbackPhoto = photos.find(p => p.isCover) ?? photos[0] ?? null;
+
   const description = isNl
     ? property.descriptionNl || property.descriptionEn
     : property.descriptionEn || property.descriptionNl;
@@ -1581,7 +1584,7 @@ export function PropertyPageClient({ property }: Props) {
                   {rooms.map(room => {
                     const roomDesc = isNl ? room.descriptionNl || room.descriptionEn : room.descriptionEn || room.descriptionNl;
                     const isSelected = selectedRoom?.id === room.id;
-                    const photo = room.photos?.[0];
+                    const photo = room.photos?.[0] ?? propertyFallbackPhoto;
 
                     return (
                       <div
@@ -1634,7 +1637,7 @@ export function PropertyPageClient({ property }: Props) {
                 {rooms.map(room => {
                   const roomDesc = isNl ? room.descriptionNl || room.descriptionEn : room.descriptionEn || room.descriptionNl;
                   const isSelected = selectedRoom?.id === room.id;
-                  const coverPhoto = room.photos?.[0];
+                  const coverPhoto = room.photos?.[0] ?? propertyFallbackPhoto;
 
                   return (
                     <div

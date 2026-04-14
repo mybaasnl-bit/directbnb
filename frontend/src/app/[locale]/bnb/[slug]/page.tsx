@@ -14,7 +14,7 @@ const DEFAULT_OG_IMAGE = `${APP_URL}/og-default.png`;
 async function fetchProperty(slug: string): Promise<Property | null> {
   try {
     const res = await fetch(`${API_URL}/public/properties/${slug}`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
