@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
 // ─── MockCalendar ─────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ function Header() {
 
         {/* CTAs */}
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <Link
             href={`/${locale}/login`}
             className="text-sm text-slate-600 hover:text-slate-900 font-semibold px-4 py-2 rounded-xl transition-colors border border-slate-200 hover:border-slate-300"

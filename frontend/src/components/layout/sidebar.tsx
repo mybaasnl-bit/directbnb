@@ -25,7 +25,6 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LanguageSwitcher } from '@/components/layout/language-switcher';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -93,9 +92,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           </span>
         )}
       </div>
-
-      {/* Language selector */}
-      <LanguageSwitcher variant="sidebar" />
 
       {/* Main nav */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">

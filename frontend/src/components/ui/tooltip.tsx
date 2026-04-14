@@ -28,7 +28,7 @@ export function Tooltip({ content, children, position = 'top', className }: Tool
     <div className={`relative group inline-flex ${className ?? ''}`}>
       {children}
       <div
-        className={`pointer-events-none absolute z-50 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-lg ${pos}`}
+        className={`pointer-events-none absolute z-[9999] px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg max-w-[220px] text-center leading-snug break-words opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-lg ${pos}`}
         role="tooltip"
       >
         {content}
