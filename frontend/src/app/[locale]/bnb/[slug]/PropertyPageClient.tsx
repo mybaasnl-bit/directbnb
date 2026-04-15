@@ -1275,6 +1275,14 @@ function StickyBookBar({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+interface PropertyExtra {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: string | number;
+  pricePer: 'GUEST' | 'STAY';
+}
+
 interface Props {
   property: Property;
 }
@@ -1342,6 +1350,14 @@ export function PropertyPageClient({ property }: Props) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [amenitiesExpanded, setAmenitiesExpanded] = useState(false);
   const [reviewsExpanded, setReviewsExpanded] = useState(false);
+
+  // Fetch real extra experiences from API
+  const { data: extras = [] } = useQuery<PropertyExtra[]>({
+    queryKey: ['property-extras', property.id],
+    queryFn: () =>
+      api.get(`/public/properties/${property.id}/extras`).then(r => r.data?.data ?? r.data),
+    enabled: property.showExtraServices !== false,
+  });
 
   const openSheet = useCallback((step: number) => {
     setSheetStep(step);
@@ -1770,34 +1786,41 @@ export function PropertyPageClient({ property }: Props) {
               )}
             </section>
 
-            {/* ── Ervaringen (Experiences) ── */}
-            {property.showExtraServices !== false && <section className="border-b border-slate-100 pb-6">
-              <h2 className="text-lg font-bold text-slate-900 mb-1">{isNl ? 'Ontdek extra ervaringen' : 'Discover extra experiences'}</h2>
-              <p className="text-sm text-slate-400 mb-4">{isNl ? 'Maak je verblijf nog specialer' : 'Make your stay even more special'}</p>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {[
-                  { emoji: '🛶', title: isNl ? 'Kanotocht door de plassen' : 'Canoe trip through the lakes', desc: isNl ? '2 uur begeleide kanotocht' : '2-hour guided canoe trip', price: 35 },
-                  { emoji: '🚲', title: isNl ? 'Fietstocht Groene Hart' : 'Cycling Green Heart', desc: isNl ? 'E-bike huren incl. route' : 'E-bike rental incl. route', price: 25 },
-                  { emoji: '🧘', title: isNl ? 'Yoga in de natuur' : 'Yoga in nature', desc: isNl ? 'Ochtend yoga op het terras' : 'Morning yoga on the terrace', price: 20 },
-                ].map((exp) => (
-                  <div key={exp.title} className="border border-slate-100 rounded-2xl p-4 flex flex-col gap-3">
-                    <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center text-2xl">
-                      {exp.emoji}
+            {/* ── Ervaringen (Experiences) — only shown when owner has active extras ── */}
+            {property.showExtraServices !== false && extras.length > 0 && (
+              <section className="border-b border-slate-100 pb-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-1">{isNl ? 'Ontdek extra ervaringen' : 'Discover extra experiences'}</h2>
+                <p className="text-sm text-slate-400 mb-4">{isNl ? 'Maak je verblijf nog specialer' : 'Make your stay even more special'}</p>
+                <div className="grid sm:grid-cols-3 gap-4">
+                  {extras.map((extra) => (
+                    <div key={extra.id} className="border border-slate-100 rounded-2xl p-4 flex flex-col gap-3">
+                      <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center">
+                        <Star className="w-6 h-6 text-brand" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-slate-900 text-sm">{extra.name}</p>
+                        {extra.description && (
+                          <p className="text-xs text-slate-400 mt-0.5">{extra.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">
+                          €{fmtPrice(extra.price)}{' '}
+                          <span className="text-xs font-normal text-slate-400">
+                            {extra.pricePer === 'GUEST'
+                              ? 'p.p.'
+                              : isNl ? 'per boeking' : 'per stay'}
+                          </span>
+                        </span>
+                        <button className="text-xs font-bold text-brand border border-brand px-3 py-1.5 rounded-lg hover:bg-brand-light transition-colors">
+                          {isNl ? 'Toevoegen' : 'Add'}
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-slate-900 text-sm">{exp.title}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{exp.desc}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">€{exp.price} <span className="text-xs font-normal text-slate-400">p.p.</span></span>
-                      <button className="text-xs font-bold text-brand border border-brand px-3 py-1.5 rounded-lg hover:bg-brand-light transition-colors">
-                        {isNl ? 'Toevoegen' : 'Add'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>}
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* ── Policies ── */}
             {(property.checkInTime || property.checkOutTime || property.cancellationPolicy) && (
