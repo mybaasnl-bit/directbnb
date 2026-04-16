@@ -402,16 +402,38 @@ function TouchDateRangePicker({
     else setMonth(m => m + 1);
   };
 
+  /**
+   * When a check-in is selected, the guest can only check out BEFORE the first
+   * unavailable date that falls after check-in. This prevents selecting a range
+   * that spans over an already-booked period.
+   * Value is the first blocked date string (exclusive upper bound for check-out),
+   * or null if no blocked dates exist after the current check-in.
+   */
+  const maxCheckOutExcl = useMemo<string | null>(() => {
+    if (!checkIn || !unavailableDates?.size) return null;
+    const first = Array.from(unavailableDates)
+      .filter(d => d > checkIn)
+      .sort()[0];
+    return first ?? null;
+  }, [checkIn, unavailableDates]);
+
   const handleDayTap = (dateStr: string) => {
     const d = new Date(dateStr);
     if (d < today) return;
     if (unavailableDates?.has(dateStr)) return;
 
     if (!checkIn || (checkIn && checkOut)) {
+      // Starting a fresh range selection
       onCheckIn(dateStr);
       onCheckOut('');
     } else {
       if (dateStr <= checkIn) {
+        // Tapped before or on existing check-in → restart
+        onCheckIn(dateStr);
+        onCheckOut('');
+      } else if (maxCheckOutExcl && dateStr >= maxCheckOutExcl) {
+        // Tapped on or after the first blocked date — range would span a booked
+        // period. Restart selection with this date as the new check-in.
         onCheckIn(dateStr);
         onCheckOut('');
       } else {
@@ -471,6 +493,13 @@ function TouchDateRangePicker({
           const d = new Date(dateStr);
           const isPast = d < today;
           const isUnavail = unavailableDates?.has(dateStr);
+          // Greyed-out when check-in is set and this date would create a range
+          // that spans over a booked period (on/after the first blocked date)
+          const isBlockedCheckOut =
+            !!checkIn && !checkOut &&
+            !!maxCheckOutExcl &&
+            dateStr >= maxCheckOutExcl &&
+            !isUnavail;
           const start = isStart(dateStr);
           const end = isEnd(dateStr);
           const range = inRange(dateStr);
@@ -479,18 +508,18 @@ function TouchDateRangePicker({
             <button
               key={day}
               type="button"
-              disabled={isPast || isUnavail}
+              disabled={isPast || !!isUnavail || isBlockedCheckOut}
               onClick={() => handleDayTap(dateStr)}
               className={[
                 'relative flex items-center justify-center text-sm font-medium py-3 transition-colors',
                 'disabled:cursor-not-allowed',
                 isPast ? 'text-slate-300' : '',
-                isUnavail && !isPast ? 'text-red-300 line-through' : '',
+                (isUnavail || isBlockedCheckOut) && !isPast ? 'text-slate-300 line-through' : '',
                 start || end
                   ? 'text-white z-10'
                   : range
                   ? 'text-brand-600'
-                  : !isPast && !isUnavail
+                  : !isPast && !isUnavail && !isBlockedCheckOut
                   ? 'text-slate-800 hover:bg-brand-light rounded-lg active:scale-95'
                   : '',
               ].join(' ')}
@@ -834,17 +863,18 @@ function BookingSheet({
     }
   }, [open, initialStep]);
 
-  // Availability for selected room (step 1)
+  // Availability for selected room — fetch 12 months so every calendar month is covered
   const { data: availData } = useQuery<{ unavailableDates: string[] }>({
-    queryKey: ['availability', selectedRoom?.id ?? rooms[0]?.id, 'sheet'],
+    queryKey: ['availability', selectedRoom?.id ?? rooms[0]?.id, 'sheet-12m'],
     queryFn: () => {
       const today = new Date();
       const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-      const end = new Date(today.getFullYear(), today.getMonth() + 2, 0).toISOString().split('T')[0];
+      const end   = new Date(today.getFullYear(), today.getMonth() + 12, 0).toISOString().split('T')[0];
       const roomId = selectedRoom?.id ?? rooms[0]?.id;
       return api.get('/availability', { params: { roomId, startDate: start, endDate: end } }).then(r => r.data?.data ?? r.data);
     },
     enabled: open,
+    staleTime: 60_000, // treat as fresh for 60 s — avoids repeated fetches while sheet is open
   });
   const unavailSet = new Set(availData?.unavailableDates ?? []);
 
@@ -859,12 +889,26 @@ function BookingSheet({
     },
   });
 
-  // Keep roomId in sync with selectedRoom so zod validation passes
+  // ── Keep hidden form fields in sync with externally-controlled props ──────────
+  // useForm captures defaultValues at mount. After that, the parent can update
+  // checkIn / checkOut / numGuests / roomId via props; we must push those into the
+  // form via setValue or Zod will validate against stale empty strings and silently
+  // block the "Controleer boeking" submit.
   useEffect(() => {
-    if (selectedRoom?.id) {
-      setValue('roomId', selectedRoom.id, { shouldValidate: false });
-    }
+    setValue('roomId', selectedRoom?.id ?? '', { shouldValidate: false });
   }, [selectedRoom?.id, setValue]);
+
+  useEffect(() => {
+    setValue('checkIn', checkIn, { shouldValidate: false });
+  }, [checkIn, setValue]);
+
+  useEffect(() => {
+    setValue('checkOut', checkOut, { shouldValidate: false });
+  }, [checkOut, setValue]);
+
+  useEffect(() => {
+    setValue('numGuests', numGuests, { shouldValidate: false });
+  }, [numGuests, setValue]);
 
   // Step 3 → save guest data locally and advance to summary (no API call yet)
   const onSubmitGuestDetails: SubmitHandler<BookingForm> = (data) => {
