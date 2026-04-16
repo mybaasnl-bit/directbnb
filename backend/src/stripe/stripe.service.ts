@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 
 /** Default platform commission percentage when host has no custom rate set */
 const DEFAULT_PLATFORM_FEE_PERCENT = 5;
@@ -15,6 +16,7 @@ export class StripeService {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
   ) {
     const key = config.get<string>('STRIPE_SECRET_KEY');
     this.enabled = !!key;
@@ -115,6 +117,115 @@ export class StripeService {
   }
 
   /**
+   * Create a Stripe Checkout Session for a guest booking.
+   * The booking record must already exist in the DB (status PENDING).
+   * On success, saves the session ID to stripePaymentIntentId (temporary;
+   * replaced by the real PaymentIntent ID when checkout.session.completed fires).
+   */
+  async createCheckoutSession(
+    bookingId: string,
+    successUrl: string,
+    cancelUrl: string,
+  ): Promise<{ checkoutUrl: string }> {
+    if (!this.stripe || !this.enabled) {
+      throw new BadRequestException('Stripe is not configured on this server.');
+    }
+
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        room: { include: { property: true } },
+        guest: true,
+        owner: { include: { paymentAccount: true } },
+      },
+    });
+
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    const totalEuros = Number(booking.totalPrice);
+    const totalCents = Math.round(totalEuros * 100);
+
+    const feePercent =
+      Number(booking.owner.paymentAccount?.platformFeePercent ?? 0) ||
+      this.config.get<number>('PLATFORM_FEE_PERCENT', DEFAULT_PLATFORM_FEE_PERCENT);
+
+    const platformFeeCents = Math.round(totalCents * feePercent / 100);
+    const platformFeeEuros = parseFloat((platformFeeCents / 100).toFixed(2));
+    const payoutEuros      = parseFloat((totalEuros - platformFeeEuros).toFixed(2));
+
+    const nights = Math.round(
+      (new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / 86_400_000,
+    );
+
+    // providerAccountId is the Stripe Connect account ID for STRIPE provider accounts
+    const ownerStripeAccountId =
+      booking.owner.paymentAccount?.provider === 'STRIPE'
+        ? (booking.owner.paymentAccount?.providerAccountId ?? null)
+        : null;
+
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: 'payment',
+      payment_method_types: ['card', 'ideal'],
+      customer_email: booking.guest.email,
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            unit_amount: totalCents,
+            product_data: {
+              name: `${booking.room.property.name} — ${booking.room.name}`,
+              description: `${nights} nacht${nights !== 1 ? 'en' : ''} · inchecken ${new Date(booking.checkIn).toLocaleDateString('nl-NL')}`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      payment_intent_data: {
+        description: `DirectBnB — ${booking.room.property.name} (${bookingId.slice(0, 8)})`,
+        receipt_email: booking.guest.email,
+        metadata: { bookingId, propertyName: booking.room.property.name, guestEmail: booking.guest.email },
+        // Route funds to the host's connected account (if onboarded)
+        ...(ownerStripeAccountId
+          ? {
+              application_fee_amount: platformFeeCents,
+              transfer_data: { destination: ownerStripeAccountId },
+            }
+          : {}),
+      },
+      metadata: { bookingId },
+      // Stripe replaces {CHECKOUT_SESSION_ID} in success_url automatically
+      success_url: successUrl.includes('{CHECKOUT_SESSION_ID}')
+        ? successUrl
+        : `${successUrl}${successUrl.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl,
+    };
+
+    const session = await this.stripe.checkout.sessions.create(sessionParams);
+
+    // Persist fee/payout amounts and the session ID so we can reconcile on webhook
+    await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: {
+        stripePaymentIntentId: session.id,   // replaced by real PI id in webhook
+        depositAmount: totalEuros,
+        platformFeeAmount: platformFeeEuros,
+        payoutAmount: payoutEuros,
+        paymentProvider: 'STRIPE',
+        paymentType: 'FULL',
+      },
+    });
+
+    this.logger.log(
+      `Checkout Session ${session.id} created for booking ${bookingId} — ` +
+      `€${totalEuros.toFixed(2)}, platform fee €${platformFeeEuros.toFixed(2)} (${feePercent}%), ` +
+      `host payout €${payoutEuros.toFixed(2)}` +
+      (ownerStripeAccountId ? ` → Connect: ${ownerStripeAccountId}` : ' (platform account, no Connect)'),
+    );
+
+    return { checkoutUrl: session.url! };
+  }
+
+  /**
    * Stripe webhook handler.
    * On payment_intent.succeeded: marks deposit as paid and captures the Charge ID
    * needed later as `source_transaction` in the transfer.
@@ -132,13 +243,54 @@ export class StripeService {
       throw new BadRequestException(`Webhook signature verification failed: ${err.message}`);
     }
 
+    // ── Hosted Checkout Session completed ────────────────────────────────────
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const bookingId = session.metadata?.bookingId;
+      if (!bookingId) return;
+
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : (session.payment_intent as Stripe.PaymentIntent | null)?.id ?? null;
+
+      const booking = await this.prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          depositPaid: true,
+          paymentStatus: 'PAID',
+          status: 'CONFIRMED',
+          paidAt: new Date(),
+          ...(paymentIntentId ? { stripePaymentIntentId: paymentIntentId } : {}),
+        },
+        include: {
+          guest: true,
+          room: { include: { property: { include: { owner: true } } } },
+        },
+      });
+
+      // Send confirmation emails (non-blocking)
+      this.emailService
+        .sendBookingConfirmed(booking, booking.room.property.owner)
+        .catch(err => this.logger.error('Confirmation email failed (non-fatal)', err));
+
+      this.logger.log(
+        `Checkout session completed for booking ${bookingId} — ` +
+        `session: ${session.id}, PI: ${paymentIntentId ?? 'pending'}`,
+      );
+    }
+
+    // ── Direct PaymentIntent (Stripe Elements flow) ───────────────────────────
     if (event.type === 'payment_intent.succeeded') {
       const intent = event.data.object as Stripe.PaymentIntent;
       const bookingId = intent.metadata?.bookingId;
       if (!bookingId) return;
 
+      // Skip if already handled by checkout.session.completed above
+      const existing = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+      if (existing?.paymentStatus === 'PAID') return;
+
       // Retrieve the Charge ID — required as source_transaction for transfers.
-      // latest_charge is the string ID of the charge.
       const chargeId = typeof intent.latest_charge === 'string'
         ? intent.latest_charge
         : (intent.latest_charge as Stripe.Charge | null)?.id ?? null;

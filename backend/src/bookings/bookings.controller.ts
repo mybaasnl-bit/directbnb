@@ -16,6 +16,7 @@ import { BookingStatus } from '@prisma/client';
 
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateCheckoutBookingDto } from './dto/create-checkout-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { JwtAuthGuard, Public } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -93,5 +94,19 @@ export class PublicBookingsController {
   @ApiOperation({ summary: 'Submit a new booking request (public, no auth required)' })
   create(@Body() dto: CreateBookingDto) {
     return this.bookingsService.createPublic(dto);
+  }
+
+  /**
+   * POST /api/v1/public/bookings/checkout
+   * Guest submits booking details + receives a Stripe Checkout URL.
+   * The booking is created as PAYMENT_PENDING; it transitions to CONFIRMED
+   * only after Stripe fires the checkout.session.completed webhook.
+   */
+  @Public()
+  @Post('checkout')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create booking and Stripe Checkout Session (public)' })
+  createWithCheckout(@Body() dto: CreateCheckoutBookingDto) {
+    return this.bookingsService.createWithStripeCheckout(dto);
   }
 }

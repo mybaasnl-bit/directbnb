@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { StripeService } from '../stripe/stripe.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateCheckoutBookingDto } from './dto/create-checkout-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { BookingStatus } from '@prisma/client';
 
@@ -79,6 +80,70 @@ export class BookingsService {
     await this.emailService.sendBookingRequest(booking, room.property.owner);
 
     return booking;
+  }
+
+  // ─── Public: create booking + Stripe Checkout Session in one call ───────────
+
+  async createWithStripeCheckout(
+    dto: CreateCheckoutBookingDto,
+  ): Promise<{ checkoutUrl: string; bookingId: string }> {
+    if (!this.stripeService.isEnabled()) {
+      throw new BadRequestException('Online betaling via Stripe is momenteel niet beschikbaar.');
+    }
+
+    const room = await this.prisma.room.findUnique({
+      where: { id: dto.roomId, isActive: true },
+      include: { property: { include: { owner: true } } },
+    });
+
+    if (!room || !room.property.isPublished) {
+      throw new NotFoundException('Room not available');
+    }
+
+    const checkIn  = new Date(dto.checkIn);
+    const checkOut = new Date(dto.checkOut);
+
+    if (checkIn >= checkOut) throw new BadRequestException('Check-out must be after check-in');
+    if (checkIn < new Date()) throw new BadRequestException('Check-in date must be in the future');
+
+    await this.assertRoomAvailable(dto.roomId, checkIn, checkOut);
+
+    const guest = await this.upsertGuest(room.property.ownerId, dto);
+
+    const nights     = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+    const totalPrice = Number(room.pricePerNight) * nights;
+
+    // Create booking with PAYMENT_PENDING — owner is notified only after payment succeeds
+    const booking = await this.prisma.booking.create({
+      data: {
+        roomId:      dto.roomId,
+        guestId:     guest.id,
+        ownerId:     room.property.ownerId,
+        checkIn,
+        checkOut,
+        numGuests:   dto.numGuests,
+        totalPrice,
+        guestMessage: dto.guestMessage,
+        status:      'PAYMENT_PENDING',
+        source:      'direct',
+      },
+    });
+
+    try {
+      const { checkoutUrl } = await this.stripeService.createCheckoutSession(
+        booking.id,
+        dto.successUrl,
+        dto.cancelUrl,
+      );
+
+      this.logger.log(`Stripe Checkout Session created for booking ${booking.id}`);
+      return { checkoutUrl, bookingId: booking.id };
+    } catch (err: any) {
+      // Roll back the booking so no phantom PAYMENT_PENDING records linger
+      await this.prisma.booking.delete({ where: { id: booking.id } }).catch(() => {});
+      this.logger.error(`Stripe session creation failed for booking ${booking.id}: ${err.message}`, err.stack);
+      throw err;
+    }
   }
 
   // ─── Owner: manually create a confirmed booking ──────────────────────────────
