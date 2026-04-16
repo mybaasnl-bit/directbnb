@@ -813,16 +813,24 @@ function BookingSheet({
   t: ReturnType<typeof useTranslations>;
 }) {
   const [step, setStep] = useState(initialStep);
-  const [success, setSuccess] = useState(false);
   const isNl = locale === 'nl';
   const nights = nightsBetween(checkIn, checkOut);
   const total = selectedRoom ? nights * Number(selectedRoom.pricePerNight) : 0;
+
+  // Saved guest data from step 3 — used in the step 4 summary
+  const [savedGuest, setSavedGuest] = useState<BookingForm | null>(null);
+
+  // Legal checkboxes (step 4)
+  const [bbAccepted, setBbAccepted] = useState(false);
+  const [directAccepted, setDirectAccepted] = useState(false);
 
   // Sync step when sheet opens
   useEffect(() => {
     if (open) {
       setStep(initialStep);
-      setSuccess(false);
+      setSavedGuest(null);
+      setBbAccepted(false);
+      setDirectAccepted(false);
     }
   }, [open, initialStep]);
 
@@ -858,26 +866,47 @@ function BookingSheet({
     }
   }, [selectedRoom?.id, setValue]);
 
-  const submitMutation = useMutation({
-    mutationFn: (data: BookingForm) =>
-      api.post('/public/bookings', {
-        ...data,
-        roomId: selectedRoom!.id,
-        checkIn,
-        checkOut,
-        numGuests,
-      }),
-    onSuccess: () => setSuccess(true),
-  });
+  // Step 3 → save guest data locally and advance to summary (no API call yet)
+  const onSubmitGuestDetails: SubmitHandler<BookingForm> = (data) => {
+    setSavedGuest(data);
+    setStep(4);
+  };
 
-  const onSubmit: SubmitHandler<BookingForm> = (data) => submitMutation.mutate(data);
+  // Step 4 → create booking + Stripe Checkout Session, redirect to Stripe
+  const checkoutMutation = useMutation({
+    mutationFn: () => {
+      if (!savedGuest || !selectedRoom) throw new Error('Missing booking data');
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      return api
+        .post('/public/bookings/checkout', {
+          roomId:           selectedRoom.id,
+          checkIn,
+          checkOut,
+          numGuests,
+          guestFirstName:   savedGuest.guestFirstName,
+          guestLastName:    savedGuest.guestLastName,
+          guestEmail:       savedGuest.guestEmail,
+          guestPhone:       savedGuest.guestPhone,
+          guestMessage:     savedGuest.guestMessage,
+          successUrl: `${origin}/${locale}/boeking-succes?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl:  `${origin}/${locale}/bnb/${property.slug}`,
+        })
+        .then(r => r.data?.data ?? r.data);
+    },
+    onSuccess: (data: { checkoutUrl: string }) => {
+      if (data?.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    },
+  });
 
   const canProceedStep1 = checkIn && checkOut && nightsBetween(checkIn, checkOut) > 0;
   const canProceedStep2 = selectedRoom != null;
+  const canPay = bbAccepted && directAccepted && !checkoutMutation.isPending;
 
-  const stepLabel = isNl
-    ? [`Selecteer data`, `Kies kamer`, `Jouw gegevens`][step - 1]
-    : [`Select dates`, `Choose room`, `Your details`][step - 1];
+  const STEP_LABELS_NL = ['Selecteer data', 'Kies kamer', 'Jouw gegevens', 'Controleer boeking'];
+  const STEP_LABELS_EN = ['Select dates',   'Choose room', 'Your details',  'Review booking'];
+  const stepLabel = (isNl ? STEP_LABELS_NL : STEP_LABELS_EN)[step - 1] ?? '';
 
   return (
     <>
@@ -908,16 +937,16 @@ function BookingSheet({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-3">
-            {step > 1 && !success && (
+            {step > 1 && (
               <button onClick={() => setStep(s => s - 1)} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100">
                 <ChevronLeft className="w-4 h-4 text-slate-700" />
               </button>
             )}
             <div>
               <p className="text-xs text-slate-400 uppercase tracking-wide font-medium">
-                {!success ? `${isNl ? 'Stap' : 'Step'} ${step} ${isNl ? 'van' : 'of'} 3` : ''}
+                {`${isNl ? 'Stap' : 'Step'} ${step} ${isNl ? 'van' : 'of'} 4`}
               </p>
-              <p className="font-bold text-slate-900 text-sm">{success ? (isNl ? 'Aanvraag verstuurd!' : 'Request sent!') : stepLabel}</p>
+              <p className="font-bold text-slate-900 text-sm">{stepLabel}</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100">
@@ -928,22 +957,8 @@ function BookingSheet({
         {/* Content */}
         <div className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 110px)' }}>
 
-          {/* ── SUCCESS ── */}
-          {success && (
-            <div className="flex flex-col items-center justify-center p-10 text-center gap-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <Check className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-900">{t('successTitle')}</h2>
-              <p className="text-slate-500 text-sm leading-relaxed">{t('successDescription')}</p>
-              <button onClick={onClose} className="mt-2 bg-brand text-white font-semibold px-8 py-3 rounded-xl w-full">
-                {isNl ? 'Sluiten' : 'Close'}
-              </button>
-            </div>
-          )}
-
           {/* ── STEP 1: DATES ── */}
-          {!success && step === 1 && (
+          {step === 1 && (
             <div className="p-5 space-y-4">
               <TouchDateRangePicker
                 checkIn={checkIn}
@@ -965,7 +980,7 @@ function BookingSheet({
           )}
 
           {/* ── STEP 2: ROOM + GUESTS ── */}
-          {!success && step === 2 && (
+          {step === 2 && (
             <div className="p-5 space-y-5">
               {/* Room cards */}
               <div>
@@ -1057,7 +1072,7 @@ function BookingSheet({
           )}
 
           {/* ── STEP 3: GUEST DETAILS ── */}
-          {!success && step === 3 && (
+          {step === 3 && (
             <div className="p-5">
               {/* Summary card */}
               {selectedRoom && (
@@ -1077,7 +1092,7 @@ function BookingSheet({
                 </div>
               )}
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmitGuestDetails)} className="space-y-4">
                 <input type="hidden" {...register('roomId')} />
 
                 <div className="grid grid-cols-2 gap-3">
@@ -1142,29 +1157,19 @@ function BookingSheet({
                   />
                 </div>
 
-                {submitMutation.isError && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                    <p className="text-red-600 text-sm">
-                      {(submitMutation.error as any)?.response?.data?.message || t('bookingError')}
-                    </p>
-                  </div>
-                )}
-
                 <button
                   type="submit"
-                  disabled={submitMutation.isPending}
-                  className="w-full bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold py-4 rounded-2xl text-base transition-colors"
+                  className="w-full bg-brand hover:bg-brand-600 text-white font-bold py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2"
                 >
-                  {submitMutation.isPending
-                    ? (isNl ? 'Versturen...' : 'Sending...')
-                    : (isNl ? 'Verstuur aanvraag' : 'Send request')}
+                  {isNl ? 'Controleer boeking' : 'Review booking'}
+                  <ArrowRight className="w-4 h-4" />
                 </button>
 
                 <div className="flex items-center justify-center gap-4 pt-1 pb-4">
                   {[
-                    isNl ? '0% commissie' : '0% commission',
-                    isNl ? 'Gratis aanvragen' : 'Free request',
-                    isNl ? 'Geen verplichting' : 'No obligation',
+                    isNl ? 'Veilig betalen' : 'Secure payment',
+                    isNl ? '256-bit encryptie' : '256-bit encryption',
+                    isNl ? 'Stripe betalingen' : 'Stripe payments',
                   ].map(label => (
                     <span key={label} className="flex items-center gap-1 text-xs text-slate-500">
                       <CheckCircle2 className="w-3 h-3 text-green-500" />
@@ -1175,6 +1180,159 @@ function BookingSheet({
               </form>
             </div>
           )}
+          {/* ── STEP 4: BOOKING SUMMARY + PAYMENT ── */}
+          {step === 4 && savedGuest && selectedRoom && (
+            <div className="p-5 space-y-5">
+
+              {/* ── Booking details card ── */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    {isNl ? 'Jouw boeking' : 'Your booking'}
+                  </p>
+                </div>
+                <div className="px-4 py-4 space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Accommodatie' : 'Accommodation'}</span>
+                    <span className="font-semibold text-slate-900 text-right max-w-[55%] truncate">{property.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Kamer' : 'Room'}</span>
+                    <span className="font-semibold text-slate-900">{selectedRoom.name}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Inchecken' : 'Check-in'}</span>
+                    <span className="font-semibold text-slate-900">{fmt(checkIn, locale)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Uitchecken' : 'Check-out'}</span>
+                    <span className="font-semibold text-slate-900">{fmt(checkOut, locale)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Nachten' : 'Nights'}</span>
+                    <span className="font-semibold text-slate-900">{nights}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Gasten' : 'Guests'}</span>
+                    <span className="font-semibold text-slate-900">{numGuests}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Guest details card ── */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    {isNl ? 'Jouw gegevens' : 'Your details'}
+                  </p>
+                </div>
+                <div className="px-4 py-4 space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'Naam' : 'Name'}</span>
+                    <span className="font-semibold text-slate-900">
+                      {savedGuest.guestFirstName} {savedGuest.guestLastName}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">{isNl ? 'E-mail' : 'Email'}</span>
+                    <span className="font-semibold text-slate-900 text-right max-w-[55%] truncate">{savedGuest.guestEmail}</span>
+                  </div>
+                  {savedGuest.guestPhone && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">{isNl ? 'Telefoon' : 'Phone'}</span>
+                      <span className="font-semibold text-slate-900">{savedGuest.guestPhone}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Price breakdown ── */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="bg-slate-50 px-4 py-3 border-b border-slate-100">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    {isNl ? 'Prijsoverzicht' : 'Price breakdown'}
+                  </p>
+                </div>
+                <div className="px-4 py-4 space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">
+                      €{fmtPrice(selectedRoom.pricePerNight)} × {nights} {isNl ? 'nacht' : 'night'}{nights !== 1 ? 'en' : ''}
+                    </span>
+                    <span className="font-semibold text-slate-900">€{fmtPrice(total)}</span>
+                  </div>
+                  <div className="border-t border-slate-100 pt-3 flex items-center justify-between">
+                    <span className="font-bold text-slate-900">{isNl ? 'Totaal' : 'Total'}</span>
+                    <span className="font-extrabold text-xl text-slate-900">€{fmtPrice(total)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Legal checkboxes ── */}
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={bbAccepted}
+                    onChange={e => setBbAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-brand accent-brand shrink-0"
+                  />
+                  <span className="text-xs text-slate-600 leading-relaxed">
+                    {isNl
+                      ? `Ik ga akkoord met de algemene voorwaarden van ${property.name}.`
+                      : `I agree to the terms and conditions of ${property.name}.`}
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={directAccepted}
+                    onChange={e => setDirectAccepted(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-brand accent-brand shrink-0"
+                  />
+                  <span className="text-xs text-slate-600 leading-relaxed">
+                    {isNl
+                      ? 'Ik ga akkoord met de voorwaarden en het privacybeleid van DirectB&B.'
+                      : 'I agree to the terms and conditions and privacy policy of DirectB&B.'}
+                  </span>
+                </label>
+              </div>
+
+              {/* ── Checkout error ── */}
+              {checkoutMutation.isError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                  <p className="text-red-600 text-sm">
+                    {(checkoutMutation.error as any)?.response?.data?.message ||
+                      (isNl ? 'Er is iets misgegaan. Probeer het opnieuw.' : 'Something went wrong. Please try again.')}
+                  </p>
+                </div>
+              )}
+
+              {/* ── Pay button ── */}
+              <button
+                onClick={() => checkoutMutation.mutate()}
+                disabled={!canPay}
+                className="w-full bg-brand hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl text-base transition-colors flex items-center justify-center gap-2"
+              >
+                {checkoutMutation.isPending ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    {isNl ? 'Doorsturen naar betaling...' : 'Redirecting to payment...'}
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    {isNl ? 'Bevestig & Betaal' : 'Confirm & Pay'}
+                  </>
+                )}
+              </button>
+
+              <p className="text-center text-xs text-slate-400 pb-4 flex items-center justify-center gap-1.5">
+                <Lock className="w-3 h-3" />
+                {isNl ? 'Veilig betalen via Stripe' : 'Secure payment via Stripe'}
+              </p>
+            </div>
+          )}
+
         </div>
       </div>
     </>

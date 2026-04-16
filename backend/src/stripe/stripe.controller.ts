@@ -30,8 +30,19 @@ export class StripeController {
   }
 
   /**
+   * POST /api/v1/stripe/checkout
+   * Guest-facing: create a booking + Stripe Checkout Session.
+   * Delegates to BookingsService to keep booking creation logic in one place.
+   * NOTE: this route is intentionally NOT on the stripe controller —
+   *       see PublicBookingsController → POST /public/bookings/checkout.
+   */
+
+  /**
    * POST /api/v1/stripe/webhook
-   * Stripe calls this when a payment succeeds. No auth — uses signature verification.
+   * Stripe calls this when a payment event fires.
+   * Required webhook events (configure in Stripe Dashboard):
+   *   - payment_intent.succeeded
+   *   - checkout.session.completed
    */
   @Public()
   @Post('webhook')
