@@ -7,8 +7,9 @@ import { api } from '@/lib/api';
 import {
   CheckCircle2, AlertCircle, ArrowRight, Loader2, Euro,
   TrendingUp, CalendarDays, CreditCard, Banknote, XCircle,
-  ShieldCheck, Zap, Lock,
+  ShieldCheck, Zap, Lock, Info,
 } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { format, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -255,6 +256,39 @@ export default function BetalingenPage() {
   });
 
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
+
+  const handleExport = () => {
+    if (!payouts.length) {
+      setExportMsg('Geen uitbetalingen om te exporteren.');
+      setTimeout(() => setExportMsg(null), 3500);
+      return;
+    }
+    const STATUS_NL: Record<string, string> = {
+      PENDING: 'In behandeling', IN_TRANSIT: 'Onderweg',
+      PAID: 'Uitbetaald', FAILED: 'Mislukt', CANCELLED: 'Geannuleerd',
+    };
+    const rows = [
+      ['Periode', 'Netto bedrag (EUR)', 'Omschrijving', 'Aankomstdatum', 'Status'],
+      ...payouts.map(p => [
+        format(new Date(p.createdAt), 'MMMM yyyy', { locale: nl }),
+        Number(p.netAmount).toFixed(2),
+        p.description ?? '',
+        p.arrivalDate ? format(new Date(p.arrivalDate), 'd MMM yyyy', { locale: nl }) : '',
+        STATUS_NL[p.status] ?? p.status,
+      ]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `uitbetalingen-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const { mutate: startOnboarding, isPending: onboardingPending } = useMutation({
     mutationFn: () =>
@@ -297,7 +331,12 @@ export default function BetalingenPage() {
 
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Uitbetalingen</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-slate-900">Uitbetalingen</h1>
+          <Tooltip content="Koppel je bankrekening via Stripe om automatisch uitbetalingen te ontvangen na elke check-in." position="right">
+            <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
+          </Tooltip>
+        </div>
         <p className="text-slate-400 mt-1">Ontvang betalingen direct op je bankrekening</p>
       </div>
 
@@ -451,7 +490,12 @@ export default function BetalingenPage() {
           <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
               <h3 className="font-bold text-slate-900">Recente uitbetalingen</h3>
-              <button className="text-sm font-bold text-brand hover:underline">Exporteer →</button>
+              <div className="flex items-center gap-3">
+                {exportMsg && (
+                  <span className="text-xs text-amber-600 font-medium">{exportMsg}</span>
+                )}
+                <button onClick={handleExport} className="text-sm font-bold text-brand hover:underline">Exporteer →</button>
+              </div>
             </div>
 
             {payoutsLoading ? (

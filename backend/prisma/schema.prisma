@@ -535,3 +535,15 @@ model PropertyExtra {
   @@index([propertyId])
   @@map("property_extras")
 }
+
+// ─── Dynamic Copy (lightweight CMS) ──────────────────────────────────────────
+
+model DynamicCopy {
+  key         String   @id              // e.g. "dashboard.title", "bookings.subtitle"
+  value       String   @db.Text         // The actual display text
+  description String?                   // Admin hint: where this key is used
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("dynamic_copy")
+}

@@ -25,6 +25,7 @@ import { AdminModule } from './admin/admin.module';
 import { IcalModule } from './ical/ical.module';
 import { ContactModule } from './contact/contact.module';
 import { PropertyExtrasModule } from './property-extras/property-extras.module';
+import { DynamicCopyModule } from './dynamic-copy/dynamic-copy.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { PropertyExtrasModule } from './property-extras/property-extras.module';
     IcalModule,
     ContactModule,
     PropertyExtrasModule,
+    DynamicCopyModule,
   ],
   providers: [
     {

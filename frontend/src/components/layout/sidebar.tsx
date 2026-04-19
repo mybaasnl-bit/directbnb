@@ -23,6 +23,7 @@ import {
   Code2,
   MessageSquare,
   ShieldAlert,
+  Type,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -71,6 +72,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     { href: `/${locale}/admin/email-templates`, label: t('emailTemplates'), icon: Mail },
     { href: `/${locale}/admin/beta-signups`,    label: t('betaSignups'),    icon: ClipboardList },
     { href: `/${locale}/admin/email-logs`,      label: t('emailLogs'),      icon: FileText },
+    { href: `/${locale}/admin/copy-management`, label: 'Tekst beheer',      icon: Type },
   ];
 
   const sidebarContent = (

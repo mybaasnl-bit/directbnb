@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -10,18 +11,30 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
+import { IsEnum, IsString, IsOptional, MaxLength } from 'class-validator';
 import { FeedbackStatus } from '@prisma/client';
 
 import { AdminService } from './admin.service';
 import { AdminGuard } from './admin.guard';
 import { AuthService } from '../auth/auth.service';
+import { DynamicCopyService } from '../dynamic-copy/dynamic-copy.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 class UpdateFeedbackStatusDto {
   @IsEnum(FeedbackStatus)
   status: FeedbackStatus;
+}
+
+class UpsertCopyDto {
+  @IsString() @MaxLength(200)
+  key: string;
+
+  @IsString()
+  value: string;
+
+  @IsString() @IsOptional() @MaxLength(500)
+  description?: string;
 }
 
 @ApiTags('admin')
@@ -32,6 +45,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly authService: AuthService,
+    private readonly copyService: DynamicCopyService,
   ) {}
 
   // ─── Stats ──────────────────────────────────────────────────────────────────
@@ -76,6 +90,28 @@ export class AdminController {
       return { message: 'Cannot impersonate yourself' };
     }
     return this.authService.createImpersonationTokens(userId);
+  }
+
+  // ─── Dynamic Copy (CMS) ─────────────────────────────────────────────────────
+
+  @Get('dynamic-copy')
+  @ApiOperation({ summary: 'List all dynamic copy entries' })
+  listCopy() {
+    return this.copyService.findAll();
+  }
+
+  @Post('dynamic-copy')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Create or update a copy entry by key' })
+  upsertCopy(@Body() dto: UpsertCopyDto) {
+    return this.copyService.upsert(dto.key, dto.value, dto.description);
+  }
+
+  @Delete('dynamic-copy/:key')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a copy entry by key' })
+  deleteCopy(@Param('key') key: string) {
+    return this.copyService.delete(key);
   }
 
   // ─── Feedback ───────────────────────────────────────────────────────────────

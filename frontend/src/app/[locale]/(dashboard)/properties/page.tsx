@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Plus, Edit, ExternalLink, BedDouble, Users, Globe, Wrench, TrendingUp } from 'lucide-react';
+import { Plus, Edit, ExternalLink, BedDouble, Users, Globe, TrendingUp, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -35,12 +35,6 @@ function getRoomStatus(room: any, index: number): 'Beschikbaar' | 'Bezet' | 'Ond
   if (pct > 80) return 'Bezet';
   return 'Beschikbaar';
 }
-
-const STATUS_STYLES: Record<string, string> = {
-  Beschikbaar: 'bg-emerald-100 text-emerald-700',
-  Bezet:       'bg-red-100 text-red-600',
-  Onderhoud:   'bg-amber-100 text-amber-700',
-};
 
 function OccupancyBar({ pct }: { pct: number }) {
   return (
@@ -114,7 +108,12 @@ export default function PropertiesPage() {
       {/* Title */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Kamers</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-slate-900">Kamers</h1>
+            <Tooltip content="Beheer je kamers en accommodaties. Klik op 'Bewerken' om prijs, beschrijving en voorzieningen aan te passen." position="right">
+              <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
+            </Tooltip>
+          </div>
           <p className="text-slate-400 mt-1">Beheer je accommodaties</p>
         </div>
         <Link
@@ -259,14 +258,6 @@ export default function PropertiesPage() {
                       <div className="px-5 pt-5 pb-4">
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap mb-1">
-                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${STATUS_STYLES[room.status]}`}>
-                                {room.status}
-                              </span>
-                              {room.status === 'Onderhoud' && (
-                                <Wrench className="w-3 h-3 text-amber-500" />
-                              )}
-                            </div>
                             <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
                               {room.name}
                             </h3>

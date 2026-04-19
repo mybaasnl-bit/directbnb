@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -19,7 +19,8 @@ import {
 } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus, X, Lock, Calendar, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus, X, Lock, Calendar, ExternalLink, Info } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 
 export default function CalendarPage() {
   const t = useTranslations('calendar');
@@ -46,6 +47,13 @@ export default function CalendarPage() {
   const allRooms = (properties as any[]).flatMap((p: any) =>
     (p.rooms ?? []).map((r: any) => ({ ...r, propertyName: p.name })),
   );
+
+  // Auto-select the first room when rooms load and nothing is selected yet
+  useEffect(() => {
+    if (!selectedRoomId && allRooms.length > 0) {
+      setSelectedRoomId(allRooms[0].id);
+    }
+  }, [allRooms.length, selectedRoomId]);
 
   const { data: icalData } = useQuery<{ importUrls: string[]; exportToken: string | null }>({
     queryKey: ['ical-room', selectedRoomId],
@@ -151,7 +159,12 @@ export default function CalendarPage() {
 
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Agenda</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-slate-900">Agenda</h1>
+          <Tooltip content="Klik op een dag om deze te blokkeren of deblokkeren. Boekingen worden automatisch gemarkeerd." position="right">
+            <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
+          </Tooltip>
+        </div>
         <p className="text-slate-400 mt-1">Beheer je beschikbaarheid en boekingen</p>
       </div>
 

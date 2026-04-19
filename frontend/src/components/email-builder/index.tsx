@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
-import { GripVertical, Trash2, Plus, LayoutGrid, Settings2, X } from 'lucide-react';
+import { GripVertical, Trash2, Plus, LayoutGrid, Settings2, X, Undo2, Redo2 } from 'lucide-react';
 
 import type { Block, BlockType } from './types';
 import { BLOCK_LABELS } from './types';
@@ -37,6 +37,8 @@ interface Props {
   variables?: string[];
 }
 
+const HISTORY_LIMIT = 50;
+
 export function EmailBuilder({ value, onChange, subject, onSubjectChange, variables = [] }: Props) {
   const [blocks, setBlocks] = useState<Block[]>(() => {
     const parsed = htmlToBlocks(value);
@@ -46,6 +48,68 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<'palette' | 'editor' | null>(null);
 
+  // Undo/redo history
+  const historyRef = useRef<Block[][]>([]);
+  const historyIndexRef = useRef<number>(-1);
+  const skipHistoryRef = useRef<boolean>(false); // true during undo/redo or initial load
+
+  const pushHistory = useCallback((newBlocks: Block[]) => {
+    if (skipHistoryRef.current) return;
+    // Drop any future states if we branched
+    const stack = historyRef.current.slice(0, historyIndexRef.current + 1);
+    stack.push(newBlocks);
+    if (stack.length > HISTORY_LIMIT) stack.shift();
+    historyRef.current = stack;
+    historyIndexRef.current = stack.length - 1;
+  }, []);
+
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  const refreshUndoRedo = useCallback(() => {
+    setCanUndo(historyIndexRef.current > 0);
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
+  }, []);
+
+  const setBlocksWithHistory = useCallback((updater: Block[] | ((prev: Block[]) => Block[])) => {
+    setBlocks((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      pushHistory(next);
+      setTimeout(refreshUndoRedo, 0);
+      return next;
+    });
+  }, [pushHistory, refreshUndoRedo]);
+
+  const undo = useCallback(() => {
+    if (historyIndexRef.current <= 0) return;
+    historyIndexRef.current--;
+    skipHistoryRef.current = true;
+    setBlocks(historyRef.current[historyIndexRef.current]);
+    skipHistoryRef.current = false;
+    refreshUndoRedo();
+  }, [refreshUndoRedo]);
+
+  const redo = useCallback(() => {
+    if (historyIndexRef.current >= historyRef.current.length - 1) return;
+    historyIndexRef.current++;
+    skipHistoryRef.current = true;
+    setBlocks(historyRef.current[historyIndexRef.current]);
+    skipHistoryRef.current = false;
+    refreshUndoRedo();
+  }, [refreshUndoRedo]);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.key === 'z' && e.shiftKey) || e.key === 'y') { e.preventDefault(); redo(); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [undo, redo]);
+
   // Re-parse blocks when value prop changes (language switch)
   const prevValueRef = useRef(value);
   useEffect(() => {
@@ -53,10 +117,15 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     prevValueRef.current = value;
     const parsed = htmlToBlocks(value);
     if (parsed) {
+      skipHistoryRef.current = true;
       setBlocks(parsed);
+      skipHistoryRef.current = false;
+      historyRef.current = [];
+      historyIndexRef.current = -1;
+      refreshUndoRedo();
       setSelectedId(null);
     }
-  }, [value]);
+  }, [value, refreshUndoRedo]);
 
   // Emit HTML whenever blocks change (debounced 300ms)
   const blocksRef = useRef(blocks);
@@ -75,24 +144,24 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
   );
 
   const updateBlock = useCallback((updated: Block) => {
-    setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-  }, []);
+    setBlocksWithHistory((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+  }, [setBlocksWithHistory]);
 
   const deleteBlock = useCallback((id: string) => {
-    setBlocks((prev) => prev.filter((b) => b.id !== id));
+    setBlocksWithHistory((prev) => prev.filter((b) => b.id !== id));
     setSelectedId((s) => (s === id ? null : s));
-  }, []);
+  }, [setBlocksWithHistory]);
 
   const addBlock = useCallback((type: BlockType, afterId?: string) => {
     const newBlock = createDefaultBlock(type);
-    setBlocks((prev) => {
+    setBlocksWithHistory((prev) => {
       if (!afterId) return [...prev, newBlock];
       const idx = prev.findIndex((b) => b.id === afterId);
       if (idx === -1) return [...prev, newBlock];
       return [...prev.slice(0, idx + 1), newBlock, ...prev.slice(idx + 1)];
     });
     setSelectedId(newBlock.id);
-  }, []);
+  }, [setBlocksWithHistory]);
 
   const handleDragStart = ({ active }: DragStartEvent) => {
     setActiveId(active.id as string);
@@ -107,7 +176,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     if (isPalette) {
       const blockType = active.data.current!.blockType as BlockType;
       const newBlock = createDefaultBlock(blockType);
-      setBlocks((prev) => {
+      setBlocksWithHistory((prev) => {
         const overId = over.id as string;
         const overIdx = prev.findIndex((b) => b.id === overId);
         if (overIdx === -1) return [...prev, newBlock];
@@ -116,7 +185,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
       setSelectedId(newBlock.id);
     } else {
       if (active.id === over.id) return;
-      setBlocks((prev) => {
+      setBlocksWithHistory((prev) => {
         const oldIdx = prev.findIndex((b) => b.id === active.id);
         const newIdx = prev.findIndex((b) => b.id === over.id);
         if (oldIdx === -1 || newIdx === -1) return prev;
@@ -143,10 +212,36 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+      <div className="flex flex-col h-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+
+      {/* Undo/Redo toolbar */}
+      <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-200 bg-white shrink-0">
+        <button
+          type="button"
+          onClick={undo}
+          disabled={!canUndo}
+          title="Ongedaan maken (Ctrl+Z)"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <Undo2 className="w-3.5 h-3.5" />
+          Ongedaan
+        </button>
+        <button
+          type="button"
+          onClick={redo}
+          disabled={!canRedo}
+          title="Opnieuw uitvoeren (Ctrl+Shift+Z)"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <Redo2 className="w-3.5 h-3.5" />
+          Opnieuw
+        </button>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
         {/* ── Left sidebar (desktop only) ── */}
         <div className="hidden md:block w-64 shrink-0 bg-white border-r border-slate-200 overflow-y-auto">
-          <BlockPalette onLoadTemplate={(tpl) => { setBlocks(tpl); setSelectedId(null); }} />
+          <BlockPalette onLoadTemplate={(tpl) => { skipHistoryRef.current = true; setBlocks(tpl); skipHistoryRef.current = false; historyRef.current = []; historyIndexRef.current = -1; refreshUndoRedo(); setSelectedId(null); }} />
         </div>
 
         {/* ── Canvas ── */}
@@ -248,7 +343,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
             <div className="overflow-y-auto flex-1">
               {mobilePanel === 'palette' ? (
                 <BlockPalette
-                  onLoadTemplate={(tpl) => { setBlocks(tpl); setSelectedId(null); setMobilePanel(null); }}
+                  onLoadTemplate={(tpl) => { skipHistoryRef.current = true; setBlocks(tpl); skipHistoryRef.current = false; historyRef.current = []; historyIndexRef.current = -1; refreshUndoRedo(); setSelectedId(null); setMobilePanel(null); }}
                   onAdd={handleMobileAdd}
                 />
               ) : (
@@ -298,6 +393,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
           </div>
         )}
       </DragOverlay>
+      </div>
     </DndContext>
   );
 }
