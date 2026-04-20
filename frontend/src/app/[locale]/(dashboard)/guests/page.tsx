@@ -152,7 +152,8 @@ export default function GuestsPage() {
   const [selectedGuest, setSelectedGuest] = useState<any | null>(null);
 
   // Dynamic copy — falls back to hardcoded Dutch if key not in DB
-  const pageSubtitle = useDynamicCopy('guests.subtitle', 'Overzicht van al je gasten');
+  const pageTitle    = useDynamicCopy('guests.header.title', 'Gasten');
+  const pageSubtitle = useDynamicCopy('guests.subtitle',     'Overzicht van al je gasten');
 
   const { data: guests = [], isLoading } = useQuery({
     queryKey: ['guests', search],
@@ -167,7 +168,7 @@ export default function GuestsPage() {
       <div className="flex items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-slate-900">Gasten</h1>
+            <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
             <Tooltip content="Overzicht van alle gasten die ooit een boeking hebben gemaakt." position="right">
               <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
             </Tooltip>

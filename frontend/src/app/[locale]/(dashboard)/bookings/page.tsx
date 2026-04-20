@@ -281,7 +281,8 @@ export default function BookingsPage() {
   const [filter, setFilter] = useState<FilterKey>('all');
 
   // Dynamic copy — falls back to hardcoded Dutch if key not in DB
-  const pageSubtitle = useDynamicCopy('bookings.subtitle', 'Beheer al je reserveringen');
+  const pageTitle    = useDynamicCopy('bookings.header.title', 'Boekingen');
+  const pageSubtitle = useDynamicCopy('bookings.subtitle',     'Beheer al je reserveringen');
   const [sentLinks, setSentLinks] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState<any | null>(null);
@@ -390,7 +391,7 @@ export default function BookingsPage() {
       {/* Title */}
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-slate-900">Boekingen</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
           <Tooltip content="Bekijk en beheer alle ontvangen boekingsverzoeken en reserveringen." position="right">
             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
           </Tooltip>
