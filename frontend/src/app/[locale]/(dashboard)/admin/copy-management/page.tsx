@@ -199,7 +199,7 @@ export default function CopyManagementPage() {
 
   const { data: entries = [], isLoading } = useQuery<CopyEntry[]>({
     queryKey: ['admin-dynamic-copy'],
-    queryFn: () => api.get('/admin/dynamic-copy').then((r) => r.data),
+    queryFn: () => api.get('/admin/dynamic-copy').then((r) => r.data.data ?? []),
   });
 
   const upsertMutation = useMutation({
