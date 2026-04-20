@@ -10,9 +10,10 @@ import { nl, enUS } from 'date-fns/locale';
 import {
   Check, X, Link2, Loader2, CheckCircle2, CalendarDays,
   BedDouble, Users, Clock, Filter, FileText, TrendingUp, Plus,
-  AlertCircle, Ban,
+  AlertCircle, Ban, Info,
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 
 const STATUS_FILTERS = [
   { key: 'all',             label: 'Alle statussen' },
@@ -278,6 +279,9 @@ export default function BookingsPage() {
   const locale = useLocale();
   const dateLocale = locale === 'nl' ? nl : enUS;
   const [filter, setFilter] = useState<FilterKey>('all');
+
+  // Dynamic copy — falls back to hardcoded Dutch if key not in DB
+  const pageSubtitle = useDynamicCopy('bookings.subtitle', 'Beheer al je reserveringen');
   const [sentLinks, setSentLinks] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState<any | null>(null);
@@ -385,8 +389,13 @@ export default function BookingsPage() {
 
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Boekingen</h1>
-        <p className="text-slate-400 mt-1">Beheer al je reserveringen</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-slate-900">Boekingen</h1>
+          <Tooltip content="Bekijk en beheer alle ontvangen boekingsverzoeken en reserveringen." position="right">
+            <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
+          </Tooltip>
+        </div>
+        <p className="text-slate-400 mt-1">{pageSubtitle}</p>
       </div>
 
       {/* Stat cards */}

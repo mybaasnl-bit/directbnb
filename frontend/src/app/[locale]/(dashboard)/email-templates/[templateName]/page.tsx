@@ -4,16 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { EmailBuilder } from '@/components/email-builder';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { blocksToHtml } from '@/components/email-builder/blocks-to-html';
-import {
-  bookingConfirmationTemplate,
-  bookingCancellationTemplate,
-  bookingRequestTemplate,
-  checkInWelcomeTemplate,
-  thankYouReviewTemplate,
-} from '@/components/email-builder/default-templates';
 
 type SaveStatus = 'idle' | 'success' | 'error' | 'autosaving';
 
@@ -67,8 +59,6 @@ export default function HostEmailTemplateEditorPage() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [testSending, setTestSending] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
-  const [showTemplateMenu, setShowTemplateMenu] = useState(false);
 
   const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Keep the very-latest values in a ref so autosave closure never goes stale
@@ -184,25 +174,6 @@ export default function HostEmailTemplateEditorPage() {
     }
   }, [templateName]);
 
-  const PRESETS = [
-    { id: 'booking_confirmation',  label: '✓ Boekingsbevestiging',          subject: 'Je boeking is bevestigd bij {{property_name}} ✓', preview: 'Hartelijk dank — bekijk hier je reserveringsdetails.',   create: bookingConfirmationTemplate },
-    { id: 'checkin_welcome',       label: '🏡 Welkomstmail voor aankomst',   subject: 'Welkom bij {{property_name}} — check-in informatie',   preview: 'Je check-in staat gepland. Alle details op een rij.',     create: checkInWelcomeTemplate },
-    { id: 'thank_you_review',      label: '⭐ Bedankje & Review verzoek',    subject: 'Bedankt voor je verblijf bij {{property_name}}!',       preview: 'We hopen u snel weer te mogen verwelkomen.',             create: thankYouReviewTemplate },
-    { id: 'booking_request',       label: '📬 Aanvraag ontvangen',           subject: 'We hebben je aanvraag ontvangen — {{property_name}}',  preview: 'Uw aanvraag is in behandeling. Wij nemen spoedig contact op.', create: bookingRequestTemplate },
-    { id: 'booking_cancellation',  label: '✕ Boeking geannuleerd',           subject: 'Uw boeking bij {{property_name}} is geannuleerd',     preview: 'We betreuren de annulering en hopen u later te verwelkomen.', create: bookingCancellationTemplate },
-  ];
-
-  const handleLoadPreset = useCallback((preset: typeof PRESETS[0]) => {
-    if (!confirm('Huidig ontwerp wissen en dit sjabloon laden?')) return;
-    const html = blocksToHtml(preset.create());
-    markDirty(() => {
-      setSubjectNl(preset.subject);
-      setPreviewTextNl(preset.preview);
-      setHtmlNl(html);
-    });
-    setShowTemplateMenu(false);
-  }, [markDirty]);
-
   const handleSendTest = useCallback(async () => {
     if (!testEmail) return;
     setTestSending(true);
@@ -287,34 +258,6 @@ export default function HostEmailTemplateEditorPage() {
             <Save className="w-4 h-4" /> {saving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
-      </div>
-
-      {/* Template selector */}
-      <div className="relative px-1 pb-2 shrink-0">
-        <button
-          onClick={() => setShowTemplateMenu((v) => !v)}
-          className="flex items-center gap-2 border border-slate-200 hover:border-brand/40 hover:bg-brand-light/50 text-slate-600 hover:text-brand px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Gebruik sjabloon
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTemplateMenu ? 'rotate-180' : ''}`} />
-        </button>
-        {showTemplateMenu && (
-          <>
-            <div className="fixed inset-0 z-20" onClick={() => setShowTemplateMenu(false)} />
-            <div className="absolute top-full left-1 mt-1 z-30 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden w-72">
-              {PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  onClick={() => handleLoadPreset(preset)}
-                  className="w-full text-left px-4 py-3 hover:bg-brand-light text-sm font-medium text-slate-700 hover:text-brand border-b border-slate-50 last:border-0 transition-colors"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
       </div>
 
       {/* Subject row — above the builder */}

@@ -9,7 +9,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Coffee, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle, Info } from 'lucide-react';
+import { Tooltip } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -179,10 +180,6 @@ function BnbTab() {
             Wijzigingen Opslaan
           </button>
         </div>
-      </SectionCard>
-
-      <SectionCard icon={Coffee} title="Services & Voorzieningen" subtitle="Wat bied je aan je gasten?">
-        <p className="text-sm text-slate-400">Beheer voorzieningen via de Kamers pagina bij het bewerken van een accommodatie.</p>
       </SectionCard>
 
       {/* Betalingen */}
@@ -556,7 +553,12 @@ export default function SettingsPage() {
 
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Instellingen</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-slate-900">Instellingen</h1>
+          <Tooltip content="Beheer hier je B&B-gegevens, account, meldingen en beveiliging." position="right">
+            <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
+          </Tooltip>
+        </div>
         <p className="text-slate-400 mt-1">Beheer je B&B en account voorkeuren</p>
       </div>
 

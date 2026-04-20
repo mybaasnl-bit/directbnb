@@ -18,6 +18,7 @@ import {
   Mail,
   BarChart2,
   Plus,
+  Info,
 } from 'lucide-react';
 import Link from 'next/link';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, isSameDay, addMonths, subMonths } from 'date-fns';
@@ -25,6 +26,7 @@ import { nl } from 'date-fns/locale';
 import { useState } from 'react';
 import { BetaBanner } from '@/components/feedback/beta-banner';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -372,6 +374,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
+  // Dynamic copy — falls back to hardcoded Dutch if key not in DB
+  const pageTitle    = useDynamicCopy('dashboard.title',    'Dashboard');
+  const pageSubtitle = useDynamicCopy('dashboard.subtitle', 'Welkom terug! Hier is een overzicht van je accommodatie.');
+
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get('/dashboard').then((r) => r.data.data),
@@ -423,8 +429,13 @@ export default function DashboardPage() {
 
       {/* Page title */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-400 mt-1">Welkom terug! Hier is een overzicht van je accommodatie.</p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
+          <Tooltip content="Overzicht van je accommodatie: boekingen, inkomsten en aankomende gasten." position="right">
+            <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
+          </Tooltip>
+        </div>
+        <p className="text-slate-400 mt-1">{pageSubtitle}</p>
       </div>
 
       {/* ── Stat cards ── */}

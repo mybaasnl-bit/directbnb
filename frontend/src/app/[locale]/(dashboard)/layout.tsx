@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { ChatBubble } from '@/components/layout/chat-bubble';
 import { ImpersonationBanner } from '@/components/admin/impersonation-banner';
+import { DynamicCopyProvider } from '@/components/providers/dynamic-copy-provider';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams, usePathname } from 'next/navigation';
 
@@ -63,7 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <>
+    <DynamicCopyProvider>
       {/* Impersonation banner — fixed at very top, only shown when active */}
       <ImpersonationBanner />
 
@@ -79,6 +80,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Chat bubble — altijd zichtbaar rechtsonder */}
         <ChatBubble />
       </div>
-    </>
+    </DynamicCopyProvider>
   );
 }
