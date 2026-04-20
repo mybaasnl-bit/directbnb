@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { Mail, BookOpen, CheckCircle, XCircle, Send, FileText, Clock, TrendingUp, Pencil, RotateCcw, Eye, X } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -59,6 +60,24 @@ export default function EmailTemplatesPage() {
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [emailStats, setEmailStats] = useState<{ SENT?: number; FAILED?: number; total?: number } | null>(null);
   const [previewLog, setPreviewLog] = useState<any | null>(null);
+
+  // ── Dynamic copy ──────────────────────────────────────────────────────────────
+  const pageTitle         = useDynamicCopy('emails.header.title',          'Emails');
+  const pageSubtitle      = useDynamicCopy('emails.header.subtitle',       'Beheer je email communicatie');
+  const statSentLabel     = useDynamicCopy('emails.stat.sent',             'Verzonden');
+  const statSentSub       = useDynamicCopy('emails.stat.sent_sublabel',    'Totaal verstuurd');
+  const statFailedLabel   = useDynamicCopy('emails.stat.failed',           'Mislukt');
+  const statFailedSub     = useDynamicCopy('emails.stat.failed_sublabel',  'Leveringsfouten');
+  const statTotalLabel    = useDynamicCopy('emails.stat.total',            'Totaal');
+  const statTotalSub      = useDynamicCopy('emails.stat.total_sublabel',   'Alle emails');
+  const statTplLabel      = useDynamicCopy('emails.stat.templates',        'Templates');
+  const statTplSub        = useDynamicCopy('emails.stat.templates_sub',    'Aangepast');
+  const filterAllLabel    = useDynamicCopy('emails.filter.all_statuses',   'Alle statussen');
+  const filterSentLabel   = useDynamicCopy('emails.filter.sent',           'Verzonden');
+  const filterPlannedLabel= useDynamicCopy('emails.filter.planned',        'Gepland');
+  const recentTitle       = useDynamicCopy('emails.recent.title',          'Recente Emails');
+  const editTemplateBtn   = useDynamicCopy('emails.button.edit_template',  'Sjabloon bewerken →');
+  const footerNote        = useDynamicCopy('emails.footer.note',           'Niet-aangepaste templates gebruiken de DirectBnB standaard e-mails. U kunt altijd resetten naar de standaard.');
 
   useEffect(() => {
     api.get('/email-templates/host/mine').then(({ data }) => {
@@ -170,34 +189,34 @@ export default function EmailTemplatesPage() {
 
       {/* Title */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Emails</h1>
-        <p className="text-slate-400 mt-1">Beheer je email communicatie</p>
+        <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
+        <p className="text-slate-400 mt-1">{pageSubtitle}</p>
       </div>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Verzonden"
+          label={statSentLabel}
           value={emailStats ? (emailStats.SENT ?? 0) : '—'}
-          sublabel="Totaal verstuurd"
+          sublabel={statSentSub}
           icon={Send}
         />
         <StatCard
-          label="Mislukt"
+          label={statFailedLabel}
           value={emailStats ? (emailStats.FAILED ?? 0) : '—'}
-          sublabel="Leveringsfouten"
+          sublabel={statFailedSub}
           icon={FileText}
         />
         <StatCard
-          label="Totaal"
+          label={statTotalLabel}
           value={emailStats ? (emailStats.total ?? 0) : '—'}
-          sublabel="Alle emails"
+          sublabel={statTotalSub}
           icon={Clock}
         />
         <StatCard
-          label="Templates"
+          label={statTplLabel}
           value={customized.size}
-          sublabel="Aangepast"
+          sublabel={statTplSub}
           icon={TrendingUp}
         />
       </div>
@@ -206,9 +225,9 @@ export default function EmailTemplatesPage() {
       <div className="bg-white rounded-2xl border border-slate-100 px-4 py-3 flex items-center gap-3">
         <div className="relative">
           <select className="appearance-none bg-white border border-slate-200 text-sm font-semibold text-slate-700 rounded-xl pl-3 pr-8 py-2 outline-none focus:ring-2 focus:ring-brand/30">
-            <option>Alle statussen</option>
-            <option>Verzonden</option>
-            <option>Gepland</option>
+            <option>{filterAllLabel}</option>
+            <option>{filterSentLabel}</option>
+            <option>{filterPlannedLabel}</option>
           </select>
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
         </div>
@@ -232,7 +251,7 @@ export default function EmailTemplatesPage() {
                   className="text-sm font-bold text-brand hover:underline flex items-center gap-1"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  Sjabloon bewerken →
+                  {editTemplateBtn}
                 </button>
                 {isCustomized && (
                   <Tooltip content="Reset naar standaard" position="top">
@@ -254,7 +273,7 @@ export default function EmailTemplatesPage() {
       {/* Recent emails */}
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-50">
-          <h3 className="font-bold text-slate-900">Recente Emails</h3>
+          <h3 className="font-bold text-slate-900">{recentTitle}</h3>
         </div>
 
         {emailLogs.length === 0 ? (
@@ -319,7 +338,7 @@ export default function EmailTemplatesPage() {
       </div>
 
       <p className="text-xs text-slate-400 text-center">
-        Niet-aangepaste templates gebruiken de DirectBnB standaard e-mails. U kunt altijd resetten naar de standaard.
+        {footerNote}
       </p>
     </div>
   );

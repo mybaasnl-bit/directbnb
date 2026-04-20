@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Plus, Edit, ExternalLink, BedDouble, Users, Globe, TrendingUp, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,23 @@ export default function PropertiesPage() {
 
   const selectCls = 'text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/20 hover:border-slate-300 transition-colors';
 
+  // ── Dynamic copy ──────────────────────────────────────────────────────────────
+  const pageTitle         = useDynamicCopy('rooms.header.title',       'Kamers');
+  const pageSubtitle      = useDynamicCopy('rooms.header.subtitle',    'Beheer je accommodaties');
+  const pageTooltip       = useDynamicCopy('rooms.header.tooltip',     "Beheer je kamers en accommodaties. Klik op 'Bewerken' om prijs, beschrijving en voorzieningen aan te passen.");
+  const newRoomBtn        = useDynamicCopy('rooms.button.new_room',    'Nieuwe Kamer');
+  const emptyTitle        = useDynamicCopy('rooms.empty.title',        'Nog geen kamers');
+  const emptySub          = useDynamicCopy('rooms.empty.subtitle',     'Voeg je eerste kamer toe om boekingen te ontvangen.');
+  const emptyBtn          = useDynamicCopy('rooms.empty.button',       'Eerste kamer toevoegen');
+  const filterAllStatus   = useDynamicCopy('rooms.filter.all_statuses','Alle statussen');
+  const filterAllTypes    = useDynamicCopy('rooms.filter.all_types',   'Alle types');
+  const filterClear       = useDynamicCopy('rooms.filter.clear',       'Wis filters');
+  const perNightLabel     = useDynamicCopy('rooms.card.per_night',     'per nacht');
+  const amenitiesLabel    = useDynamicCopy('rooms.card.amenities',     'Voorzieningen');
+  const editBtn           = useDynamicCopy('rooms.button.edit',        'Bewerken');
+  const detailsBtn        = useDynamicCopy('rooms.button.details',     'Details');
+  const editPropertyBtn   = useDynamicCopy('rooms.button.edit_property','Accommodatie bewerken →');
+
   return (
     <div className="space-y-6 max-w-6xl">
 
@@ -109,19 +127,19 @@ export default function PropertiesPage() {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-slate-900">Kamers</h1>
-            <Tooltip content="Beheer je kamers en accommodaties. Klik op 'Bewerken' om prijs, beschrijving en voorzieningen aan te passen." position="right">
+            <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
+            <Tooltip content={pageTooltip} position="right">
               <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
             </Tooltip>
           </div>
-          <p className="text-slate-400 mt-1">Beheer je accommodaties</p>
+          <p className="text-slate-400 mt-1">{pageSubtitle}</p>
         </div>
         <Link
           href={`/${locale}/properties/rooms/new`}
           className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors shadow-sm shadow-brand/20"
         >
           <Plus className="w-4 h-4" />
-          Nieuwe Kamer
+          {newRoomBtn}
         </Link>
       </div>
 
@@ -163,16 +181,16 @@ export default function PropertiesPage() {
           <div className="w-16 h-16 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
             <BedDouble className="w-8 h-8 text-brand" />
           </div>
-          <h3 className="font-bold text-slate-700 text-lg mb-2">Nog geen kamers</h3>
+          <h3 className="font-bold text-slate-700 text-lg mb-2">{emptyTitle}</h3>
           <p className="text-slate-400 text-sm mb-6 max-w-xs mx-auto">
-            Voeg je eerste kamer toe om boekingen te ontvangen.
+            {emptySub}
           </p>
           <Link
             href={`/${locale}/properties/rooms/new`}
             className="inline-flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Eerste kamer toevoegen
+            {emptyBtn}
           </Link>
         </div>
       ) : (
@@ -184,7 +202,7 @@ export default function PropertiesPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className={selectCls}
             >
-              <option value="all">Alle statussen</option>
+              <option value="all">{filterAllStatus}</option>
               <option value="Beschikbaar">Beschikbaar</option>
               <option value="Bezet">Bezet</option>
               <option value="Onderhoud">Onderhoud</option>
@@ -195,7 +213,7 @@ export default function PropertiesPage() {
               onChange={(e) => setTypeFilter(e.target.value)}
               className={selectCls}
             >
-              <option value="all">Alle types</option>
+              <option value="all">{filterAllTypes}</option>
               <option value="Suite">Suite</option>
               <option value="Standaard">Standaard</option>
               <option value="Familie">Familie</option>
@@ -208,7 +226,7 @@ export default function PropertiesPage() {
                 onClick={() => { setStatusFilter('all'); setTypeFilter('all'); }}
                 className="text-sm text-slate-400 hover:text-slate-600 font-semibold px-2"
               >
-                Wis filters
+                {filterClear}
               </button>
             )}
           </div>
@@ -243,7 +261,7 @@ export default function PropertiesPage() {
                     href={`/${locale}/properties/${property.id}`}
                     className="text-xs font-bold text-brand hover:underline"
                   >
-                    Accommodatie bewerken →
+                    {editPropertyBtn}
                   </Link>
                 </div>
 
@@ -277,7 +295,7 @@ export default function PropertiesPage() {
                             <span className="text-2xl font-extrabold text-slate-900">
                               €{Number(room.pricePerNight ?? 0).toFixed(0)}
                             </span>
-                            <span className="text-xs text-slate-400 ml-1">per nacht</span>
+                            <span className="text-xs text-slate-400 ml-1">{perNightLabel}</span>
                           </div>
                         </div>
 
@@ -288,7 +306,7 @@ export default function PropertiesPage() {
                       {/* Amenities */}
                       {room.amenities.length > 0 && (
                         <div className="px-5 pb-4">
-                          <p className="text-xs font-semibold text-slate-400 mb-2">Voorzieningen</p>
+                          <p className="text-xs font-semibold text-slate-400 mb-2">{amenitiesLabel}</p>
                           <div className="flex flex-wrap gap-1.5">
                             {room.amenities.slice(0, 4).map((a: string) => (
                               <span
@@ -314,7 +332,7 @@ export default function PropertiesPage() {
                           className="flex-1 flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-600 text-white text-sm font-bold py-2.5 rounded-xl transition-colors"
                         >
                           <Edit className="w-3.5 h-3.5" />
-                          Bewerken
+                          {editBtn}
                         </Link>
                         {property.isPublished && (
                           <a
@@ -324,7 +342,7 @@ export default function PropertiesPage() {
                             className="flex-1 flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold py-2.5 rounded-xl transition-colors"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
-                            Details
+                            {detailsBtn}
                           </a>
                         )}
                       </div>

@@ -10,6 +10,7 @@ import {
   ShieldCheck, Zap, Lock, Info,
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 import { cn } from '@/lib/utils';
 import { format, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -258,6 +259,23 @@ export default function BetalingenPage() {
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [exportMsg, setExportMsg] = useState<string | null>(null);
 
+  // ── Dynamic copy ──────────────────────────────────────────────────────────────
+  const pageTitle          = useDynamicCopy('payouts.header.title',         'Uitbetalingen');
+  const pageSubtitle       = useDynamicCopy('payouts.header.subtitle',      'Ontvang betalingen direct op je bankrekening');
+  const pageTooltip        = useDynamicCopy('payouts.header.tooltip',       'Koppel je bankrekening via Stripe om automatisch uitbetalingen te ontvangen na elke check-in.');
+  const statYearLabel      = useDynamicCopy('payouts.stat.this_year',       'Totaal dit jaar');
+  const statMonthLabel     = useDynamicCopy('payouts.stat.this_month',      'Deze maand');
+  const statPendingLabel   = useDynamicCopy('payouts.stat.pending',         'In behandeling');
+  const statPendingSub     = useDynamicCopy('payouts.stat.pending_sublabel','Wordt uitbetaald na check-in');
+  const statNextLabel      = useDynamicCopy('payouts.stat.next_payout',     'Volgende uitbetaling');
+  const statNextSubYes     = useDynamicCopy('payouts.stat.next_sub_yes',    'Verwachte aankomstdatum');
+  const statNextSubNo      = useDynamicCopy('payouts.stat.next_sub_no',     'Geen uitbetaling gepland');
+  const chartTitle         = useDynamicCopy('payouts.chart.title',          'Inkomsten overzicht');
+  const historyTitle       = useDynamicCopy('payouts.history.title',        'Recente uitbetalingen');
+  const exportBtn          = useDynamicCopy('payouts.history.export',       'Exporteer →');
+  const emptyTitle         = useDynamicCopy('payouts.history.empty_title',  'Nog geen uitbetalingen');
+  const emptySub           = useDynamicCopy('payouts.history.empty_sub',    'Zodra er boekingen zijn uitbetaald, verschijnen ze hier.');
+
   const handleExport = () => {
     if (!payouts.length) {
       setExportMsg('Geen uitbetalingen om te exporteren.');
@@ -332,12 +350,12 @@ export default function BetalingenPage() {
       {/* Title */}
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-slate-900">Uitbetalingen</h1>
-          <Tooltip content="Koppel je bankrekening via Stripe om automatisch uitbetalingen te ontvangen na elke check-in." position="right">
+          <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
+          <Tooltip content={pageTooltip} position="right">
             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
           </Tooltip>
         </div>
-        <p className="text-slate-400 mt-1">Ontvang betalingen direct op je bankrekening</p>
+        <p className="text-slate-400 mt-1">{pageSubtitle}</p>
       </div>
 
       {/* Return banners from Stripe */}
@@ -455,46 +473,46 @@ export default function BetalingenPage() {
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              label="Totaal dit jaar"
+              label={statYearLabel}
               value={`€${totalThisYear.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
               icon={Euro}
             />
             <StatCard
-              label="Deze maand"
+              label={statMonthLabel}
               value={`€${thisMonth.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
               icon={TrendingUp}
             />
             <StatCard
-              label="In behandeling"
+              label={statPendingLabel}
               value={`€${pendingAmount.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
-              sublabel="Wordt uitbetaald na check-in"
+              sublabel={statPendingSub}
               icon={CalendarDays}
             />
             <StatCard
-              label="Volgende uitbetaling"
+              label={statNextLabel}
               value={nextPayout?.arrivalDate
                 ? format(new Date(nextPayout.arrivalDate), 'd MMM', { locale: nl })
                 : '—'}
-              sublabel={nextPayout ? 'Verwachte aankomstdatum' : 'Geen uitbetaling gepland'}
+              sublabel={nextPayout ? statNextSubYes : statNextSubNo}
               icon={CreditCard}
             />
           </div>
 
           {/* Chart */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6">
-            <h3 className="font-bold text-slate-900 mb-6">Inkomsten overzicht</h3>
+            <h3 className="font-bold text-slate-900 mb-6">{chartTitle}</h3>
             <RevenueChart payouts={payouts} />
           </div>
 
           {/* Payout history */}
           <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
-              <h3 className="font-bold text-slate-900">Recente uitbetalingen</h3>
+              <h3 className="font-bold text-slate-900">{historyTitle}</h3>
               <div className="flex items-center gap-3">
                 {exportMsg && (
                   <span className="text-xs text-amber-600 font-medium">{exportMsg}</span>
                 )}
-                <button onClick={handleExport} className="text-sm font-bold text-brand hover:underline">Exporteer →</button>
+                <button onClick={handleExport} className="text-sm font-bold text-brand hover:underline">{exportBtn}</button>
               </div>
             </div>
 
@@ -507,9 +525,9 @@ export default function BetalingenPage() {
                 <div className="w-14 h-14 bg-brand-light rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Banknote className="w-7 h-7 text-brand" />
                 </div>
-                <p className="font-bold text-slate-700">Nog geen uitbetalingen</p>
+                <p className="font-bold text-slate-700">{emptyTitle}</p>
                 <p className="text-sm text-slate-400 mt-1">
-                  Zodra er boekingen zijn uitbetaald, verschijnen ze hier.
+                  {emptySub}
                 </p>
               </div>
             ) : (

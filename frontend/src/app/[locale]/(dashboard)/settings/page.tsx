@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
 import { Home, User, Bell, ShieldCheck, CheckCircle2, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -548,23 +549,38 @@ function BeveiligingTab() {
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('bnb');
 
+  // ── Dynamic copy ──────────────────────────────────────────────────────────────
+  const pageTitle     = useDynamicCopy('settings.header.title',    'Instellingen');
+  const pageSubtitle  = useDynamicCopy('settings.header.subtitle', 'Beheer je B&B en account voorkeuren');
+  const tabBnb        = useDynamicCopy('settings.tab.bnb',         'B&B Instellingen');
+  const tabAccount    = useDynamicCopy('settings.tab.account',     'Account');
+  const tabMeldingen  = useDynamicCopy('settings.tab.meldingen',   'Meldingen');
+  const tabBeveiliging= useDynamicCopy('settings.tab.beveiliging', 'Beveiliging & Betalingen');
+
+  const tabLabels: Record<TabKey, string> = {
+    bnb: tabBnb,
+    account: tabAccount,
+    meldingen: tabMeldingen,
+    beveiliging: tabBeveiliging,
+  };
+
   return (
     <div className="max-w-3xl space-y-6">
 
       {/* Title */}
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold text-slate-900">Instellingen</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
           <Tooltip content="Beheer hier je B&B-gegevens, account, meldingen en beveiliging." position="right">
             <Info className="w-4 h-4 text-slate-400 hover:text-slate-600 cursor-default transition-colors" />
           </Tooltip>
         </div>
-        <p className="text-slate-400 mt-1">Beheer je B&B en account voorkeuren</p>
+        <p className="text-slate-400 mt-1">{pageSubtitle}</p>
       </div>
 
       {/* Tabs */}
       <div className="bg-white rounded-2xl border border-slate-100 px-1 py-1 flex items-center gap-1 overflow-x-auto">
-        {TABS.map(({ key, label, icon: Icon }) => (
+        {TABS.map(({ key, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
@@ -575,7 +591,7 @@ export default function SettingsPage() {
             }`}
           >
             <Icon className="w-4 h-4" />
-            {label}
+            {tabLabels[key]}
           </button>
         ))}
       </div>
