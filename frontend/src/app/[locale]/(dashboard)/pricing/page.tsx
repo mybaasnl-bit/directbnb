@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
@@ -63,20 +63,18 @@ const PLANS: Plan[] = [
   },
 ];
 
-// ── Page component ────────────────────────────────────────────────────────────
+// ── Inner component (uses useSearchParams — must be inside Suspense) ──────────
 
-export default function PricingPage() {
+function PricingContent() {
   const { locale } = useParams<{ locale: string }>();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
-  const isPaywall  = searchParams.get('paywall') === '1';
+  const isPaywall   = searchParams.get('paywall') === '1';
   const isCancelled = searchParams.get('subscription') === 'cancelled';
 
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'professional' | null>(null);
 
-  // ── Checkout mutation ────────────────────────────────────────────────────────
   const checkoutMutation = useMutation({
     mutationFn: (plan: 'basic' | 'professional') =>
       api
@@ -86,7 +84,6 @@ export default function PricingPage() {
           cancelUrl:  `${window.location.origin}/${locale}/pricing?subscription=cancelled`,
         })
         .then((r) => r.data.data as { checkoutUrl: string }),
-
     onSuccess: ({ checkoutUrl }) => {
       window.location.href = checkoutUrl;
     },
@@ -151,15 +148,14 @@ export default function PricingPage() {
       {/* Plan cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-2xl">
         {PLANS.map((plan) => {
-          const isLoading =
-            checkoutMutation.isPending && selectedPlan === plan.id;
+          const isLoading = checkoutMutation.isPending && selectedPlan === plan.id;
 
           return (
             <div
               key={plan.id}
               className={`relative rounded-3xl p-6 flex flex-col transition-shadow ${
                 plan.highlighted
-                  ? 'bg-brand text-white shadow-2xl shadow-brand/30 ring-0'
+                  ? 'bg-brand text-white shadow-2xl shadow-brand/30'
                   : 'bg-white border border-slate-100 hover:shadow-md'
               }`}
             >
@@ -175,28 +171,18 @@ export default function PricingPage() {
 
               {/* Plan name & price */}
               <div className="mb-5">
-                <p
-                  className={`text-sm font-bold uppercase tracking-wider mb-1 ${
-                    plan.highlighted ? 'text-white/70' : 'text-brand'
-                  }`}
-                >
+                <p className={`text-sm font-bold uppercase tracking-wider mb-1 ${
+                  plan.highlighted ? 'text-white/70' : 'text-brand'
+                }`}>
                   {plan.name}
                 </p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-bold">{plan.price}</span>
-                  <span
-                    className={`text-sm ${
-                      plan.highlighted ? 'text-white/70' : 'text-slate-400'
-                    }`}
-                  >
+                  <span className={`text-sm ${plan.highlighted ? 'text-white/70' : 'text-slate-400'}`}>
                     {plan.period}
                   </span>
                 </div>
-                <p
-                  className={`text-sm mt-1.5 ${
-                    plan.highlighted ? 'text-white/80' : 'text-slate-500'
-                  }`}
-                >
+                <p className={`text-sm mt-1.5 ${plan.highlighted ? 'text-white/80' : 'text-slate-500'}`}>
                   {plan.tagline}
                 </p>
               </div>
@@ -205,24 +191,12 @@ export default function PricingPage() {
               <ul className="space-y-2.5 mb-6 flex-1">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-start gap-2.5 text-sm">
-                    <div
-                      className={`w-4.5 h-4.5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        plan.highlighted
-                          ? 'bg-white/20'
-                          : 'bg-brand/10'
-                      }`}
-                    >
-                      <Check
-                        className={`w-3 h-3 ${
-                          plan.highlighted ? 'text-white' : 'text-brand'
-                        }`}
-                      />
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      plan.highlighted ? 'bg-white/20' : 'bg-brand/10'
+                    }`}>
+                      <Check className={`w-3 h-3 ${plan.highlighted ? 'text-white' : 'text-brand'}`} />
                     </div>
-                    <span
-                      className={
-                        plan.highlighted ? 'text-white/90' : 'text-slate-700'
-                      }
-                    >
+                    <span className={plan.highlighted ? 'text-white/90' : 'text-slate-700'}>
                       {feature}
                     </span>
                   </li>
@@ -256,7 +230,7 @@ export default function PricingPage() {
         })}
       </div>
 
-      {/* Stripe trust note */}
+      {/* Trust note */}
       <p className="text-xs text-slate-400 text-center mt-8 max-w-sm">
         Betaling wordt veilig verwerkt via Stripe. Je kan op elk moment
         opzeggen via je accountinstellingen.
@@ -270,5 +244,19 @@ export default function PricingPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Page export — wraps inner component in Suspense (required by Next.js 14) ──
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-brand border-t-transparent" />
+      </div>
+    }>
+      <PricingContent />
+    </Suspense>
   );
 }
