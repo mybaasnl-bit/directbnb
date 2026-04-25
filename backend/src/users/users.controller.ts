@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Param, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -34,5 +34,18 @@ export class UsersController {
     @Body() dto: UpdateNotificationPrefsDto,
   ) {
     return this.usersService.updateNotificationPrefs(userId, dto);
+  }
+
+  /**
+   * Mark a dashboard page's onboarding popup as seen.
+   * Idempotent — safe to call multiple times. Returns updated steps array.
+   */
+  @Post('me/onboarding/:step')
+  @HttpCode(HttpStatus.OK)
+  completeOnboardingStep(
+    @CurrentUser('id') userId: string,
+    @Param('step') step: string,
+  ) {
+    return this.usersService.completeOnboardingStep(userId, step);
   }
 }

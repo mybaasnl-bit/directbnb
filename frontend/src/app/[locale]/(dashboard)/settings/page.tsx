@@ -9,9 +9,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { FeedbackButton } from '@/components/feedback/feedback-button';
-import { Home, User, Bell, ShieldCheck, CheckCircle2, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle, Info } from 'lucide-react';
+import { Home, User, Bell, ShieldCheck, CheckCircle2, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle, Info, CreditCard, Loader2, ExternalLink } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -385,6 +386,22 @@ function MeldingenTab() {
   );
 }
 
+// ── Subscription status labels ────────────────────────────────────────────────
+const SUB_LABELS: Record<string, string> = {
+  active:     'Actief',
+  trialing:   'Proefperiode',
+  past_due:   'Betaling achterstallig',
+  canceled:   'Geannuleerd',
+  incomplete: 'Niet actief',
+};
+const SUB_COLORS: Record<string, string> = {
+  active:     'bg-emerald-100 text-emerald-700',
+  trialing:   'bg-blue-100 text-blue-700',
+  past_due:   'bg-amber-100 text-amber-700',
+  canceled:   'bg-red-100 text-red-700',
+  incomplete: 'bg-slate-100 text-slate-500',
+};
+
 // ── Beveiliging & Betalingen tab ─────────────────────────────────────────────
 function BeveiligingTab() {
   const { locale } = useParams<{ locale: string }>();
@@ -395,6 +412,25 @@ function BeveiligingTab() {
   const [showNew, setShowNew] = useState(false);
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState(false);
+
+  // ── Subscription status ────────────────────────────────────────────────────
+  const { data: subStatus } = useQuery<{
+    status: string;
+    priceId: string | null;
+    subscriptionId: string | null;
+    hasCustomer: boolean;
+  } | null>({
+    queryKey: ['subscription-status'],
+    queryFn: () => api.get('/subscription/status').then(r => r.data.data).catch(() => null),
+  });
+
+  const portalMutation = useMutation({
+    mutationFn: () =>
+      api.post('/subscription/portal').then(r => r.data.data as { portalUrl: string }),
+    onSuccess: ({ portalUrl }) => {
+      window.location.href = portalUrl;
+    },
+  });
 
   const { data: paymentAccount } = useQuery<{ status: string; payoutsEnabled: boolean; chargesEnabled: boolean } | null>({
     queryKey: ['payout-account-status'],
@@ -437,6 +473,73 @@ function BeveiligingTab() {
 
   return (
     <div className="space-y-5">
+
+      {/* Subscription management */}
+      <SectionCard
+        icon={CreditCard}
+        title="Abonnement"
+        subtitle="Beheer je DirectB&B abonnement"
+      >
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="space-y-1.5">
+            {subStatus ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    SUB_COLORS[subStatus.status] ?? 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {SUB_LABELS[subStatus.status] ?? subStatus.status}
+                  </span>
+                  {(subStatus.status === 'active' || subStatus.status === 'trialing') && (
+                    <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Toegang actief
+                    </span>
+                  )}
+                </div>
+                {subStatus.priceId && (
+                  <p className="text-xs text-slate-400">Plan ID: {subStatus.priceId}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">Geen actief abonnement gevonden.</p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {subStatus?.subscriptionId ? (
+              <button
+                onClick={() => portalMutation.mutate()}
+                disabled={portalMutation.isPending}
+                className="inline-flex items-center gap-2 bg-brand hover:bg-brand/90 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-sm transition-colors"
+              >
+                {portalMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4" />
+                )}
+                Beheer Abonnement
+              </button>
+            ) : (
+              <Link
+                href={`/${locale}/pricing`}
+                className="inline-flex items-center gap-2 bg-brand hover:bg-brand/90 text-white font-bold px-4 py-2 rounded-xl text-sm transition-colors"
+              >
+                <CreditCard className="w-4 h-4" /> Abonnement kiezen
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {portalMutation.isError && (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5 mt-2">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <p className="text-sm text-red-700">
+              Kon de beheerportal niet openen. Probeer het opnieuw.
+            </p>
+          </div>
+        )}
+      </SectionCard>
+
       {/* Payments status */}
       <SectionCard icon={Banknote} title="Betalingsstatus" subtitle="Stripe Connect account voor uitbetalingen">
         {paymentAccount ? (
@@ -566,6 +669,8 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
+
+      <OnboardingTrigger pageKey="settings" />
 
       {/* Title */}
       <div>

@@ -27,6 +27,7 @@ import { useState } from 'react';
 import { BetaBanner } from '@/components/feedback/beta-banner';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -426,6 +427,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+      <OnboardingTrigger pageKey="dashboard" />
 
       {/* Page title */}
       <div>

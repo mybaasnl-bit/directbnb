@@ -22,6 +22,7 @@ import { useLocale } from 'next-intl';
 import { ChevronLeft, ChevronRight, LogIn, LogOut, Wrench, Plus, X, Lock, Calendar, ExternalLink, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 
 export default function CalendarPage() {
   const t = useTranslations('calendar');
@@ -188,6 +189,7 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-4 max-w-6xl">
+      <OnboardingTrigger pageKey="agenda" />
 
       {/* Title */}
       <div>

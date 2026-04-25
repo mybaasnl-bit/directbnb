@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { Mail, BookOpen, CheckCircle, XCircle, Send, FileText, Clock, TrendingUp, Pencil, RotateCcw, Eye, X } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -186,6 +187,8 @@ export default function EmailTemplatesPage() {
           </div>
         </div>
       )}
+
+      <OnboardingTrigger pageKey="emails" />
 
       {/* Title */}
       <div>

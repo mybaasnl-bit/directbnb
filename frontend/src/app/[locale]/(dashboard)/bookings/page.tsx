@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 
 const STATUS_FILTERS = [
   { key: 'all',             label: 'Alle statussen' },
@@ -340,6 +341,8 @@ export default function BookingsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+
+      <OnboardingTrigger pageKey="bookings" />
 
       {/* Modal */}
       {showModal && (

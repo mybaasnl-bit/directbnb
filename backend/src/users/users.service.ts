@@ -20,6 +20,11 @@ export class UsersService {
         preferredLanguage: true,
         isBetaUser: true,
         emailVerified: true,
+        completedOnboardingSteps: true,
+        // Subscription billing
+        subscriptionStatus: true,
+        stripeCustomerId: true,
+        stripePriceId: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -27,6 +32,32 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  /**
+   * Mark a dashboard onboarding step as completed for a user.
+   * Idempotent — safe to call multiple times for the same step.
+   * Returns the updated array of completed step keys.
+   */
+  async completeOnboardingStep(id: string, step: string): Promise<string[]> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { completedOnboardingSteps: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Already completed — return as-is without a write
+    if (user.completedOnboardingSteps.includes(step)) {
+      return user.completedOnboardingSteps;
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { completedOnboardingSteps: { push: step } },
+      select: { completedOnboardingSteps: true },
+    });
+
+    return updated.completedOnboardingSteps;
   }
 
   async update(id: string, dto: UpdateUserDto) {
