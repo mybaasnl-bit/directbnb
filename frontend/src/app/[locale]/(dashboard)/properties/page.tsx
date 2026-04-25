@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { Plus, Edit, ExternalLink, BedDouble, Users, Globe, TrendingUp, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,7 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
+      <OnboardingTrigger pageKey="rooms" />
 
       {/* Title */}
       <div className="flex items-start justify-between">

@@ -103,6 +103,7 @@ model User {
   isActive                    Boolean  @default(true)
   isBetaUser        Boolean  @default(false)
   emailVerified     Boolean  @default(false)
+  completedOnboardingSteps    String[] @default([])
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   createdAt         DateTime @default(now())

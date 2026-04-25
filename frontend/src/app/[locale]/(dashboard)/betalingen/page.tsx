@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 import { cn } from '@/lib/utils';
 import { format, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -346,6 +347,8 @@ export default function BetalingenPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+
+      <OnboardingTrigger pageKey="payouts" />
 
       {/* Title */}
       <div>

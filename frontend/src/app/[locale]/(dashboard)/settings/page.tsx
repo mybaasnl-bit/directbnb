@@ -12,6 +12,7 @@ import { FeedbackButton } from '@/components/feedback/feedback-button';
 import { Home, User, Bell, ShieldCheck, CheckCircle2, Clock, Banknote, ArrowRight, Eye, EyeOff, KeyRound, AlertCircle, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -566,6 +567,8 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
+
+      <OnboardingTrigger pageKey="settings" />
 
       {/* Title */}
       <div>

@@ -8,6 +8,7 @@ export interface User {
   preferredLanguage: string;
   isBetaUser: boolean;
   emailVerified: boolean;
+  completedOnboardingSteps: string[];
   createdAt: string;
   _count?: { properties: number };
 }

@@ -468,4 +468,77 @@ export const DEFAULT_COPY: DefaultCopyEntry[] = [
     value: 'Overzicht van al je gasten',
     description: 'Ondertitel op de gastenpagina',
   },
+
+  // ── Onboarding popups ──────────────────────────────────────────────────────────
+  // Each page gets a title + description shown once on first visit.
+  {
+    key: 'dashboard.onboarding.title',
+    value: 'Welkom bij je Dashboard',
+    description: 'Titel van de onboarding popup op de dashboardpagina',
+  },
+  {
+    key: 'dashboard.onboarding.description',
+    value: 'Dit is jouw command center. Hier zie je een live overzicht van openstaande boekingen, je inkomsten deze maand en alle recente activiteit in één oogopslag.',
+    description: 'Beschrijving in de onboarding popup op de dashboardpagina',
+  },
+  {
+    key: 'bookings.onboarding.title',
+    value: 'Beheer al je boekingen',
+    description: 'Titel van de onboarding popup op de boekingenpagina',
+  },
+  {
+    key: 'bookings.onboarding.description',
+    value: 'Nieuwe boekingsverzoeken verschijnen bovenaan in het geel. Accepteer of weiger ze direct. Je kunt ook handmatig boekingen aanmaken en betalingslinks versturen.',
+    description: 'Beschrijving in de onboarding popup op de boekingenpagina',
+  },
+  {
+    key: 'agenda.onboarding.title',
+    value: 'Je beschikbaarheidskalender',
+    description: 'Titel van de onboarding popup op de agendapagina',
+  },
+  {
+    key: 'agenda.onboarding.description',
+    value: 'Klik op een dag om deze te blokkeren of deblokkeren. Boekingen zijn automatisch zichtbaar in de kalender. Synchroniseer met Google of Apple Agenda via de knoppen bovenaan.',
+    description: 'Beschrijving in de onboarding popup op de agendapagina',
+  },
+  {
+    key: 'rooms.onboarding.title',
+    value: 'Je kamers & accommodaties',
+    description: 'Titel van de onboarding popup op de kamerspagina',
+  },
+  {
+    key: 'rooms.onboarding.description',
+    value: "Hier beheer je al jouw kamers. Klik op 'Bewerken' om de prijs, beschrijving of voorzieningen aan te passen. Zet een accommodatie online of offline via de publicatieknop.",
+    description: 'Beschrijving in de onboarding popup op de kamerspagina',
+  },
+  {
+    key: 'emails.onboarding.title',
+    value: 'Automatische e-mailcommunicatie',
+    description: 'Titel van de onboarding popup op de e-mailpagina',
+  },
+  {
+    key: 'emails.onboarding.description',
+    value: 'DirectBnB verstuurt automatisch e-mails bij boekingen en bevestigingen. Pas de inhoud van de sjablonen hier aan voor een persoonlijke uitstraling. Je kunt altijd resetten naar de standaard.',
+    description: 'Beschrijving in de onboarding popup op de e-mailpagina',
+  },
+  {
+    key: 'payouts.onboarding.title',
+    value: 'Automatische uitbetalingen',
+    description: 'Titel van de onboarding popup op de uitbetalingenpagina',
+  },
+  {
+    key: 'payouts.onboarding.description',
+    value: 'Koppel eenmalig je bankrekening via Stripe. Daarna ontvang je betalingen automatisch na elke check-in — binnen 2 werkdagen op je rekening. Volledig veilig en geautomatiseerd.',
+    description: 'Beschrijving in de onboarding popup op de uitbetalingenpagina',
+  },
+  {
+    key: 'settings.onboarding.title',
+    value: 'Je B&B instellingen',
+    description: 'Titel van de onboarding popup op de instellingenpagina',
+  },
+  {
+    key: 'settings.onboarding.description',
+    value: 'Stel hier je accommodatiegegevens in, beheer je accountprofiel, configureer meldingen en regel beveiliging en betalingen. Wijzigingen worden direct opgeslagen.',
+    description: 'Beschrijving in de onboarding popup op de instellingenpagina',
+  },
 ];
