@@ -88,6 +88,14 @@ enum BookingPayoutStatus {
   NOT_APPLICABLE
 }
 
+enum SubscriptionStatus {
+  active
+  trialing
+  past_due
+  canceled
+  incomplete
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -104,6 +112,13 @@ model User {
   isBetaUser        Boolean  @default(false)
   emailVerified     Boolean  @default(false)
   completedOnboardingSteps    String[] @default([])
+
+  // ── Stripe Billing (SaaS subscription) ─────────────────────────────────────
+  stripeCustomerId      String?            @unique
+  stripeSubscriptionId  String?            @unique
+  subscriptionStatus    SubscriptionStatus @default(incomplete)
+  stripePriceId         String?
+
   termsAcceptedAt   DateTime?
   privacyAcceptedAt DateTime?
   createdAt         DateTime @default(now())

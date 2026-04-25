@@ -1,3 +1,10 @@
+export type SubscriptionStatus =
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'canceled'
+  | 'incomplete';
+
 export interface User {
   id: string;
   email: string;
@@ -9,6 +16,10 @@ export interface User {
   isBetaUser: boolean;
   emailVerified: boolean;
   completedOnboardingSteps: string[];
+  // Stripe Billing
+  subscriptionStatus?: SubscriptionStatus;
+  stripeCustomerId?: string;
+  stripePriceId?: string;
   createdAt: string;
   _count?: { properties: number };
 }

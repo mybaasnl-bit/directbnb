@@ -21,6 +21,10 @@ export class UsersService {
         isBetaUser: true,
         emailVerified: true,
         completedOnboardingSteps: true,
+        // Subscription billing
+        subscriptionStatus: true,
+        stripeCustomerId: true,
+        stripePriceId: true,
         createdAt: true,
         updatedAt: true,
       },

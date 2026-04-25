@@ -46,6 +46,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         // ignore corrupt localStorage
       }
     }
+
+    // ── Subscription paywall ───────────────────────────────────────────────────
+    // Admins and beta-users bypass the paywall.
+    // Everyone else must have an active or trialing subscription.
+    if (!isLoading && user && user.role !== 'ADMIN' && !user.isBetaUser) {
+      const status = user.subscriptionStatus;
+      const hasAccess = status === 'active' || status === 'trialing';
+      const isPricingPage = pathname.includes('/pricing');
+
+      if (!hasAccess && !isPricingPage) {
+        router.push(`/${locale}/pricing?paywall=1`);
+        return;
+      }
+    }
   }, [user, isLoading, router, locale, pathname, isAdminRoute]);
 
   if (isLoading) {
