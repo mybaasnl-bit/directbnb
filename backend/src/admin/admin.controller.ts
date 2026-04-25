@@ -11,7 +11,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsEnum, IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsEnum, IsString, IsOptional, MaxLength, IsArray, ValidateNested, ArrayMaxSize } from 'class-validator';
+import { Type } from 'class-transformer';
 import { FeedbackStatus } from '@prisma/client';
 
 import { AdminService } from './admin.service';
@@ -35,6 +36,25 @@ class UpsertCopyDto {
 
   @IsString() @IsOptional() @MaxLength(500)
   description?: string;
+}
+
+class SyncCopyEntryDto {
+  @IsString() @MaxLength(200)
+  key: string;
+
+  @IsString()
+  value: string;
+
+  @IsString() @IsOptional() @MaxLength(500)
+  description?: string;
+}
+
+class SyncCopyDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @ArrayMaxSize(500)
+  @Type(() => SyncCopyEntryDto)
+  entries: SyncCopyEntryDto[];
 }
 
 @ApiTags('admin')
@@ -112,6 +132,13 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete a copy entry by key' })
   deleteCopy(@Param('key') key: string) {
     return this.copyService.delete(key);
+  }
+
+  @Post('sync-copy')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Seed missing default copy keys — existing keys are never overwritten' })
+  syncCopy(@Body() dto: SyncCopyDto) {
+    return this.copyService.syncDefaults(dto.entries);
   }
 
   // ─── Feedback ───────────────────────────────────────────────────────────────

@@ -72,4 +72,33 @@ export class DynamicCopyService {
     this.invalidateCache();
     this.logger.log(`Deleted copy key "${key}"`);
   }
+
+  /**
+   * Sync default copy entries — inserts only keys that don't yet exist in the DB.
+   * Existing keys are never overwritten (admin customisations are preserved).
+   * Returns the count of newly inserted entries.
+   */
+  async syncDefaults(
+    entries: { key: string; value: string; description?: string }[],
+  ): Promise<{ inserted: number; skipped: number; total: number }> {
+    const result = await this.prisma.dynamicCopy.createMany({
+      data: entries.map((e) => ({
+        key: e.key,
+        value: e.value,
+        description: e.description ?? null,
+      })),
+      skipDuplicates: true,   // existing keys (admin-customised) are left untouched
+    });
+
+    this.invalidateCache();
+    this.logger.log(
+      `syncDefaults: inserted ${result.count} of ${entries.length} entries (${entries.length - result.count} already existed)`,
+    );
+
+    return {
+      inserted: result.count,
+      skipped: entries.length - result.count,
+      total: entries.length,
+    };
+  }
 }

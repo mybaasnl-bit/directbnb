@@ -7,8 +7,9 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import {
   Search, Plus, Pencil, Trash2, X, Save, AlertCircle, CheckCircle2,
-  FileText, RefreshCw,
+  FileText, RefreshCw, DatabaseZap,
 } from 'lucide-react';
+import { DEFAULT_COPY } from '@/lib/constants/defaultCopy';
 import { cn } from '@/lib/utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -226,6 +227,21 @@ export default function CopyManagementPage() {
     },
   });
 
+  const syncMutation = useMutation({
+    mutationFn: () =>
+      api.post('/admin/sync-copy', { entries: DEFAULT_COPY }).then((r) => r.data.data as { inserted: number; skipped: number; total: number }),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: ['admin-dynamic-copy'] });
+      qc.invalidateQueries({ queryKey: ['dynamic-copy'] });
+      setSaveNotice(
+        result.inserted > 0
+          ? `${result.inserted} tekst${result.inserted !== 1 ? 'en' : ''} toegevoegd, ${result.skipped} al aanwezig.`
+          : `Alles al gesynchroniseerd — ${result.skipped} teksten ongewijzigd.`,
+      );
+      setTimeout(() => setSaveNotice(null), 4000);
+    },
+  });
+
   const filtered = entries.filter((e) =>
     !search ||
     e.key.toLowerCase().includes(search.toLowerCase()) ||
@@ -237,18 +253,35 @@ export default function CopyManagementPage() {
     <div className="space-y-6 max-w-5xl">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Tekst beheer</h1>
           <p className="text-slate-400 mt-1">Beheer dashboard teksten zonder code te deployen</p>
         </div>
-        <button
-          onClick={() => setEditEntry(null)}
-          className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors shadow-sm shadow-brand/20"
-        >
-          <Plus className="w-4 h-4" />
-          Nieuwe tekst
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Sync default texts */}
+          <button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-brand hover:text-brand text-slate-600 text-sm font-semibold px-4 py-3 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {syncMutation.isPending ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <DatabaseZap className="w-4 h-4" />
+            )}
+            {syncMutation.isPending ? 'Synchroniseren…' : 'Synchroniseer Standaard Teksten'}
+          </button>
+
+          {/* New entry */}
+          <button
+            onClick={() => setEditEntry(null)}
+            className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors shadow-sm shadow-brand/20"
+          >
+            <Plus className="w-4 h-4" />
+            Nieuwe tekst
+          </button>
+        </div>
       </div>
 
       {/* Save notice */}
