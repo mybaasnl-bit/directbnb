@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LayoutDashboard, BookOpen, CalendarDays, BedDouble,
-  Mail, Banknote, Settings, Sparkles, X,
+  Mail, Banknote, Settings, Sparkles, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 import { useOnboarding } from '@/hooks/use-onboarding';
@@ -57,7 +57,20 @@ const PAGE_CONFIG: Record<string, {
     descFallback:
       'Stel hier je accommodatiegegevens in, beheer je accountprofiel, configureer meldingen en regel beveiliging en betalingen. Wijzigingen worden direct opgeslagen.',
   },
+  'email-editor': {
+    icon: Mail,
+    titleFallback: 'Welkom bij de editor',
+    descFallback:
+      'Hier pas je de tekst en opmaak van je automatische e-mails aan. Wijzigingen worden automatisch opgeslagen — je hoeft niets handmatig te doen.',
+  },
 };
+
+// ─── Step type ────────────────────────────────────────────────────────────────
+
+interface OnboardingStep {
+  title: string;
+  description: string;
+}
 
 // ─── Inner popup ─────────────────────────────────────────────────────────────
 
@@ -77,10 +90,38 @@ function OnboardingPopup({
   };
 
   const Icon = config.icon;
-  const title = useDynamicCopy(`${pageKey}.onboarding.title`, config.titleFallback);
-  const description = useDynamicCopy(`${pageKey}.onboarding.description`, config.descFallback);
 
-  // Delayed mount so the page renders before the popup slides in — prevents layout-shift perception
+  // Single-step fallback values (existing DynamicCopy keys)
+  const fallbackTitle = useDynamicCopy(`${pageKey}.onboarding.title`, config.titleFallback);
+  const fallbackDesc  = useDynamicCopy(`${pageKey}.onboarding.description`, config.descFallback);
+
+  // Multi-step JSON from DynamicCopy — key: `${pageKey}.onboarding.steps`
+  // Format: [{ "title": "...", "description": "..." }, ...]
+  const stepsJson = useDynamicCopy(`${pageKey}.onboarding.steps`, '');
+
+  const steps: OnboardingStep[] = useMemo(() => {
+    if (!stepsJson) return [];
+    try {
+      const parsed = JSON.parse(stepsJson);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed as OnboardingStep[];
+    } catch {
+      // invalid JSON — fall back
+    }
+    return [];
+  }, [stepsJson]);
+
+  // Merge: prefer multi-step JSON, fall back to single legacy step
+  const allSteps: OnboardingStep[] = steps.length > 0
+    ? steps
+    : [{ title: fallbackTitle, description: fallbackDesc }];
+
+  const [stepIndex, setStepIndex] = useState(0);
+  const currentStep = allSteps[stepIndex];
+  const totalSteps  = allSteps.length;
+  const isFirst = stepIndex === 0;
+  const isLast  = stepIndex === totalSteps - 1;
+
+  // Delayed mount so the page renders before the popup slides in
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 350);
@@ -111,35 +152,89 @@ function OnboardingPopup({
             <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0">
               <Icon className="w-6 h-6 text-white" />
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
-              aria-label="Sluiten"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2.5">
+              {totalSteps > 1 && (
+                <span className="text-xs font-bold text-white/80 bg-white/15 px-2.5 py-1 rounded-full">
+                  Stap {stepIndex + 1} van {totalSteps}
+                </span>
+              )}
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+                aria-label="Sluiten"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <h2 className="mt-4 text-xl font-extrabold text-white leading-tight">
-            {title}
+            {currentStep.title}
           </h2>
         </div>
 
         {/* Body */}
         <div className="px-6 py-5">
           <p className="text-sm text-slate-600 leading-relaxed">
-            {description}
+            {currentStep.description}
           </p>
+
+          {/* Step dots */}
+          {totalSteps > 1 && (
+            <div className="flex items-center justify-center gap-1.5 mt-5">
+              {allSteps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`rounded-full transition-all duration-300 ${
+                    i === stepIndex ? 'w-6 h-2 bg-brand' : 'w-2 h-2 bg-slate-200'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-6 pb-6">
-          <button
-            onClick={onClose}
-            disabled={isPending}
-            className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold py-3 rounded-2xl text-sm transition-colors shadow-lg shadow-brand/25"
-          >
-            {isPending ? 'Even geduld…' : 'Ik begrijp het ✓'}
-          </button>
+          {totalSteps <= 1 ? (
+            /* Single-step: legacy "Ik begrijp het" button */
+            <button
+              onClick={onClose}
+              disabled={isPending}
+              className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold py-3 rounded-2xl text-sm transition-colors shadow-lg shadow-brand/25"
+            >
+              {isPending ? 'Even geduld…' : 'Ik begrijp het ✓'}
+            </button>
+          ) : (
+            /* Multi-step: Vorige / Volgende / Sluiten */
+            <div className="flex gap-3">
+              {!isFirst && (
+                <button
+                  onClick={() => setStepIndex((i) => i - 1)}
+                  className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors flex-shrink-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Vorige
+                </button>
+              )}
+              {!isLast ? (
+                <button
+                  onClick={() => setStepIndex((i) => i + 1)}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-brand hover:bg-brand-600 text-white font-bold py-3 rounded-2xl text-sm transition-colors shadow-lg shadow-brand/25"
+                >
+                  Volgende
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={onClose}
+                  disabled={isPending}
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-60 text-white font-bold py-3 rounded-2xl text-sm transition-colors shadow-lg shadow-brand/25"
+                >
+                  {isPending ? 'Even geduld…' : 'Sluiten ✓'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

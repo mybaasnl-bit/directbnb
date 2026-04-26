@@ -264,6 +264,7 @@ export default function BetalingenPage() {
   const pageTitle          = useDynamicCopy('payouts.header.title',         'Uitbetalingen');
   const pageSubtitle       = useDynamicCopy('payouts.header.subtitle',      'Ontvang betalingen direct op je bankrekening');
   const pageTooltip        = useDynamicCopy('payouts.header.tooltip',       'Koppel je bankrekening via Stripe om automatisch uitbetalingen te ontvangen na elke check-in.');
+  const payoutTimingInfo   = useDynamicCopy('payouts.info.payout_timing',   'Let op: Elke uitbetaling wordt per individuele boeking verwerkt op het moment dat de gast is ingecheckt.');
   const statYearLabel      = useDynamicCopy('payouts.stat.this_year',       'Totaal dit jaar');
   const statMonthLabel     = useDynamicCopy('payouts.stat.this_month',      'Deze maand');
   const statPendingLabel   = useDynamicCopy('payouts.stat.pending',         'In behandeling');
@@ -359,6 +360,12 @@ export default function BetalingenPage() {
           </Tooltip>
         </div>
         <p className="text-slate-400 mt-1">{pageSubtitle}</p>
+      </div>
+
+      {/* Payout timing info */}
+      <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4">
+        <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-blue-700">{payoutTimingInfo}</p>
       </div>
 
       {/* Return banners from Stripe */}

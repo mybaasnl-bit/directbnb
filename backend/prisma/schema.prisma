@@ -209,8 +209,9 @@ model Room {
   sqm           Int?
   minStay       Int      @default(1)
   isActive      Boolean  @default(true)
-  amenities       String[] @default([])
-  houseRules      String?  @db.Text
+  amenities         String[] @default([])
+  customFacilities  String[] @default([])
+  houseRules        String?  @db.Text
   icalImportUrls  String[] @default([])
   icalExportToken String?  @unique
   createdAt       DateTime @default(now())

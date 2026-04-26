@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import {
   Search, Plus, Pencil, Trash2, X, Save, AlertCircle, CheckCircle2,
-  FileText, RefreshCw, DatabaseZap,
+  FileText, RefreshCw, DatabaseZap, MapPin,
 } from 'lucide-react';
 import { DEFAULT_COPY } from '@/lib/constants/defaultCopy';
 import { cn } from '@/lib/utils';
@@ -184,6 +184,156 @@ function DeleteModal({
             Verwijderen
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tour Steps Manager ────────────────────────────────────────────────────────
+
+const TOUR_PAGE_KEYS = [
+  { key: 'dashboard',     label: 'Dashboard' },
+  { key: 'bookings',      label: 'Boekingen' },
+  { key: 'agenda',        label: 'Agenda' },
+  { key: 'rooms',         label: 'Kamers' },
+  { key: 'emails',        label: 'E-mail templates' },
+  { key: 'email-editor',  label: 'E-mail editor' },
+  { key: 'payouts',       label: 'Uitbetalingen' },
+  { key: 'settings',      label: 'Instellingen' },
+];
+
+const STEP_PLACEHOLDER = JSON.stringify(
+  [
+    { title: 'Stap 1 titel', description: 'Uitleg voor stap 1...' },
+    { title: 'Stap 2 titel', description: 'Uitleg voor stap 2...' },
+  ],
+  null,
+  2,
+);
+
+function TourStepsManager({
+  entries,
+  onSave,
+  saving,
+}: {
+  entries: CopyEntry[];
+  onSave: (key: string, value: string) => void;
+  saving: boolean;
+}) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+
+  // Initialise drafts from DB entries on first render / when entries change
+  useEffect(() => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      TOUR_PAGE_KEYS.forEach(({ key }) => {
+        const dbKey = `${key}.onboarding.steps`;
+        const entry = entries.find((e) => e.key === dbKey);
+        if (entry && !(key in next)) {
+          next[key] = entry.value;
+        }
+      });
+      return next;
+    });
+  }, [entries]);
+
+  const validateAndSave = (pageKey: string) => {
+    const raw = drafts[pageKey] ?? '';
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) throw new Error('Moet een array zijn');
+      setJsonErrors((e) => ({ ...e, [pageKey]: '' }));
+      onSave(`${pageKey}.onboarding.steps`, raw);
+      setSaved((s) => ({ ...s, [pageKey]: true }));
+      setTimeout(() => setSaved((s) => ({ ...s, [pageKey]: false })), 3000);
+    } catch (err: any) {
+      setJsonErrors((e) => ({ ...e, [pageKey]: err.message ?? 'Ongeldige JSON' }));
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 bg-brand-light rounded-xl flex items-center justify-center flex-shrink-0">
+          <MapPin className="w-4 h-4 text-brand" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Tour Stappen Beheer</h2>
+          <p className="text-sm text-slate-400">
+            Configureer meerdere stappen per pagina als JSON-array. Leeg laten = enkelvoudige popup.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {TOUR_PAGE_KEYS.map(({ key, label }) => {
+          const dbEntry = entries.find((e) => e.key === `${key}.onboarding.steps`);
+          const draft = drafts[key] ?? dbEntry?.value ?? '';
+          const hasError = !!jsonErrors[key];
+          const isSaved = saved[key];
+
+          return (
+            <div key={key} className="bg-white rounded-2xl border border-slate-100 p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 text-sm">{label}</p>
+                  <p className="font-mono text-xs text-slate-400">{key}.onboarding.steps</p>
+                </div>
+                {dbEntry && (
+                  <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+                    Actief
+                  </span>
+                )}
+              </div>
+
+              <textarea
+                value={draft}
+                onChange={(e) => {
+                  setDrafts((d) => ({ ...d, [key]: e.target.value }));
+                  setJsonErrors((err) => ({ ...err, [key]: '' }));
+                }}
+                rows={6}
+                placeholder={STEP_PLACEHOLDER}
+                spellCheck={false}
+                className={cn(
+                  'w-full font-mono text-xs px-3 py-2.5 border rounded-xl resize-y outline-none transition-colors',
+                  hasError
+                    ? 'border-red-300 focus:ring-2 focus:ring-red-200'
+                    : 'border-slate-200 focus:ring-2 focus:ring-brand/20 focus:border-brand',
+                )}
+              />
+
+              {hasError && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {jsonErrors[key]}
+                </p>
+              )}
+
+              <button
+                onClick={() => validateAndSave(key)}
+                disabled={saving || !draft.trim()}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-brand hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold transition-colors"
+              >
+                {isSaved ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Opgeslagen!
+                  </>
+                ) : saving ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    Stappen opslaan
+                  </>
+                )}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -393,6 +543,13 @@ export default function CopyManagementPage() {
           {filtered.length} van {entries.length} entries
         </p>
       )}
+
+      {/* ── Tour Stappen Beheer ──────────────────────────────────────────────── */}
+      <TourStepsManager
+        entries={entries}
+        onSave={(key, value) => upsertMutation.mutate({ key, value, description: `Tour stappen JSON voor ${key.split('.')[0]}` })}
+        saving={upsertMutation.isPending}
+      />
 
       {/* Edit / Create modal */}
       {editEntry !== undefined && (

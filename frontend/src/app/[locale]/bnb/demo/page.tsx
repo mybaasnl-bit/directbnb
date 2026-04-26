@@ -69,6 +69,8 @@ const DEMO_PROPERTY: Property & { avgRating: number; reviewCount: number } = {
       maxGuests: 2,
       minStay: 1,
       isActive: true,
+      amenities: ['wifi', 'bath'],
+      customFacilities: [],
       createdAt: '2025-01-01T00:00:00Z',
       photos: [
         {
@@ -90,6 +92,8 @@ const DEMO_PROPERTY: Property & { avgRating: number; reviewCount: number } = {
       maxGuests: 2,
       minStay: 1,
       isActive: true,
+      amenities: ['wifi', 'bath', 'airco'],
+      customFacilities: ['Jacuzzi', 'Grachtzicht'],
       createdAt: '2025-01-01T00:00:00Z',
       photos: [
         {
@@ -111,6 +115,8 @@ const DEMO_PROPERTY: Property & { avgRating: number; reviewCount: number } = {
       maxGuests: 4,
       minStay: 2,
       isActive: true,
+      amenities: ['wifi', 'parking'],
+      customFacilities: [],
       createdAt: '2025-01-01T00:00:00Z',
       photos: [],
     },
