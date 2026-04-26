@@ -5,6 +5,7 @@ import Problem from '@/components/sections/Problem';
 import Solution from '@/components/sections/Solution';
 import HowItWorks from '@/components/sections/HowItWorks';
 import Features from '@/components/sections/Features';
+import Pricing from '@/components/sections/Pricing';
 import BetaProgram from '@/components/sections/BetaProgram';
 import SignupForm from '@/components/sections/SignupForm';
 import SocialProof from '@/components/sections/SocialProof';
@@ -19,6 +20,7 @@ export default function HomePage() {
         <Solution />
         <HowItWorks />
         <Features />
+        <Pricing />
         <SocialProof />
         <BetaProgram />
         <SignupForm />

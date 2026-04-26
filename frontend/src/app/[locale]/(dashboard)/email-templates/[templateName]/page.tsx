@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { EmailBuilder } from '@/components/email-builder';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 
 type SaveStatus = 'idle' | 'success' | 'error' | 'autosaving';
 
@@ -212,6 +213,8 @@ export default function HostEmailTemplateEditorPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
+      <OnboardingTrigger pageKey="email-editor" />
+
       {/* Header */}
       <div className="flex items-center justify-between px-1 pb-4 shrink-0">
         <div className="flex items-center gap-3">
@@ -258,6 +261,14 @@ export default function HostEmailTemplateEditorPage() {
             <Save className="w-4 h-4" /> {saving ? 'Opslaan…' : 'Opslaan'}
           </button>
         </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 mb-2 shrink-0">
+        <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-blue-700">
+          Dit zijn automatische e-mails die zonder handmatige actie naar je gasten worden verzonden.
+        </p>
       </div>
 
       {/* Subject row — above the builder */}

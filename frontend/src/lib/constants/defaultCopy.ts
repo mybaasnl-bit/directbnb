@@ -541,4 +541,41 @@ export const DEFAULT_COPY: DefaultCopyEntry[] = [
     value: 'Stel hier je accommodatiegegevens in, beheer je accountprofiel, configureer meldingen en regel beveiliging en betalingen. Wijzigingen worden direct opgeslagen.',
     description: 'Beschrijving in de onboarding popup op de instellingenpagina',
   },
+
+  // ── Uitbetalingen — info box ───────────────────────────────────────────────
+  {
+    key: 'payouts.info.payout_timing',
+    value: 'Let op: Elke uitbetaling wordt per individuele boeking verwerkt op het moment dat de gast is ingecheckt.',
+    description: 'Informatiemelding bovenaan de uitbetalingenpagina over het tijdstip van uitbetalingen',
+  },
+
+  // ── E-mail editor — multi-step tour (email-editor pageKey) ─────────────────
+  {
+    key: 'email-editor.onboarding.title',
+    value: 'Welkom bij de editor',
+    description: 'Titel van de onboarding popup op de e-mail editor pagina (stap 1 fallback)',
+  },
+  {
+    key: 'email-editor.onboarding.description',
+    value: 'Hier pas je de tekst en opmaak van je automatische e-mails aan. Wijzigingen worden automatisch opgeslagen — je hoeft niets handmatig te doen.',
+    description: 'Beschrijving in de onboarding popup op de e-mail editor pagina (stap 1 fallback)',
+  },
+  {
+    key: 'email-editor.onboarding.steps',
+    value: JSON.stringify([
+      {
+        title: 'Welkom bij de editor',
+        description: 'Hier pas je de tekst en opmaak van je automatische e-mails aan. Gebruik de toolbar om koppen, afbeeldingen en knoppen toe te voegen.',
+      },
+      {
+        title: 'Kies je variabelen',
+        description: 'Rechts in de editor vind je dynamische variabelen zoals {{guest_name}} en {{property_name}}. Klik op een variabele om hem in te voegen — hij wordt automatisch ingevuld bij elk verstuurde e-mail.',
+      },
+      {
+        title: 'Sla automatisch op',
+        description: 'Je werk wordt automatisch opgeslagen na 4 seconden inactiviteit. Je ziet een "Opgeslagen" melding bovenin. Klaar? Sluit de editor en je wijzigingen zijn actief.',
+      },
+    ]),
+    description: 'Multi-step tour stappen JSON voor de e-mail editor (3 stappen)',
+  },
 ];

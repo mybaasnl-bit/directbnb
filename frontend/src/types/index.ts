@@ -83,6 +83,8 @@ export interface Room {
   sqm?: number;
   minStay: number;
   isActive: boolean;
+  amenities: string[];
+  customFacilities: string[];
   photos: RoomPhoto[];
   createdAt: string;
 }

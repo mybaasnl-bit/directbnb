@@ -1831,6 +1831,15 @@ export function PropertyPageClient({ property }: Props) {
                             {room.beds && <span className="flex items-center gap-1"><BedDouble className="w-3 h-3" />{room.beds}</span>}
                             {room.sqm && <span>{room.sqm}m²</span>}
                           </div>
+                          {room.customFacilities?.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {room.customFacilities.map(tag => (
+                                <span key={tag} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           <button
                             onClick={e => { e.stopPropagation(); handleSelectRoom(room); openSheet(1); }}
                             className={`mt-3 w-full py-2.5 rounded-xl text-sm font-bold transition-colors ${
@@ -1883,6 +1892,15 @@ export function PropertyPageClient({ property }: Props) {
                                   {room.sqm && <span className="flex items-center gap-1.5 text-xs text-slate-500"><SquareStack className="w-3.5 h-3.5" />{room.sqm} m²</span>}
                                   {room.minStay > 1 && <span className="flex items-center gap-1.5 text-xs text-slate-500"><CalendarDays className="w-3.5 h-3.5" />{isNl ? `Min. ${room.minStay} nachten` : `Min. ${room.minStay} nights`}</span>}
                                 </div>
+                                {room.customFacilities?.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {room.customFacilities.map(tag => (
+                                      <span key={tag} className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                               <div className="text-right shrink-0 flex flex-col items-end gap-3">
                                 <div>

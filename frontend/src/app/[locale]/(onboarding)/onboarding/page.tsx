@@ -56,6 +56,37 @@ function makeEmptyRoom(): RoomDraft {
   return { name: '', maxGuests: '2', descriptionNl: '', pricePerNight: '' };
 }
 
+// ─── IBAN validation (MOD-97 / ISO 13616) ────────────────────────────────────
+// Returns true for a valid IBAN, false otherwise.
+// Strips whitespace and uppercases before checking.
+
+function validateIBAN(raw: string): boolean {
+  const iban = raw.replace(/\s+/g, '').toUpperCase();
+
+  // Must be 15–34 characters and match 2-letter country code + 2 check digits + BBAN
+  if (iban.length < 15 || iban.length > 34) return false;
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(iban)) return false;
+
+  // Rearrange: move first 4 chars to end
+  const rearranged = iban.slice(4) + iban.slice(0, 4);
+
+  // Replace letters with digits (A=10 … Z=35)
+  const numeric = Array.from(rearranged)
+    .map((c) => {
+      const code = c.charCodeAt(0);
+      return code >= 65 && code <= 90 ? String(code - 55) : c;
+    })
+    .join('');
+
+  // MOD-97 check — process in chunks to avoid integer overflow
+  let remainder = 0;
+  for (const digit of numeric) {
+    remainder = (remainder * 10 + Number(digit)) % 97;
+  }
+
+  return remainder === 1;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ProgressBar({ step, total }: { step: number; total: number }) {
@@ -174,8 +205,18 @@ export default function OnboardingPage() {
     }
 
     if (step === 6) {
-      if (!state.data.iban.trim()) errs.iban = 'IBAN is verplicht';
-      if (!state.data.ibanHolder.trim()) errs.ibanHolder = 'Naam rekeninghouder is verplicht';
+      const rawIban = state.data.iban.trim();
+      if (rawIban) {
+        // IBAN is filled — validate format + MOD-97 checksum
+        if (!validateIBAN(rawIban)) {
+          errs.iban = 'Ongeldig IBAN nummer ingevoerd. Controleer de notatie.';
+        }
+        // When an IBAN is provided the holder name is also required
+        if (!state.data.ibanHolder.trim()) {
+          errs.ibanHolder = 'Naam rekeninghouder is verplicht als je een IBAN invult';
+        }
+      }
+      // Both fields are optional — no error when left blank
     }
 
     setFieldErrors(errs);
@@ -718,7 +759,8 @@ export default function OnboardingPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  IBAN nummer <span className="text-brand">*</span>
+                  IBAN nummer{' '}
+                  <span className="text-slate-400 font-normal text-xs">(optioneel)</span>
                 </label>
                 <input
                   value={state.data.iban}
@@ -727,16 +769,20 @@ export default function OnboardingPage() {
                   className={inp}
                 />
                 {fieldErrors.iban && (
-                  <p className="text-red-500 text-xs mt-1">{fieldErrors.iban}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-start gap-1">
+                    <span className="mt-0.5">⚠</span>
+                    {fieldErrors.iban}
+                  </p>
                 )}
                 <p className="text-xs text-slate-400 mt-1.5">
-                  Je Nederlandse of Europese bankrekeningnummer
+                  Je Nederlandse of Europese bankrekeningnummer — je kunt dit ook later invullen
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Naam rekeninghouder <span className="text-brand">*</span>
+                  Naam rekeninghouder{' '}
+                  <span className="text-slate-400 font-normal text-xs">(verplicht bij IBAN)</span>
                 </label>
                 <input
                   value={state.data.ibanHolder}

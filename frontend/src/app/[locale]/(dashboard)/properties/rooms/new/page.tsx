@@ -44,9 +44,10 @@ export default function NewRoomPage() {
     bedType: '',
     bedCount: '1',
     amenities: [] as string[],
+    customFacilities: [] as string[],
     houseRules: '',
   });
-  const [customAmenity, setCustomAmenity] = useState('');
+  const [customFacilityInput, setCustomFacilityInput] = useState('');
   const [apiError, setApiError] = useState('');
 
   // ── Data ──
@@ -85,6 +86,7 @@ export default function NewRoomPage() {
         maxGuests: parseInt(form.maxGuests),
         minStay: 1,
         amenities: form.amenities,
+        customFacilities: form.customFacilities,
         ...(form.houseRules.trim() && { houseRules: form.houseRules.trim() }),
       }),
     onSuccess: () => {
@@ -360,48 +362,72 @@ export default function NewRoomPage() {
                   </button>
                 );
               })}
-              {form.amenities.filter(a => !AMENITIES.find(x => x.key === a)).map((custom) => (
-                <button
-                  key={custom}
-                  type="button"
-                  onClick={() => toggleAmenity(custom)}
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-brand bg-brand-light/30 text-brand text-sm font-semibold transition-all text-left"
-                >
-                  <span className="w-4 h-4 rounded flex items-center justify-center flex-shrink-0 bg-brand">
-                    <Check className="w-2.5 h-2.5 text-white" />
-                  </span>
-                  {custom}
-                </button>
-              ))}
+            </div>
+          </div>
+
+          {/* Eigen Voorzieningen */}
+          <div className="bg-white rounded-3xl p-6 space-y-5 border border-slate-100">
+            <div>
+              <h2 className="font-bold text-slate-900 text-lg mb-1">Eigen Voorzieningen</h2>
+              <p className="text-sm text-slate-400">
+                Voeg unieke voorzieningen toe die niet in de standaardlijst staan
+              </p>
             </div>
 
+            {/* Tag list */}
+            {form.customFacilities.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {form.customFacilities.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 bg-brand-light/40 text-brand border border-brand/20 text-sm font-semibold px-3 py-1.5 rounded-xl"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          customFacilities: f.customFacilities.filter((t) => t !== tag),
+                        }))
+                      }
+                      className="text-brand/60 hover:text-brand transition-colors leading-none"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Input */}
             <div className="flex gap-2">
               <input
-                value={customAmenity}
-                onChange={(e) => setCustomAmenity(e.target.value)}
+                value={customFacilityInput}
+                onChange={(e) => setCustomFacilityInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    const val = customAmenity.trim();
-                    if (val && !form.amenities.includes(val)) {
-                      setForm((f) => ({ ...f, amenities: [...f.amenities, val] }));
+                    const val = customFacilityInput.trim();
+                    if (val && !form.customFacilities.includes(val)) {
+                      setForm((f) => ({ ...f, customFacilities: [...f.customFacilities, val] }));
                     }
-                    setCustomAmenity('');
+                    setCustomFacilityInput('');
                   }
                 }}
-                placeholder="Voeg eigen voorziening toe..."
+                placeholder="Bijv. Jacuzzi, Sauna, Terras..."
                 className={`${inp} flex-1`}
               />
               <button
                 type="button"
                 onClick={() => {
-                  const val = customAmenity.trim();
-                  if (val && !form.amenities.includes(val)) {
-                    setForm((f) => ({ ...f, amenities: [...f.amenities, val] }));
+                  const val = customFacilityInput.trim();
+                  if (val && !form.customFacilities.includes(val)) {
+                    setForm((f) => ({ ...f, customFacilities: [...f.customFacilities, val] }));
                   }
-                  setCustomAmenity('');
+                  setCustomFacilityInput('');
                 }}
-                disabled={!customAmenity.trim()}
+                disabled={!customFacilityInput.trim()}
                 className="px-4 py-3 bg-brand hover:bg-brand-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-sm transition-colors flex-shrink-0"
               >
                 <Plus className="w-4 h-4" />
