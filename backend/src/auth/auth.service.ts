@@ -151,6 +151,18 @@ export class AuthService {
         preferredLanguage: true,
         isBetaUser: true,
         emailVerified: true,
+        // ── Onboarding ─────────────────────────────────────────────────────
+        // CRITICAL: must be included so the onboarding popup knows which steps
+        // the user has already completed and never shows them again after a
+        // cache refresh. Without this field every page reload would re-trigger
+        // all onboarding popups.
+        completedOnboardingSteps: true,
+        // ── Subscription / paywall ──────────────────────────────────────────
+        // Required by the dashboard layout to enforce the subscription paywall.
+        // Missing these caused the paywall to kick in after every cache refresh.
+        subscriptionStatus: true,
+        stripeCustomerId: true,
+        stripePriceId: true,
         createdAt: true,
         _count: {
           select: { properties: true },

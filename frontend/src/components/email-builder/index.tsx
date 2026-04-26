@@ -48,14 +48,32 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobilePanel, setMobilePanel] = useState<'palette' | 'editor' | null>(null);
 
-  // Undo/redo history
-  const historyRef = useRef<Block[][]>([]);
+  // ── Undo/redo history ───────────────────────────────────────────────────────
+  //
+  // Root cause of previous breakage (two bugs, now fixed):
+  //
+  // Bug 1 — History never seeded: historyRef started empty (index = -1).
+  //   After the first user edit, index jumped to 0, and the undo guard
+  //   `index <= 0` immediately blocked it. Fix: seed history with the
+  //   initial block state so the first edit lives at index 1, not 0.
+  //
+  // Bug 2 — onChange roundtrip wiped history: every edit emits HTML via
+  //   onChange(html) → parent stores it → value prop changes → the
+  //   "re-parse on value change" effect detected a change, cleared
+  //   historyRef, and reset the index. Fix: track lastEmittedRef and skip
+  //   the re-parse when the new value is exactly what we just emitted.
+
+  const historyRef      = useRef<Block[][]>([]);
   const historyIndexRef = useRef<number>(-1);
-  const skipHistoryRef = useRef<boolean>(false); // true during undo/redo or initial load
+  const skipHistoryRef  = useRef<boolean>(false); // set true during undo/redo and initial loads
+
+  // Tracks the last HTML string we ourselves emitted via onChange so we
+  // can distinguish "our own change bouncing back" from a genuine external change.
+  const lastEmittedRef = useRef<string>('');
 
   const pushHistory = useCallback((newBlocks: Block[]) => {
     if (skipHistoryRef.current) return;
-    // Drop any future states if we branched
+    // Drop any future states if we've branched from a mid-history position
     const stack = historyRef.current.slice(0, historyIndexRef.current + 1);
     stack.push(newBlocks);
     if (stack.length > HISTORY_LIMIT) stack.shift();
@@ -70,6 +88,18 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     setCanUndo(historyIndexRef.current > 0);
     setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
   }, []);
+
+  // Seed history once with the blocks that exist at mount-time.
+  // This ensures the very first user edit lands at index 1, making
+  // undo (which requires index > 0) immediately available.
+  useEffect(() => {
+    if (historyRef.current.length === 0) {
+      historyRef.current = [blocks];
+      historyIndexRef.current = 0;
+      refreshUndoRedo();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally run only on mount
 
   const setBlocksWithHistory = useCallback((updater: Block[] | ((prev: Block[]) => Block[])) => {
     setBlocks((prev) => {
@@ -86,7 +116,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     skipHistoryRef.current = true;
     setBlocks(historyRef.current[historyIndexRef.current]);
     skipHistoryRef.current = false;
-    refreshUndoRedo();
+    setTimeout(refreshUndoRedo, 0);
   }, [refreshUndoRedo]);
 
   const redo = useCallback(() => {
@@ -95,7 +125,7 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     skipHistoryRef.current = true;
     setBlocks(historyRef.current[historyIndexRef.current]);
     skipHistoryRef.current = false;
-    refreshUndoRedo();
+    setTimeout(refreshUndoRedo, 0);
   }, [refreshUndoRedo]);
 
   // Keyboard shortcuts for undo/redo
@@ -110,29 +140,38 @@ export function EmailBuilder({ value, onChange, subject, onSubjectChange, variab
     return () => window.removeEventListener('keydown', handleKey);
   }, [undo, redo]);
 
-  // Re-parse blocks when value prop changes (language switch)
+  // Re-parse blocks when value prop changes externally (e.g. language switch,
+  // initial API load). Skip when the change is our own onChange output bouncing
+  // back from the parent — that would wipe history on every single keystroke.
   const prevValueRef = useRef(value);
   useEffect(() => {
     if (value === prevValueRef.current) return;
     prevValueRef.current = value;
+
+    // Our own emission: ignore to preserve history
+    if (value === lastEmittedRef.current) return;
+
     const parsed = htmlToBlocks(value);
     if (parsed) {
       skipHistoryRef.current = true;
       setBlocks(parsed);
       skipHistoryRef.current = false;
-      historyRef.current = [];
-      historyIndexRef.current = -1;
+      // Seed fresh history for the newly loaded template — index 0 = baseline
+      historyRef.current = [parsed];
+      historyIndexRef.current = 0;
       refreshUndoRedo();
       setSelectedId(null);
     }
   }, [value, refreshUndoRedo]);
 
-  // Emit HTML whenever blocks change (debounced 300ms)
+  // Emit HTML whenever blocks change (debounced 300ms).
+  // Record what we emit so the value-change effect above can skip it.
   const blocksRef = useRef(blocks);
   blocksRef.current = blocks;
   useEffect(() => {
     const timer = setTimeout(() => {
       const html = blocksToHtml(blocksRef.current);
+      lastEmittedRef.current = html; // ← mark as our own emission
       onChange(html);
     }, 300);
     return () => clearTimeout(timer);
