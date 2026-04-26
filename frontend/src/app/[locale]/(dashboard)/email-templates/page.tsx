@@ -299,7 +299,8 @@ export default function EmailTemplatesPage() {
         ) : (
           <div className="divide-y divide-slate-50">
             {emailLogs.map((log: any, i: number) => (
-              <div key={i} className="px-6 py-4 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
+              /* px-4 on mobile, px-6 on sm+; gap-3 on mobile, gap-4 on sm+ */
+              <div key={i} className="px-4 sm:px-6 py-4 flex items-start gap-3 sm:gap-4 hover:bg-slate-50/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="font-bold text-slate-900 text-sm truncate">
@@ -315,14 +316,15 @@ export default function EmailTemplatesPage() {
                     </span>
                   </div>
                   {log.recipientEmail && (
-                    <p className="text-xs text-slate-500">{log.recipientEmail}</p>
+                    <p className="text-xs text-slate-500 truncate">{log.recipientEmail}</p>
                   )}
                   {log.previewText && (
                     <p className="text-xs text-slate-400 mt-0.5 truncate">{log.previewText}</p>
                   )}
                 </div>
                 <div className="shrink-0 flex flex-col items-end gap-1">
-                  <p className="text-xs text-slate-400">
+                  {/* whitespace-nowrap prevents the date from wrapping on narrow screens */}
+                  <p className="text-xs text-slate-400 whitespace-nowrap">
                     {log.sentAt ? format(new Date(log.sentAt), 'd MMM yyyy, HH:mm', { locale: nl }) : '—'}
                   </p>
                   <button
@@ -331,7 +333,8 @@ export default function EmailTemplatesPage() {
                     title="E-mail bekijken"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    Bekijken
+                    {/* Label hidden on very narrow screens to save horizontal space */}
+                    <span className="hidden sm:inline">Bekijken</span>
                   </button>
                 </div>
               </div>

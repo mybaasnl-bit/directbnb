@@ -410,8 +410,8 @@ export default function BookingsPage() {
         <StatCard label="Geannuleerd" value={cancelledCount} icon={TrendingUp} />
       </div>
 
-      {/* Filter bar */}
-      <div className="bg-white rounded-2xl border border-slate-100 px-4 py-3 flex items-center gap-3">
+      {/* Filter bar — flex-wrap so "Nieuwe Boeking" wraps to next line on narrow screens */}
+      <div className="bg-white rounded-2xl border border-slate-100 px-4 py-3 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 border border-slate-200 rounded-xl px-3 py-2 hover:bg-slate-50 cursor-pointer">
           <Filter className="w-4 h-4" />
           Filter
@@ -428,10 +428,10 @@ export default function BookingsPage() {
           </select>
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
         </div>
-        <div className="flex-1" />
+        {/* ml-auto: pushes button right on same row; when wrapped it right-aligns on new row */}
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
+          className="flex items-center gap-2 bg-brand hover:bg-brand-600 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors ml-auto"
         >
           <Plus className="w-4 h-4" />
           Nieuwe Boeking
@@ -462,6 +462,9 @@ export default function BookingsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          {/* overflow-x-auto enables horizontal swipe on mobile; min-w prevents column crush */}
+          <div className="overflow-x-auto">
+          <div className="min-w-[760px]">
           {/* Table header */}
           <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-3 border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wide">
             <div>Gast</div>
@@ -563,6 +566,8 @@ export default function BookingsPage() {
               </div>
             );
           })}
+          </div>{/* /min-w */}
+          </div>{/* /overflow-x-auto */}
         </div>
       )}
     </div>

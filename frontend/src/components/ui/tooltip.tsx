@@ -27,9 +27,12 @@ export function Tooltip({ content, children, position = 'top', className }: Tool
   return (
     <div className={`relative group inline-flex ${className ?? ''}`}>
       {children}
+      {/* Hidden on touch/mobile (< sm) — avoids sticky-hover and off-screen clipping.
+          On sm+ screens it appears on hover as normal. */}
       <div
-        className={`pointer-events-none absolute z-[9999] px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg max-w-[220px] text-center leading-snug break-words opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-lg ${pos}`}
+        className={`pointer-events-none absolute z-[9999] px-2.5 py-1.5 bg-slate-900 text-white text-xs font-medium rounded-lg max-w-[220px] text-center leading-snug break-words opacity-0 hidden sm:block sm:group-hover:opacity-100 transition-opacity duration-150 shadow-lg ${pos}`}
         role="tooltip"
+        aria-hidden="true"
       >
         {content}
         <span className={`absolute w-2 h-2 bg-slate-900 rotate-45 ${arrow}`} />

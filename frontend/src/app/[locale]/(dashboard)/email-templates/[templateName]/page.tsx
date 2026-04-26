@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { EmailBuilder } from '@/components/email-builder';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, RotateCcw, Sparkles, Clock, Info } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Send, Sparkles, Clock, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { OnboardingTrigger } from '@/components/onboarding/onboarding-popup';
 
@@ -157,24 +157,6 @@ export default function HostEmailTemplateEditorPage() {
     performSave(false);
   }, [performSave]);
 
-  const handleReset = useCallback(async () => {
-    if (!confirm('Weet u zeker dat u wilt resetten naar de standaard DirectBnB template? Uw aanpassingen gaan verloren.')) return;
-    try {
-      await api.delete(`/email-templates/host/mine/${templateName}`);
-      const { data } = await api.get(`/email-templates/host/mine/${templateName}/resolved`);
-      const tpl: ResolvedTemplate = data?.data ?? data;
-      setSubjectNl(tpl.subjectNl ?? '');
-      setSubjectEn(tpl.subjectEn ?? '');
-      setHtmlNl(tpl.htmlNl ?? '');
-      setHtmlEn(tpl.htmlEn ?? '');
-      latestRef.current = { subjectNl: tpl.subjectNl ?? '', subjectEn: tpl.subjectEn ?? '', htmlNl: tpl.htmlNl ?? '', htmlEn: tpl.htmlEn ?? '' };
-      setIsCustomized(false);
-      setDirty(false);
-    } catch {
-      alert('Resetten mislukt. Probeer het opnieuw.');
-    }
-  }, [templateName]);
-
   const handleSendTest = useCallback(async () => {
     if (!testEmail) return;
     setTestSending(true);
@@ -247,14 +229,10 @@ export default function HostEmailTemplateEditorPage() {
             <div className="flex items-center gap-1.5 text-red-500 text-sm font-medium"><AlertCircle className="w-4 h-4" /> Fout bij opslaan</div>
           )}
 
-          {isCustomized && (
-            <button onClick={handleReset} className="flex items-center gap-2 border border-slate-200 hover:border-red-300 text-slate-500 hover:text-red-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
-              <RotateCcw className="w-4 h-4" /> Reset
-            </button>
-          )}
-
           <button onClick={() => setShowTestModal(true)} className="flex items-center gap-2 border border-slate-200 hover:border-slate-300 text-slate-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors">
-            <Send className="w-4 h-4" /> Test
+            <Send className="w-4 h-4" />
+            <span className="hidden sm:inline">Stuur test e-mail</span>
+            <span className="sm:hidden">Test</span>
           </button>
 
           <button onClick={handleSave} disabled={saving || !dirty} className="flex items-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors">

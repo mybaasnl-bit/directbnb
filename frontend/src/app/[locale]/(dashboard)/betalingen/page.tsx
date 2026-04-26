@@ -546,7 +546,7 @@ export default function BetalingenPage() {
                   <thead>
                     <tr className="border-b border-slate-50">
                       {['Periode', 'Netto bedrag', 'Omschrijving', 'Aankomstdatum', 'Status'].map(h => (
-                        <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide">
+                        <th key={h} className="px-5 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap">
                           {h}
                         </th>
                       ))}
@@ -555,19 +555,19 @@ export default function BetalingenPage() {
                   <tbody className="divide-y divide-slate-50">
                     {payouts.map(p => (
                       <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-5 py-4 text-slate-700 font-medium">
+                        <td className="px-5 py-4 text-slate-700 font-medium whitespace-nowrap">
                           {format(new Date(p.createdAt), 'MMMM yyyy', { locale: nl })}
                         </td>
-                        <td className="px-5 py-4 font-bold text-slate-900">
+                        <td className="px-5 py-4 font-bold text-slate-900 whitespace-nowrap">
                           €{Number(p.netAmount).toFixed(2)}
                         </td>
                         <td className="px-5 py-4 text-slate-500">{p.description ?? '—'}</td>
-                        <td className="px-5 py-4 text-slate-500">
+                        <td className="px-5 py-4 text-slate-500 whitespace-nowrap">
                           {p.arrivalDate
                             ? format(new Date(p.arrivalDate), 'd MMM yyyy', { locale: nl })
                             : '—'}
                         </td>
-                        <td className="px-5 py-4"><StatusBadge status={p.status} /></td>
+                        <td className="px-5 py-4 whitespace-nowrap"><StatusBadge status={p.status} /></td>
                       </tr>
                     ))}
                   </tbody>
