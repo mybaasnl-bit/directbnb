@@ -70,18 +70,18 @@ export default function BetaSignupsPage() {
 
   return (
     <div className="max-w-5xl space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center">
+      {/* Header — flex-wrap so action buttons drop below title on narrow screens */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          <div className="w-12 h-12 bg-brand-light rounded-2xl flex items-center justify-center flex-shrink-0">
             <Users className="w-6 h-6 text-brand" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold text-slate-900">Beta Aanmeldingen</h1>
             <p className="text-slate-400 text-sm">Stuur uitnodigingen om accounts aan te maken</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={load}
             className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand bg-white px-4 py-2.5 rounded-xl hover:bg-brand-light transition-colors"
@@ -139,6 +139,9 @@ export default function BetaSignupsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-3xl overflow-hidden">
+          {/* overflow-x-auto: horizontal swipe on mobile; min-w prevents column crush */}
+          <div className="overflow-x-auto">
+          <div className="min-w-[640px]">
           <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-brand-light/40 border-b border-brand/10">
             {['Naam / B&B', 'E-mail', 'Locatie', 'Taal', 'Datum', 'Actie'].map(h => (
               <div key={h} className={`${h === 'Naam / B&B' ? 'col-span-3' : h === 'E-mail' ? 'col-span-3' : 'col-span-2'} text-xs font-bold text-slate-500 uppercase tracking-wide`}>{h}</div>
@@ -208,6 +211,8 @@ export default function BetaSignupsPage() {
               );
             })}
           </div>
+          </div>{/* /min-w */}
+          </div>{/* /overflow-x-auto */}
         </div>
       )}
     </div>

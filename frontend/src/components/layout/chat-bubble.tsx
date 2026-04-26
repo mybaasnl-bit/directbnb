@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { MessageCircle, X, Send, CheckCircle, ChevronDown } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -16,6 +17,11 @@ const CATEGORIES: { value: Category; label: string; emoji: string }[] = [
 ];
 
 export function ChatBubble() {
+  const pathname = usePathname();
+  // Only render the feedback bubble on the main dashboard overview page
+  // e.g. /nl/dashboard — NOT on /nl/dashboard/bookings, /nl/dashboard/settings, etc.
+  const isDashboardOverview = pathname.endsWith('/dashboard');
+
   const [step, setStep]         = useState<Step>('idle');
   const [message, setMessage]   = useState('');
   const [category, setCategory] = useState<Category>('QUESTION');
@@ -49,6 +55,8 @@ export function ChatBubble() {
   const handleSent  = () => { setStep('idle'); setMessage(''); submit.reset(); };
 
   const canSend = message.trim().length >= 3 && !submit.isPending;
+
+  if (!isDashboardOverview) return null;
 
   return (
     <div ref={bubbleRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
