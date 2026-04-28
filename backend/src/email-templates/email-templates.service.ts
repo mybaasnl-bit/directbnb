@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { PrismaService } from '../prisma/prisma.service';
@@ -209,24 +209,35 @@ export class EmailTemplatesService {
     const { subject, html } = await this.resolve(templateName, language, sampleVars, hostId);
 
     if (!this.config.get<string>('RESEND_API_KEY')) {
-      this.logger.warn('Host test email skipped — RESEND_API_KEY not set');
-      return { sent: false, reason: 'RESEND_API_KEY not set' };
+      this.logger.error('Host test email failed — RESEND_API_KEY is not configured');
+      throw new BadRequestException('RESEND_API_KEY is not configured on the server');
     }
+
+    const fromAddress = this.from;
+    const emailSubject = `[TEST] ${subject}`;
+    this.logger.log(`Sending host test email — from: ${fromAddress}, to: ${to}, subject: "${emailSubject}"`);
 
     try {
       const { data, error } = await this.resend.emails.send({
-        from: this.from,
+        from: fromAddress,
         to,
-        subject: `[TEST] ${subject}`,
+        subject: emailSubject,
         html,
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        this.logger.error(`EMAIL SEND ERROR: Resend returned an error`, JSON.stringify(error));
+        throw new InternalServerErrorException(error.message ?? 'Resend returned an unknown error');
+      }
+
       this.logger.log(`Host test email sent to ${to} (messageId: ${data?.id})`);
       return { sent: true, messageId: data?.id };
     } catch (err: any) {
-      this.logger.error(`Host test email failed: ${err.message}`);
-      throw err;
+      // Don't double-wrap NestJS exceptions
+      if (err?.status) throw err;
+      console.error('EMAIL SEND ERROR:', err);
+      this.logger.error(`Host test email failed: ${err?.message ?? err}`);
+      throw new InternalServerErrorException(err?.message ?? 'Failed to send test email');
     }
   }
 

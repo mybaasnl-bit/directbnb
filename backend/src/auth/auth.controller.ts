@@ -133,11 +133,12 @@ export class AuthController {
 
     try {
       const profile = req.user as OAuthProfile;
-      const { accessToken, refreshToken } = await this.authService.validateOrCreateOAuthUser(profile);
+      const { user, accessToken, refreshToken } = await this.authService.validateOrCreateOAuthUser(profile);
+      const locale = (user as any)?.preferredLanguage ?? 'nl';
 
       // Redirect to frontend callback page with tokens in query string
       const params = new URLSearchParams({ at: accessToken, rt: refreshToken });
-      return res.redirect(`${frontendUrl}/nl/auth/callback?${params.toString()}`);
+      return res.redirect(`${frontendUrl}/${locale}/auth/callback?${params.toString()}`);
     } catch (err: any) {
       const message = encodeURIComponent(err?.message ?? 'oauth_failed');
       return res.redirect(`${frontendUrl}/nl/login?error=${message}`);

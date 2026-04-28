@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -51,30 +51,20 @@ export default function NewRoomPage() {
   const [apiError, setApiError] = useState('');
 
   // ── Data ──
-  const { data: properties = [], isLoading } = useQuery<any[]>({
+  const { data: propertiesData = [], isLoading } = useQuery<any[]>({
     queryKey: ['properties'],
     queryFn: () => api.get('/properties').then((r) => r.data.data),
-    // Auto-select if only one property
-    select: (data) => data,
+    staleTime: 30_000,
   });
 
   // Auto-advance past property step if there's exactly one property
-  const handlePropertyLoad = (data: any[]) => {
-    if (data.length === 1) {
-      setSelectedPropertyId(data[0].id);
+  // Done with useEffect to avoid side-effects inside queryFn
+  useEffect(() => {
+    if (propertiesData.length === 1 && !selectedPropertyId) {
+      setSelectedPropertyId(propertiesData[0].id);
       setStep('room');
     }
-  };
-
-  const { data: propertiesData = [] } = useQuery<any[]>({
-    queryKey: ['properties'],
-    queryFn: () => api.get('/properties').then((r) => {
-      const d = r.data.data;
-      handlePropertyLoad(d);
-      return d;
-    }),
-    staleTime: 30_000,
-  });
+  }, [propertiesData]);
 
   const createRoom = useMutation({
     mutationFn: () =>
@@ -85,6 +75,8 @@ export default function NewRoomPage() {
         pricePerNight: parseFloat(form.pricePerNight),
         maxGuests: parseInt(form.maxGuests),
         minStay: 1,
+        ...(form.bedType && { bedType: form.bedType }),
+        ...(form.bedCount && { bedCount: parseInt(form.bedCount) }),
         amenities: form.amenities,
         customFacilities: form.customFacilities,
         ...(form.houseRules.trim() && { houseRules: form.houseRules.trim() }),

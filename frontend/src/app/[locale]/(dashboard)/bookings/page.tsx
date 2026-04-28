@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { nl, enUS } from 'date-fns/locale';
 import {
   Check, X, Link2, Loader2, CheckCircle2, CalendarDays,
-  BedDouble, Users, Clock, Filter, FileText, TrendingUp, Plus,
+  BedDouble, Users, Clock, Filter, FileText, Plus,
   AlertCircle, Ban, Info,
 } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -296,6 +296,8 @@ export default function BookingsPage() {
         .then((r) => r.data.data),
   });
 
+  const [mutationError, setMutationError] = useState('');
+
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) =>
       api.patch(`/bookings/${id}/status`, { status }),
@@ -303,6 +305,11 @@ export default function BookingsPage() {
       qc.invalidateQueries({ queryKey: ['bookings'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['pending-bookings'] });
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Status wijzigen mislukt.';
+      setMutationError(Array.isArray(msg) ? msg[0] : msg);
+      setTimeout(() => setMutationError(''), 4000);
     },
   });
 
@@ -314,14 +321,24 @@ export default function BookingsPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['pending-bookings'] });
     },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Annuleren mislukt.';
+      setMutationError(Array.isArray(msg) ? msg[0] : msg);
+      setTimeout(() => setMutationError(''), 4000);
+    },
   });
 
   const sendPaymentLink = useMutation({
-    mutationFn: ({ id, method }: { id: string; method: string }) =>
-      api.post(`/mollie/send-link/${id}?method=${method}`).then(r => r.data?.data ?? r.data),
+    mutationFn: ({ id }: { id: string }) =>
+      api.post(`/mollie/send-link/${id}`).then(r => r.data?.data ?? r.data),
     onSuccess: (_data, variables) => {
       setSentLinks(prev => new Set(Array.from(prev).concat(variables.id)));
       qc.invalidateQueries({ queryKey: ['bookings'] });
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Betaallink versturen mislukt.';
+      setMutationError(Array.isArray(msg) ? msg[0] : msg);
+      setTimeout(() => setMutationError(''), 4000);
     },
   });
 
@@ -407,7 +424,7 @@ export default function BookingsPage() {
         <StatCard label="Totale Boekingen" value={totalCount} icon={FileText} />
         <StatCard label="Bevestigd" value={confirmedCount} icon={CheckCircle2} />
         <StatCard label="In afwachting" value={pendingCount} icon={Clock} />
-        <StatCard label="Geannuleerd" value={cancelledCount} icon={TrendingUp} />
+        <StatCard label="Geannuleerd" value={cancelledCount} icon={Ban} />
       </div>
 
       {/* Filter bar — flex-wrap so "Nieuwe Boeking" wraps to next line on narrow screens */}
@@ -437,6 +454,14 @@ export default function BookingsPage() {
           Nieuwe Boeking
         </button>
       </div>
+
+      {/* Mutation error banner */}
+      {mutationError && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-700">{mutationError}</p>
+        </div>
+      )}
 
       {/* Table */}
       {isLoading ? (
@@ -482,7 +507,7 @@ export default function BookingsPage() {
             <div key={booking.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-4 border-b border-slate-50 hover:bg-brand-light/10 transition-colors items-center bg-amber-50/30">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                  {booking.guest.firstName[0]}{booking.guest.lastName[0]}
+                  {booking.guest.firstName?.[0] ?? ''}{booking.guest.lastName?.[0] ?? ''}
                 </div>
                 <span className="font-semibold text-sm text-slate-900 truncate">{booking.guest.firstName} {booking.guest.lastName}</span>
               </div>
@@ -523,7 +548,7 @@ export default function BookingsPage() {
               <div key={booking.id} className="grid grid-cols-[2fr_1.5fr_1fr_1fr_0.6fr_1fr_0.7fr_0.6fr] gap-3 px-5 py-4 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors items-center">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-9 h-9 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                    {booking.guest.firstName[0]}{booking.guest.lastName[0]}
+                    {booking.guest.firstName?.[0] ?? ''}{booking.guest.lastName?.[0] ?? ''}
                   </div>
                   <span className="font-semibold text-sm text-slate-900 truncate">{booking.guest.firstName} {booking.guest.lastName}</span>
                 </div>
@@ -540,7 +565,7 @@ export default function BookingsPage() {
                     ) : (
                       <Tooltip content="Stuur betaallink naar gast" position="top">
                         <button
-                          onClick={() => sendPaymentLink.mutate({ id: booking.id, method: 'ideal' })}
+                          onClick={() => sendPaymentLink.mutate({ id: booking.id })}
                           disabled={isSending}
                           className="text-xs font-bold text-brand hover:underline disabled:opacity-60"
                         >

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { Search, Mail, Phone, MapPin, Star, X, BedDouble, CalendarDays, Euro, Info } from 'lucide-react';
+import { Search, Mail, Phone, MapPin, X, BedDouble, CalendarDays, Euro, Info } from 'lucide-react';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useDynamicCopy } from '@/components/providers/dynamic-copy-provider';
 import { format } from 'date-fns';
@@ -134,31 +134,25 @@ function GuestDetailModal({ guest, onClose }: { guest: any; onClose: () => void 
   );
 }
 
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={`w-3.5 h-3.5 ${i <= rating ? 'text-brand fill-brand' : 'text-slate-200 fill-slate-200'}`}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function GuestsPage() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedGuest, setSelectedGuest] = useState<any | null>(null);
+
+  // Debounce search so we don't fire an API call on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
 
   // Dynamic copy — falls back to hardcoded Dutch if key not in DB
   const pageTitle    = useDynamicCopy('guests.header.title', 'Gasten');
   const pageSubtitle = useDynamicCopy('guests.subtitle',     'Overzicht van al je gasten');
 
   const { data: guests = [], isLoading } = useQuery({
-    queryKey: ['guests', search],
+    queryKey: ['guests', debouncedSearch],
     queryFn: () =>
-      api.get('/guests', { params: search ? { search } : {} }).then((r) => r.data.data),
+      api.get('/guests', { params: debouncedSearch ? { search: debouncedSearch } : {} }).then((r) => r.data.data),
   });
 
   return (
@@ -207,8 +201,6 @@ export default function GuestsPage() {
             const totalSpent = guest.bookings?.reduce((s: number, b: any) => s + Number(b.totalPrice ?? 0), 0) ?? 0;
             const lastBooking = guest.bookings?.[0];
             const lastVisit = lastBooking ? new Date(lastBooking.checkIn) : null;
-            // Mock rating 3-5 based on initials for now
-            const rating = 3 + (initials.charCodeAt(0) % 3);
 
             return (
               <div key={guest.id} className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-md transition-shadow">
@@ -226,7 +218,6 @@ export default function GuestsPage() {
                         </span>
                       )}
                     </div>
-                    <StarRating rating={rating} />
                   </div>
                 </div>
 
