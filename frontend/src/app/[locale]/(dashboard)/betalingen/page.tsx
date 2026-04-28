@@ -484,26 +484,26 @@ export default function BetalingenPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               label={statYearLabel}
-              value={`€${totalThisYear.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
+              value={payoutsLoading ? '—' : `€${totalThisYear.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
               icon={Euro}
             />
             <StatCard
               label={statMonthLabel}
-              value={`€${thisMonth.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
+              value={payoutsLoading ? '—' : `€${thisMonth.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
               icon={TrendingUp}
             />
             <StatCard
               label={statPendingLabel}
-              value={`€${pendingAmount.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
+              value={payoutsLoading ? '—' : `€${pendingAmount.toLocaleString('nl-NL', { maximumFractionDigits: 0 })}`}
               sublabel={statPendingSub}
               icon={CalendarDays}
             />
             <StatCard
               label={statNextLabel}
-              value={nextPayout?.arrivalDate
+              value={payoutsLoading ? '—' : (nextPayout?.arrivalDate
                 ? format(new Date(nextPayout.arrivalDate), 'd MMM', { locale: nl })
-                : '—'}
-              sublabel={nextPayout ? statNextSubYes : statNextSubNo}
+                : '—')}
+              sublabel={payoutsLoading ? undefined : (nextPayout ? statNextSubYes : statNextSubNo)}
               icon={CreditCard}
             />
           </div>

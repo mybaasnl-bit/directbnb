@@ -99,7 +99,7 @@ export default function CalendarPage() {
     ? `${API_URL.replace('/api/v1', '')}/api/v1/ical/export/${icalData.exportToken}`
     : null;
 
-  const { data: calendarData } = useQuery({
+  const { data: calendarData, isError: calendarError } = useQuery({
     queryKey: ['calendar', selectedRoomId, year, month],
     queryFn: () =>
       api.get('/availability/calendar', { params: { roomId: selectedRoomId, year, month } })
@@ -259,6 +259,13 @@ export default function CalendarPage() {
 
         {/* Calendar */}
         <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          {/* Error banner */}
+          {calendarError && (
+            <div className="flex items-center gap-2 bg-red-50 border-b border-red-100 px-5 py-3">
+              <X className="w-4 h-4 text-red-500 shrink-0" />
+              <p className="text-sm text-red-700 font-medium">Kalender kon niet worden geladen. Controleer je verbinding en probeer opnieuw.</p>
+            </div>
+          )}
           {/* Month nav */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
             <h2 className="font-bold text-slate-900 text-lg capitalize">

@@ -50,6 +50,7 @@ interface Photo { id: string; url: string; altText?: string; isCover: boolean; }
 interface Room {
   id: string; name: string; descriptionNl?: string; descriptionEn?: string;
   pricePerNight: number; maxGuests: number; isActive: boolean;
+  beds?: number; sqm?: number; minStay?: number;
   photos: Photo[];
 }
 interface Property {
@@ -216,9 +217,9 @@ export default function PropertyDetailPage() {
       name: room.name,
       pricePerNight: String(room.pricePerNight),
       maxGuests: String(room.maxGuests),
-      beds: '',
-      sqm: '',
-      minStay: '1',
+      beds: room.beds != null ? String(room.beds) : '',
+      sqm: room.sqm != null ? String(room.sqm) : '',
+      minStay: String(room.minStay ?? 1),
     });
     setEditRoomError('');
   };
@@ -228,6 +229,9 @@ export default function PropertyDetailPage() {
       name: editRoomForm.name,
       pricePerNight: parseFloat(editRoomForm.pricePerNight),
       maxGuests: parseInt(editRoomForm.maxGuests),
+      ...(editRoomForm.beds.trim()    ? { beds:    parseInt(editRoomForm.beds)    } : {}),
+      ...(editRoomForm.sqm.trim()     ? { sqm:     parseFloat(editRoomForm.sqm)   } : {}),
+      ...(editRoomForm.minStay.trim() ? { minStay: parseInt(editRoomForm.minStay) } : {}),
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['property', id] });

@@ -235,7 +235,7 @@ function AccountTab() {
   const t = useTranslations('settings');
   const { user, refetchUser } = useAuth();
 
-  const { register, handleSubmit, formState: { isSubmitting, isDirty } } = useForm<ProfileValues>({
+  const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName:         user?.firstName ?? '',
@@ -247,7 +247,7 @@ function AccountTab() {
 
   const update = useMutation({
     mutationFn: (data: ProfileValues) => api.patch('/users/me', data),
-    onSuccess: () => refetchUser?.(),
+    onSuccess: (_, variables) => { reset(variables); refetchUser?.(); },
   });
 
   return (
