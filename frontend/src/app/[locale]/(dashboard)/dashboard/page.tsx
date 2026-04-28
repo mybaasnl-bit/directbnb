@@ -410,6 +410,10 @@ export default function DashboardPage() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       qc.invalidateQueries({ queryKey: ['bookings'] });
     },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Actie mislukt.';
+      console.error('Booking status update failed:', Array.isArray(msg) ? msg[0] : msg);
+    },
   });
 
   if (isLoading) return <Skeleton />;
@@ -420,6 +424,8 @@ export default function DashboardPage() {
   const bookedDates: Date[] = upcoming.flatMap((b: any) => {
     const checkIn = new Date(b.checkIn);
     const checkOut = new Date(b.checkOut);
+    // Guard against invalid dates or inverted ranges (would throw inside eachDayOfInterval)
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) return [];
     return eachDayOfInterval({ start: checkIn, end: checkOut });
   });
 

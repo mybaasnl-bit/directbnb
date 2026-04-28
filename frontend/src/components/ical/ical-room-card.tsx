@@ -159,7 +159,7 @@ export function IcalRoomCard({ roomId, roomName }: IcalRoomCardProps) {
                   </p>
                   <button
                     onClick={() => syncNow.mutate()}
-                    disabled={syncNow.isPending || (data?.importUrls.length ?? 0) === 0}
+                    disabled={syncNow.isPending || (data?.importUrls?.length ?? 0) === 0}
                     className="flex items-center gap-1 text-xs font-semibold text-brand hover:underline disabled:opacity-40 disabled:no-underline"
                   >
                     <RefreshCw className={cn('w-3 h-3', syncNow.isPending && 'animate-spin')} />
@@ -171,7 +171,7 @@ export function IcalRoomCard({ roomId, roomName }: IcalRoomCardProps) {
                   <p className="text-xs text-slate-400">Nog geen import URLs. Voeg de iCal URL van Airbnb of Booking.com hieronder toe.</p>
                 ) : (
                   <ul className="space-y-1.5">
-                    {data!.importUrls.map(url => (
+                    {(data?.importUrls ?? []).map(url => (
                       <li key={url} className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2">
                         <span className="flex-1 text-xs text-slate-600 font-mono truncate">{url}</span>
                         <button

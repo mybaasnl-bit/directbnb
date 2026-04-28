@@ -24,9 +24,9 @@ export function RecentBookings({ bookings }: { bookings: any[] }) {
             <div key={b.id} className="px-5 py-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-slate-900 truncate">
-                  {b.guest.firstName} {b.guest.lastName}
+                  {b.guest?.firstName ?? ''} {b.guest?.lastName ?? ''}
                 </p>
-                <p className="text-xs text-slate-400 truncate">{b.room.property.name}</p>
+                <p className="text-xs text-slate-400 truncate">{b.room?.property?.name ?? b.room?.name ?? '—'}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <BookingStatusBadge status={b.status} />

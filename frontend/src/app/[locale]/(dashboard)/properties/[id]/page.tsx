@@ -50,6 +50,7 @@ interface Photo { id: string; url: string; altText?: string; isCover: boolean; }
 interface Room {
   id: string; name: string; descriptionNl?: string; descriptionEn?: string;
   pricePerNight: number; maxGuests: number; isActive: boolean;
+  beds?: number; sqm?: number; minStay?: number;
   photos: Photo[];
 }
 interface Property {
@@ -107,6 +108,7 @@ export default function PropertyDetailPage() {
 
   // ── Details form state ──
   const [detailsSaved, setDetailsSaved] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
   const [detailsForm, setDetailsForm] = useState<Partial<Property> | null>(null);
 
   // ── Photo mutations ──
@@ -127,14 +129,21 @@ export default function PropertyDetailPage() {
 
   // ── Amenities saved state ──
   const [amenitiesSaved, setAmenitiesSaved] = useState(false);
+  const [amenitiesError, setAmenitiesError] = useState('');
   const toggleAmenity = async (key: string) => {
     const current: string[] = property?.amenities ?? [];
     const next = current.includes(key)
       ? current.filter(k => k !== key)
       : [...current, key];
-    await updateProperty.mutateAsync({ amenities: next } as any);
-    setAmenitiesSaved(true);
-    setTimeout(() => setAmenitiesSaved(false), 2000);
+    try {
+      await updateProperty.mutateAsync({ amenities: next } as any);
+      setAmenitiesError('');
+      setAmenitiesSaved(true);
+      setTimeout(() => setAmenitiesSaved(false), 2000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Opslaan mislukt.';
+      setAmenitiesError(Array.isArray(msg) ? msg[0] : msg);
+    }
   };
 
   // ── Extra Ervaringen CRUD ──
@@ -163,14 +172,21 @@ export default function PropertyDetailPage() {
 
   // ── Policies form state ──
   const [policiesSaved, setPoliciesSaved] = useState(false);
+  const [policiesError, setPoliciesError] = useState('');
   const [policiesForm, setPoliciesForm] = useState<Partial<Property> | null>(null);
   const handlePoliciesSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!policiesForm) return;
-    await updateProperty.mutateAsync(policiesForm as any);
-    setPoliciesSaved(true);
-    setPoliciesForm(null);
-    setTimeout(() => setPoliciesSaved(false), 2000);
+    try {
+      await updateProperty.mutateAsync(policiesForm as any);
+      setPoliciesError('');
+      setPoliciesSaved(true);
+      setPoliciesForm(null);
+      setTimeout(() => setPoliciesSaved(false), 2000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Opslaan mislukt.';
+      setPoliciesError(Array.isArray(msg) ? msg[0] : msg);
+    }
   };
   const handlePolicyField = (field: string, value: any) => {
     setPoliciesForm(prev => ({ ...(prev ?? {}), [field]: value }));
@@ -201,9 +217,9 @@ export default function PropertyDetailPage() {
       name: room.name,
       pricePerNight: String(room.pricePerNight),
       maxGuests: String(room.maxGuests),
-      beds: '',
-      sqm: '',
-      minStay: '1',
+      beds: room.beds != null ? String(room.beds) : '',
+      sqm: room.sqm != null ? String(room.sqm) : '',
+      minStay: String(room.minStay ?? 1),
     });
     setEditRoomError('');
   };
@@ -213,6 +229,9 @@ export default function PropertyDetailPage() {
       name: editRoomForm.name,
       pricePerNight: parseFloat(editRoomForm.pricePerNight),
       maxGuests: parseInt(editRoomForm.maxGuests),
+      ...(editRoomForm.beds.trim()    ? { beds:    parseInt(editRoomForm.beds)    } : {}),
+      ...(editRoomForm.sqm.trim()     ? { sqm:     parseFloat(editRoomForm.sqm)   } : {}),
+      ...(editRoomForm.minStay.trim() ? { minStay: parseInt(editRoomForm.minStay) } : {}),
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['property', id] });
@@ -283,10 +302,16 @@ export default function PropertyDetailPage() {
 
   const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProperty.mutateAsync(form);
-    setDetailsSaved(true);
-    setDetailsForm(null);
-    setTimeout(() => setDetailsSaved(false), 2000);
+    try {
+      await updateProperty.mutateAsync(form);
+      setDetailsError('');
+      setDetailsSaved(true);
+      setDetailsForm(null);
+      setTimeout(() => setDetailsSaved(false), 2000);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? err?.message ?? 'Opslaan mislukt.';
+      setDetailsError(Array.isArray(msg) ? msg[0] : msg);
+    }
   };
 
   const handleField = (field: string, value: string) => {
@@ -342,6 +367,9 @@ export default function PropertyDetailPage() {
           <h2 className="font-semibold text-slate-900">Gegevens</h2>
           <SaveButton pending={updateProperty.isPending} saved={detailsSaved} />
         </div>
+        {detailsError && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-100">{detailsError}</p>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1.5">Naam *</label>
@@ -658,6 +686,9 @@ export default function PropertyDetailPage() {
               <Check className="w-3.5 h-3.5" /> Opgeslagen
             </span>
           )}
+          {amenitiesError && (
+            <span className="text-red-600 text-xs">{amenitiesError}</span>
+          )}
         </div>
         <p className="text-xs text-slate-400">Klik op een faciliteit om aan/uit te zetten. Wijzigingen worden direct opgeslagen.</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -688,6 +719,9 @@ export default function PropertyDetailPage() {
           <h2 className="font-semibold text-slate-900">Huisregels & beleid</h2>
           <SaveButton pending={updateProperty.isPending} saved={policiesSaved} />
         </div>
+        {policiesError && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5 border border-red-100">{policiesError}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <div>

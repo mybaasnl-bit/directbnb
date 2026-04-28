@@ -28,10 +28,10 @@ export function UpcomingBookings({ bookings }: { bookings: any[] }) {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-900">
-                  {b.guest.firstName} {b.guest.lastName}
+                  {b.guest?.firstName ?? ''} {b.guest?.lastName ?? ''}
                 </p>
                 <p className="text-xs text-slate-500 mt-0.5 truncate">
-                  {b.room.property.name} — {b.room.name}
+                  {b.room?.property?.name ?? b.room?.name ?? '—'}{b.room?.property?.name && b.room?.name ? ` — ${b.room.name}` : ''}
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {format(new Date(b.checkIn), 'dd MMM', { locale: dateLocale })}

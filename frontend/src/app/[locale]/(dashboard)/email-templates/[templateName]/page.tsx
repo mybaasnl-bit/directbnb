@@ -60,6 +60,7 @@ export default function HostEmailTemplateEditorPage() {
   const [showTestModal, setShowTestModal] = useState(false);
   const [testSending, setTestSending] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [testErrorMessage, setTestErrorMessage] = useState<string>('');
 
   const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Keep the very-latest values in a ref so autosave closure never goes stale
@@ -136,7 +137,7 @@ export default function HostEmailTemplateEditorPage() {
     } finally {
       if (!isAuto) setSaving(false);
     }
-  }, [templateName, templateLoaded]);
+  }, [templateName, templateLoaded, previewTextNl]);
 
   // Autosave: triggers only after template is loaded AND dirty
   useEffect(() => {
@@ -144,7 +145,7 @@ export default function HostEmailTemplateEditorPage() {
     if (autosaveRef.current) clearTimeout(autosaveRef.current);
     autosaveRef.current = setTimeout(() => performSave(true), AUTOSAVE_DELAY);
     return () => { if (autosaveRef.current) clearTimeout(autosaveRef.current); };
-  }, [dirty, subjectNl, htmlNl, performSave, templateLoaded]);
+  }, [dirty, subjectNl, previewTextNl, htmlNl, performSave, templateLoaded]);
 
   const markDirty = useCallback((fn: () => void) => {
     fn();
@@ -161,11 +162,18 @@ export default function HostEmailTemplateEditorPage() {
     if (!testEmail) return;
     setTestSending(true);
     setTestStatus('idle');
+    setTestErrorMessage('');
     try {
       await api.post(`/email-templates/host/mine/${templateName}/test`, { to: testEmail, language: 'nl' });
       setTestStatus('success');
       setTimeout(() => { setTestStatus('idle'); setShowTestModal(false); }, 2500);
-    } catch {
+    } catch (err: any) {
+      const msg: string =
+        err?.response?.data?.message ??
+        err?.response?.data?.error ??
+        err?.message ??
+        'Onbekende fout';
+      setTestErrorMessage(msg);
       setTestStatus('error');
     } finally {
       setTestSending(false);
@@ -300,10 +308,18 @@ export default function HostEmailTemplateEditorPage() {
                 <input type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} placeholder="uw@emailadres.nl" className="w-full px-4 py-2.5 bg-brand-light/40 rounded-xl text-sm border-0 outline-none focus:ring-2 focus:ring-brand/30" />
               </div>
               {testStatus === 'success' && <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium"><CheckCircle className="w-4 h-4" /> Test e-mail verstuurd!</div>}
-              {testStatus === 'error' && <div className="flex items-center gap-2 text-red-500 text-sm"><AlertCircle className="w-4 h-4" /> Versturen mislukt. Probeer het opnieuw.</div>}
+              {testStatus === 'error' && (
+                <div className="flex items-start gap-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">
+                    <span className="font-semibold">Fout bij verzenden: </span>
+                    {testErrorMessage || 'Onbekende fout'}
+                  </p>
+                </div>
+              )}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => { setShowTestModal(false); setTestStatus('idle'); }} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Annuleren</button>
+              <button onClick={() => { setShowTestModal(false); setTestStatus('idle'); setTestErrorMessage(''); }} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Annuleren</button>
               <button onClick={handleSendTest} disabled={!testEmail || testSending} className="flex-1 flex items-center justify-center gap-2 bg-brand hover:bg-brand-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
                 <Send className="w-4 h-4" /> {testSending ? 'Versturen…' : 'Verstuur test'}
               </button>

@@ -29,8 +29,8 @@ const TEMPLATE_TYPES = [
   },
   {
     name: 'booking_cancelled_guest',
-    label: 'Check-in Info',
-    description: 'Stuur check-in instructies en details',
+    label: 'Boeking geannuleerd',
+    description: 'Ontvangen door de gast wanneer de boeking wordt geannuleerd',
     icon: BookOpen,
   },
 ];
@@ -57,6 +57,8 @@ export default function EmailTemplatesPage() {
   const router = useRouter();
   const [customized, setCustomized] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [resetting, setResetting] = useState<string | null>(null);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [emailStats, setEmailStats] = useState<{ SENT?: number; FAILED?: number; total?: number } | null>(null);
@@ -84,6 +86,9 @@ export default function EmailTemplatesPage() {
     api.get('/email-templates/host/mine').then(({ data }) => {
       const list: HostTemplate[] = data?.data ?? data ?? [];
       setCustomized(new Set(list.map((t) => t.templateName)));
+    }).catch(() => {
+      // API unavailable — show templates with default (non-customized) state
+    }).finally(() => {
       setLoading(false);
     });
 
@@ -112,6 +117,16 @@ export default function EmailTemplatesPage() {
       setResetting(null);
     }
   };
+
+  const filteredLogs = emailLogs.filter(log => {
+    if (statusFilter !== 'all' && log.status !== statusFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const haystack = `${log.templateName ?? ''} ${log.subject ?? ''} ${log.recipientEmail ?? ''} ${log.recipientName ?? ''}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -227,14 +242,23 @@ export default function EmailTemplatesPage() {
       {/* Filter + search bar */}
       <div className="bg-white rounded-2xl border border-slate-100 px-4 py-3 flex items-center gap-3">
         <div className="relative">
-          <select className="appearance-none bg-white border border-slate-200 text-sm font-semibold text-slate-700 rounded-xl pl-3 pr-8 py-2 outline-none focus:ring-2 focus:ring-brand/30">
-            <option>{filterAllLabel}</option>
-            <option>{filterSentLabel}</option>
-            <option>{filterPlannedLabel}</option>
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="appearance-none bg-white border border-slate-200 text-sm font-semibold text-slate-700 rounded-xl pl-3 pr-8 py-2 outline-none focus:ring-2 focus:ring-brand/30"
+          >
+            <option value="all">{filterAllLabel}</option>
+            <option value="SENT">{filterSentLabel}</option>
+            <option value="SCHEDULED">{filterPlannedLabel}</option>
           </select>
           <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▾</span>
         </div>
-        <input placeholder="Zoek emails..." className="flex-1 text-sm text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30" />
+        <input
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Zoek emails..."
+          className="flex-1 text-sm text-slate-700 placeholder-slate-400 bg-white border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-brand/30"
+        />
       </div>
 
       {/* Email template cards */}
@@ -279,7 +303,9 @@ export default function EmailTemplatesPage() {
           <h3 className="font-bold text-slate-900">{recentTitle}</h3>
         </div>
 
-        {emailLogs.length === 0 ? (
+        {filteredLogs.length === 0 && emailLogs.length > 0 ? (
+          <div className="px-6 py-8 text-center text-sm text-slate-400">Geen emails gevonden voor dit filter.</div>
+        ) : emailLogs.length === 0 ? (
           <div className="px-6 py-10 space-y-4">
             {/* Static examples matching Figma when no real data */}
             {[
@@ -298,7 +324,7 @@ export default function EmailTemplatesPage() {
           </div>
         ) : (
           <div className="divide-y divide-slate-50">
-            {emailLogs.map((log: any, i: number) => (
+            {filteredLogs.map((log: any, i: number) => (
               /* px-4 on mobile, px-6 on sm+; gap-3 on mobile, gap-4 on sm+ */
               <div key={i} className="px-4 sm:px-6 py-4 flex items-start gap-3 sm:gap-4 hover:bg-slate-50/50 transition-colors">
                 <div className="flex-1 min-w-0">

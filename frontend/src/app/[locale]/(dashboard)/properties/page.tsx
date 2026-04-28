@@ -29,27 +29,9 @@ function getRoomType(name: string): string {
   return 'Standaard';
 }
 
-// Derive mock status: isActive=false → Onderhoud, else alternate Beschikbaar/Bezet
-function getRoomStatus(room: any, index: number): 'Beschikbaar' | 'Bezet' | 'Onderhoud' {
-  if (!room.isActive) return 'Onderhoud';
-  // Use name-length as deterministic mock (replace with real booking status later)
-  const pct = Math.min(95, 55 + ((room.name?.length ?? 3) * 7) % 40);
-  if (pct > 80) return 'Bezet';
-  return 'Beschikbaar';
-}
-
-function OccupancyBar({ pct }: { pct: number }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-semibold text-slate-500">Bezettingsgraad</span>
-        <span className="text-xs font-bold text-slate-900">{pct}%</span>
-      </div>
-      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-        <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
+// Derive real status from isActive flag only (live occupancy requires a separate bookings query)
+function getRoomStatus(room: any): 'Beschikbaar' | 'Onderhoud' {
+  return room.isActive ? 'Beschikbaar' : 'Onderhoud';
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -74,13 +56,12 @@ export default function PropertiesPage() {
 
   // Flatten all rooms with derived status/type
   const allRooms = useMemo(() =>
-    (properties as any[]).flatMap((p: any, pi: number) =>
-      (p.rooms ?? []).map((r: any, ri: number) => ({
+    (properties as any[]).flatMap((p: any) =>
+      (p.rooms ?? []).map((r: any) => ({
         ...r,
         property: p,
-        status: getRoomStatus(r, pi * 10 + ri),
+        status: getRoomStatus(r),
         type: getRoomType(r.name ?? ''),
-        occupancyPct: Math.min(95, 55 + ((r.name?.length ?? 3) * 7) % 40),
         amenities: r.amenities ?? p.amenities ?? [],
       }))
     ),
@@ -90,7 +71,7 @@ export default function PropertiesPage() {
   // Stats
   const totalRooms = allRooms.length;
   const beschikbaar = allRooms.filter(r => r.status === 'Beschikbaar').length;
-  const bezet = allRooms.filter(r => r.status === 'Bezet').length;
+  const bezet = allRooms.filter(r => r.status === 'Onderhoud').length;
   const avgPrice = totalRooms > 0
     ? Math.round(allRooms.reduce((s, r) => s + Number(r.pricePerNight ?? 0), 0) / totalRooms)
     : 0;
@@ -150,8 +131,8 @@ export default function PropertiesPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Totale Kamers', value: totalRooms, icon: BedDouble, color: 'text-slate-700', tooltip: 'Totaal aantal verhuurbare kamers in je accommodatie.' },
-            { label: 'Beschikbaar',   value: beschikbaar, icon: TrendingUp, color: 'text-emerald-600', tooltip: 'Kamers die momenteel beschikbaar zijn voor nieuwe boekingen.' },
-            { label: 'Bezet',        value: bezet,        icon: Users,      color: 'text-red-500',    tooltip: 'Kamers die momenteel bezet zijn of onderhoud ondergaan.' },
+            { label: 'Online',        value: beschikbaar, icon: TrendingUp, color: 'text-emerald-600', tooltip: 'Kamers die actief zijn en beschikbaar voor nieuwe boekingen.' },
+            { label: 'Offline',       value: bezet,        icon: Users,      color: 'text-red-500',    tooltip: 'Kamers die op offline/inactief zijn gezet.' },
             { label: 'Gem. Prijs',   value: `€${avgPrice}`, icon: null,    color: 'text-brand',      tooltip: 'Gemiddelde prijs per nacht over alle kamers.' },
           ].map(({ label, value, icon: Icon, color, tooltip }) => (
             <div key={label} className="bg-white rounded-2xl px-5 py-4 border border-slate-100 flex items-center gap-3">
@@ -205,9 +186,8 @@ export default function PropertiesPage() {
               className={selectCls}
             >
               <option value="all">{filterAllStatus}</option>
-              <option value="Beschikbaar">Beschikbaar</option>
-              <option value="Bezet">Bezet</option>
-              <option value="Onderhoud">Onderhoud</option>
+              <option value="Beschikbaar">Online</option>
+              <option value="Onderhoud">Offline</option>
             </select>
 
             <select
@@ -301,8 +281,6 @@ export default function PropertiesPage() {
                           </div>
                         </div>
 
-                        {/* Occupancy */}
-                        <OccupancyBar pct={room.occupancyPct} />
                       </div>
 
                       {/* Amenities */}

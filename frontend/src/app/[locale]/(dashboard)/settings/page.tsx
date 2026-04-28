@@ -85,6 +85,7 @@ function BnbTab() {
   const [description, setDescription] = useState('');
   const { locale } = useParams<{ locale: string }>();
   const [checkIn, setCheckIn]           = useState('14:00');
+  const [checkInUntil, setCheckInUntil] = useState('20:00');
   const [checkOut, setCheckOut]         = useState('10:00');
   const [saved, setSaved]               = useState(false);
 
@@ -92,9 +93,10 @@ function BnbTab() {
     if (property) {
       setName(property.name ?? '');
       setCity(property.addressCity ?? '');
-      setAddress(property.addressLine1 ?? '');
+      setAddress(property.addressStreet ?? '');
       setDescription(property.descriptionNl ?? '');
       setCheckIn(property.checkInTime ?? '14:00');
+      setCheckInUntil((property as any).checkInUntilTime ?? '20:00');
       setCheckOut(property.checkOutTime ?? '10:00');
     }
   }, [property?.id]);
@@ -140,7 +142,7 @@ function BnbTab() {
         </div>
         <div className="flex justify-end">
           <button
-            onClick={() => update.mutate({ name, addressCity: city, addressLine1: address, descriptionNl: description })}
+            onClick={() => update.mutate({ name, addressCity: city, addressStreet: address, descriptionNl: description })}
             disabled={update.isPending}
             className="bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
           >
@@ -152,9 +154,9 @@ function BnbTab() {
       <SectionCard icon={Clock} title="Check-in & Check-out Tijden" subtitle="Standaard aankomst en vertrek tijden">
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Check-in vanaf', value: checkIn, set: setCheckIn },
-            { label: 'Check-in tot',   value: '20:00', set: () => {} },
-            { label: 'Check-out tot',  value: checkOut, set: setCheckOut },
+            { label: 'Check-in vanaf', value: checkIn,       set: setCheckIn },
+            { label: 'Check-in tot',   value: checkInUntil, set: setCheckInUntil },
+            { label: 'Check-out tot',  value: checkOut,     set: setCheckOut },
           ].map(({ label, value, set }) => (
             <div key={label}>
               <FieldLabel>{label}</FieldLabel>
@@ -175,7 +177,7 @@ function BnbTab() {
         </div>
         <div className="flex justify-end">
           <button
-            onClick={() => update.mutate({ checkInTime: checkIn, checkOutTime: checkOut })}
+            onClick={() => update.mutate({ checkInTime: checkIn, checkInUntilTime: checkInUntil, checkOutTime: checkOut } as any)}
             disabled={update.isPending}
             className="bg-brand hover:bg-brand-600 disabled:opacity-50 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
           >
@@ -233,7 +235,7 @@ function AccountTab() {
   const t = useTranslations('settings');
   const { user, refetchUser } = useAuth();
 
-  const { register, handleSubmit, formState: { isSubmitting, isDirty } } = useForm<ProfileValues>({
+  const { register, handleSubmit, reset, formState: { isSubmitting, isDirty } } = useForm<ProfileValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       firstName:         user?.firstName ?? '',
@@ -245,7 +247,7 @@ function AccountTab() {
 
   const update = useMutation({
     mutationFn: (data: ProfileValues) => api.patch('/users/me', data),
-    onSuccess: () => refetchUser?.(),
+    onSuccess: (_, variables) => { reset(variables); refetchUser?.(); },
   });
 
   return (
